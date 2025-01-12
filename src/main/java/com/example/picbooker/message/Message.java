@@ -10,6 +10,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+// to do refine entire message folder
+// split -> chat messages , system messages 
 @Getter
 @Setter
 @Builder
