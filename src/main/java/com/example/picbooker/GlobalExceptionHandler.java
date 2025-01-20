@@ -4,10 +4,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 // import org.springframework.security.core.AuthenticationException;
+import org.springframework.web.servlet.NoHandlerFoundException;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import io.jsonwebtoken.ExpiredJwtException;
 
@@ -79,6 +82,38 @@ public class GlobalExceptionHandler {
                 .status(httpstatus)
                 .build();
 
+    }
+
+    // add these following properties if i want the no handler to be thrown
+    // currently no resource is thrown instead
+    // spring.mvc.throw-exception-if-no-handler-found=true
+    // spring.web.resources.add-mappings=false
+
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public ApiResponse<String> handleNoHandlerFoundException(NoHandlerFoundException ex) {
+        System.err.println("No Handler Found: " + ex.getRequestURL());
+        return ApiResponse.<String>builder()
+                .content("The endpoint does not exist: " + ex.getRequestURL())
+                .status(HttpStatus.NOT_FOUND)
+                .build();
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ApiResponse<String> handleNoResourceFoundException(NoResourceFoundException ex) {
+        System.err.println("No Resource Found: " + ex.getResourcePath());
+        return ApiResponse.<String>builder()
+                .content("The resource was not found: " + ex.getResourcePath())
+                .status(HttpStatus.NOT_FOUND)
+                .build();
+    }
+
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ApiResponse<String> handleMethodNotSupportedException(HttpRequestMethodNotSupportedException ex) {
+        System.err.println("Method Not Supported: " + ex.getMethod());
+        return ApiResponse.<String>builder()
+                .content("HTTP method not allowed: " + ex.getMethod())
+                .status(HttpStatus.METHOD_NOT_ALLOWED)
+                .build();
     }
 
     @ExceptionHandler(MissingServletRequestParameterException.class)

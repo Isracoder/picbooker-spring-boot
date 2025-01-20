@@ -152,4 +152,40 @@ public class UserController {
         }
     }
 
+    @PostMapping("/{id}/subscriptions/pro")
+    public ApiResponse<String> subscribeToPro() {
+        try {
+            // to do implement
+            // send userId in body maybe , with type
+            // maybe payment info
+            return ApiResponse.<String>builder()
+                    .content("not implemented")
+                    .status(HttpStatus.NOT_IMPLEMENTED)
+                    .build();
+        } catch (ApiException e) {
+            return ApiResponse.<String>builder()
+                    .content(e.getMessage())
+                    .status(e.getStatus())
+                    .build();
+        }
+    }
+
+    @DeleteMapping("/{id}/subscriptions/pro")
+    public ApiResponse<String> cancelSubscription() {
+        try {
+            // to do implement
+            // send userId in body maybe , with type
+            // maybe payment info
+            return ApiResponse.<String>builder()
+                    .content("not implemented")
+                    .status(HttpStatus.NOT_IMPLEMENTED)
+                    .build();
+        } catch (ApiException e) {
+            return ApiResponse.<String>builder()
+                    .content(e.getMessage())
+                    .status(e.getStatus())
+                    .build();
+        }
+    }
+
 }

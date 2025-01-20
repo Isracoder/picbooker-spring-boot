@@ -20,6 +20,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -27,20 +28,25 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
+import lombok.extern.slf4j.Slf4j;
 
+@MappedSuperclass
+@SuperBuilder(toBuilder = true)
+@Slf4j
 @Setter
 @Validated
 @Entity
 @Table(name = "users")
 @Getter
-@Builder
-@NoArgsConstructor
+// @Builder
+// @NoArgsConstructor
 @AllArgsConstructor
+@RequiredArgsConstructor
 public class User implements UserDetails {
 
     @Id
@@ -83,12 +89,23 @@ public class User implements UserDetails {
     private OauthProviderType provider;
 
     @Column
-    private String avatarUrl;
+    private String photoUrl;
 
     @Column
-    private Double latitude;
+    private String country;
+
     @Column
-    private Double longitude;
+    private String city;
+
+    @Column
+    private LocalDateTime subscriptionStart;
+
+    @Column
+    private LocalDateTime subscriptionEnd;
+
+    @Column
+    @Default
+    private Boolean isPro = false;
 
     @Column
     @Default

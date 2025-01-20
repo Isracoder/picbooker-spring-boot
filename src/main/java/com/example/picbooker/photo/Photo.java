@@ -1,10 +1,14 @@
 package com.example.picbooker.photo;
 
+import com.example.picbooker.photographer.Photographer;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,6 +28,9 @@ public class Photo {
     private Long id;
 
     // photographer id
+    @ManyToOne
+    @JoinColumn(name = "photographer", nullable = false)
+    private Photographer photographer;
 
     @Column
     private String photoUrl;

@@ -3,6 +3,9 @@ package com.example.picbooker.session;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
+import com.example.picbooker.deposit.Deposit;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -10,6 +13,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -49,4 +54,10 @@ public class Session {
 
     // relationships
     // deposit , client , sessiontype , photographerId
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "deposit_id", referencedColumnName = "id")
+    private Deposit deposit;
+
+    // many to many with photographerAdditionalService
 }
