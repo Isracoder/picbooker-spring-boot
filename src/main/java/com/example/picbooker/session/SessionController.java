@@ -73,7 +73,7 @@ public class SessionController {
 
     // maybe add /:status to get past, upcoming, pending , etc (prob for bookings
     // not sessions)
-    @GetMapping("/{photographerId]/") // GET /api/sessions/123?date=2024-12-31
+    @GetMapping("/{photographerId}/") // GET /api/sessions/123?date=2024-12-31
     public ApiResponse<?> getAvailableAppointments(
             @PathVariable Long photographerId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
@@ -96,7 +96,7 @@ public class SessionController {
         }
     }
 
-    @GetMapping("/{photographerId]")
+    @GetMapping("/{photographerId}")
     public ApiResponse<?> getAvailableBetween(@PathVariable("photographerId") long id) {
         try {
             // get sessions for photographer

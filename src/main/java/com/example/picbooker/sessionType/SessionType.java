@@ -37,7 +37,7 @@ public class SessionType {
     private Long id;
 
     @Default
-    @OneToMany(mappedBy = "photographer_session_types", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "sessionType", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     List<PhotographerSessionType> photographerSessionTypes = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)

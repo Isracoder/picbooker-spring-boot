@@ -15,6 +15,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+// to think of unifying with video and renaming to media 
 @Getter
 @Setter
 @AllArgsConstructor
@@ -38,6 +39,4 @@ public class Photo {
     @Column
     private String description;
 
-    // relationships
-    // deposit , client , sessiontype , photographerId
 }

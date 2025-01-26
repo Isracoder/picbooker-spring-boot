@@ -12,7 +12,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -39,13 +38,11 @@ public class Review {
     // private PlayerRankKey id;
 
     @ManyToOne
-    @MapsId("playerId")
-    @JoinColumn(name = "player_id", insertable = false, updatable = false)
+    @JoinColumn(name = "photographer", insertable = false, updatable = false)
     private Photographer photographer;
 
     @ManyToOne
-    @MapsId("gameId")
-    @JoinColumn(name = "game_id", insertable = false, updatable = false)
+    @JoinColumn(name = "client", insertable = false, updatable = false)
     private Client client;
 
     @Column

@@ -35,7 +35,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @Entity
 @Table
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 public class Photographer extends User {
 
     @Column
@@ -55,7 +55,7 @@ public class Photographer extends User {
 
     // clients that set me as one of their favorites
     @Default
-    @ManyToMany(mappedBy = "favorite_photographers")
+    @ManyToMany(mappedBy = "favoritePhotographers")
     private Set<Client> clients = new HashSet<>();
 
     // sessions that i'm the photographer for

@@ -1,5 +1,6 @@
 package com.example.picbooker.workhours;
 
+import java.time.DayOfWeek;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,9 +33,10 @@ public class WorkHourService {
         // list of all workhours
     }
 
-    public void findForPhotographerAndDay() {
+    public WorkHour findForPhotographerAndDay(Long photographerId, DayOfWeek day) {
         // to do implement ;
         // specific day workhour
+        return workHourRepository.findByDayAndPhotographer_Id(day, photographerId);
     }
 
     public void updateForPhotographer() {

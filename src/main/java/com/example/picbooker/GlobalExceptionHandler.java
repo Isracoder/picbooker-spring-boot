@@ -1,5 +1,7 @@
 package com.example.picbooker;
 
+import java.util.NoSuchElementException;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
@@ -36,6 +38,17 @@ public class GlobalExceptionHandler {
         return ApiResponse.<String>builder()
                 .content("Invalid credentials provided.")
                 .status(HttpStatus.UNAUTHORIZED)
+                .build();
+
+    }
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ApiResponse<String> handleNoSuchElementException(NoSuchElementException ex) {
+        System.err.println("Not found : " + ex.getMessage());
+
+        return ApiResponse.<String>builder()
+                .content("Requested entity not found")
+                .status(HttpStatus.NOT_FOUND)
                 .build();
 
     }

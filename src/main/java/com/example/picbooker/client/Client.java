@@ -5,12 +5,15 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.springframework.validation.annotation.Validated;
+
 import com.example.picbooker.photographer.Photographer;
 import com.example.picbooker.review.Review;
 import com.example.picbooker.session.Session;
 import com.example.picbooker.user.User;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -30,19 +33,22 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@SuperBuilder
 @Table
+@SuperBuilder(toBuilder = true)
+@Validated
 public class Client extends User {
 
     // id inherited
 
-    private int pointsBalance;
+    @Column
+    @Default
+    private int pointsBalance = 0;
 
     // favorite photographers
 
     @Default
     @ManyToMany
-    @JoinTable(name = "favorite_photographers", joinColumns = @JoinColumn(name = "photographer_id"), inverseJoinColumns = @JoinColumn(name = "client_id"))
+    @JoinTable(name = "favorite_photographers", joinColumns = @JoinColumn(name = "client_id"), inverseJoinColumns = @JoinColumn(name = "photographer_id"))
     private Set<Photographer> favoritePhotographers = new HashSet<>();
 
     // booked sessions

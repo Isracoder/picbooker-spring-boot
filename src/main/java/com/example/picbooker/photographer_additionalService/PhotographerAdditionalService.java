@@ -33,8 +33,8 @@ public class PhotographerAdditionalService implements Serializable {
     private Photographer photographer;
 
     @ManyToOne
-    @JoinColumn(name = "additional_service", nullable = false)
-    private AdditionalService adddAdditionalService;
+    @JoinColumn(name = "photographer_additional_service", nullable = false)
+    private AdditionalService additionalService;
 
     @Column
     private Boolean paymentRequired;

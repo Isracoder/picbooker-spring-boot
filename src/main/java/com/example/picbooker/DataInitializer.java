@@ -1,15 +1,24 @@
 package com.example.picbooker;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.picbooker.additionalService.AdditionalService;
+import com.example.picbooker.additionalService.AdditionalServiceRepository;
+import com.example.picbooker.sessionType.SessionType;
+import com.example.picbooker.sessionType.SessionTypeRepository;
+
 @Configuration
 public class DataInitializer {
 
-    // @Autowired
-    // private RealmKingdomRepository realmKingdomRepository;
+    @Autowired
+    private SessionTypeRepository sessionTypeRepository;
+
+    @Autowired
+    private AdditionalServiceRepository additionalServiceRepository;
 
     // @Autowired
     // private RoleRepository roleRepository;
@@ -17,23 +26,34 @@ public class DataInitializer {
     @Bean
     public CommandLineRunner loadData() {
         return args -> {
-            // initializeDefaultKingdoms();
-            // loadRoles();
+            initializeDefaultSessionTypes();
+            initializeDefaultAdditionalServices();
         };
     }
 
     @Transactional
-    public void initializeDefaultKingdoms() {
-        // GameVariables.kingdoms.forEach(defaultKingdom -> {
-        // if (!realmKingdomRepository.existsByName(defaultKingdom.getName())) {
+    public void initializeDefaultSessionTypes() {
+        Variables.defaultSessionTypes.forEach(sessionType -> {
+            if (!sessionTypeRepository.existsByType(sessionType.getType())) {
 
-        // RealmKingdom realmKingdom =
-        // RealmKingdom.builder().name(defaultKingdom.getName())
-        // .motto(defaultKingdom.getMotto())
-        // .description(defaultKingdom.getDescription()).build();
-        // realmKingdomRepository.save(realmKingdom);
-        // }
-        // });
+                SessionType st = SessionType.builder().type(sessionType.getType())
+                        .description(sessionType.getDescription()).build();
+                sessionTypeRepository.save(st);
+            }
+        });
+
+    }
+
+    @Transactional
+    public void initializeDefaultAdditionalServices() {
+        Variables.defaultAdditionalServices.forEach(additionalService -> {
+            if (!additionalServiceRepository.existsByType(additionalService.getType())) {
+
+                AdditionalService st = AdditionalService.builder().type(additionalService.getType())
+                        .description(additionalService.getDescription()).build();
+                additionalServiceRepository.save(st);
+            }
+        });
 
     }
 

@@ -37,7 +37,7 @@ public class AdditionalService {
     private Long id;
 
     @Default
-    @OneToMany(mappedBy = "photographer_additional_service", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "additionalService", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     List<PhotographerAdditionalService> photographerAdditionalServices = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)

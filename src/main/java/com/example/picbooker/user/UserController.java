@@ -84,7 +84,7 @@ public class UserController {
 
     @PostMapping("/")
     public ApiResponse<UserResponse> createUser(@RequestBody UserRequest userRequest) {
-        UserResponse userRes = service.save(userRequest);
+        UserResponse userRes = service.createAndSave(userRequest);
         return ApiResponse.<UserResponse>builder()
                 .content(userRes)
                 .status(HttpStatus.OK)

@@ -70,7 +70,7 @@ public class UserService {
 
     }
 
-    public UserResponse save(UserRequest userRequest) {
+    public UserResponse createAndSave(UserRequest userRequest) {
         User user = UserMapper.toEntity(userRequest);
         user.setPassword(new BCryptPasswordEncoder().encode(user.getPassword()));
         return save(user);

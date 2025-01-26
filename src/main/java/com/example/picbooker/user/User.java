@@ -20,7 +20,8 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.Inheritance;
+import jakarta.persistence.InheritanceType;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -30,23 +31,19 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder.Default;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-import lombok.extern.slf4j.Slf4j;
 
-@MappedSuperclass
 @SuperBuilder(toBuilder = true)
-@Slf4j
 @Setter
 @Validated
 @Entity
 @Table(name = "users")
 @Getter
-// @Builder
-// @NoArgsConstructor
+@NoArgsConstructor
 @AllArgsConstructor
-@RequiredArgsConstructor
+@Inheritance(strategy = InheritanceType.JOINED)
 public class User implements UserDetails {
 
     @Id
@@ -80,6 +77,9 @@ public class User implements UserDetails {
 
     @Column
     private String refreshToken;
+
+    @Column
+    private RoleType role;
 
     @Column
     private LocalDateTime expiresAt;
