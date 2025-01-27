@@ -34,7 +34,7 @@ public class WorkHourService {
     }
 
     public WorkHour findForPhotographerAndDay(Long photographerId, DayOfWeek day) {
-        // to do implement ;
+
         // specific day workhour
         return workHourRepository.findByDayAndPhotographer_Id(day, photographerId);
     }

@@ -20,7 +20,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -36,12 +35,12 @@ import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserMapper;
 import com.example.picbooker.user.UserOTP;
 import com.example.picbooker.user.UserRequest;
-import com.example.picbooker.user.UserResponse;
 import com.example.picbooker.user.UserService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import jakarta.mail.MessagingException;
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import net.minidev.json.JSONObject;
@@ -98,6 +97,7 @@ public class AuthService {
 
         try {
             // to think of extracting
+            System.out.println(loginDto.getEmail() + " , " + loginDto.getPassword());
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                     loginDto.getEmail(),
                     loginDto.getPassword()));
@@ -117,12 +117,12 @@ public class AuthService {
         try {
             String email = loginDto.getEmail(), password = loginDto.getPassword();
             User user = userService.findByEmail(email);
-            if (user == null)
-                throw new ApiException(HttpStatus.BAD_REQUEST, "No user");
+            if (isNull(user))
+                throw new ApiException(HttpStatus.NOT_FOUND, "No user");
             if (!user.getIsEnabled()) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "User isn't verified");
+                throw new ApiException(HttpStatus.FORBIDDEN, "User isn't verified");
             }
-
+            System.out.println(SecurityConfig.passwordEncoder().matches(password, user.getPassword()));
             Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                     loginDto.getEmail(),
                     loginDto.getPassword()));
@@ -130,16 +130,12 @@ public class AuthService {
                 throw new RuntimeException("Invalid credentials.");
             }
 
-            String code = jwtUtil.generateCode2FA();
-            user.setTemp2FACode(code);
-            user.setCodeExpiryTime(LocalDateTime.now().plusMinutes(codeExpiryMinutes));
-            userService.save(user);
             String token = jwtUtil.generateJwtToken(authentication);
             tempTokens.put(email, token); // Temporarily store the token
-
-            emailService.send2FACode(email, code);
+            changeAndResendCode(email, user);
         } catch (Exception e) {
-            System.out.println("Authentication failed: " + e.getMessage());
+            System.out.println(
+                    "Authentication failed: " + e.getMessage() + " " + e.getLocalizedMessage() + " " + e.getClass());
             throw e;
         }
     }
@@ -165,8 +161,8 @@ public class AuthService {
     private User verifyCode(String code, String email) {
         try {
             User user = userService.findByEmail(email);
-            if (user == null)
-                throw new ApiException(HttpStatus.BAD_REQUEST, "No user");
+            if (isNull(user))
+                throw new ApiException(HttpStatus.NOT_FOUND, "No user");
             if (!isNull(user.getTemp2FACode()) && user.getTemp2FACode().equals(code) &&
                     user.getCodeExpiryTime().isAfter(LocalDateTime.now())) {
                 return user;
@@ -177,7 +173,7 @@ public class AuthService {
         }
     }
 
-    public UserResponse verifyRegister2FA(UserOTP verifyDto) {
+    public String verifyRegister2FA(UserOTP verifyDto) {
         try {
             User user = verifyCode(verifyDto.getCode(), verifyDto.getEmail());
 
@@ -187,7 +183,10 @@ public class AuthService {
                 user.setCodeExpiryTime(null);
                 user.setRegisterDate(LocalDateTime.now());
                 userService.save(user);
-                return UserMapper.toResponse(user);
+                // return login(new UserRequest(user.getUsername(), user.getEmail(),
+                // user.getPassword()));
+                return jwtUtil.generateJwtToken(user);
+
             }
             throw new ApiException(HttpStatus.BAD_REQUEST, "Bad Verification Credentials");
         } catch (Exception e) {
@@ -200,13 +199,10 @@ public class AuthService {
         try {
             String code = jwtUtil.generateCode2FA();
             User user = UserMapper.toEntity(userRequest);
-            user.setTemp2FACode(code);
-            user.setCodeExpiryTime(LocalDateTime.now().plusMinutes(codeExpiryMinutes)); // 10-minute expiry
             user.setIsEnabled(false); // Not enabled until 2FA is verified
-            user.setPassword(new BCryptPasswordEncoder().encode(user.getPassword()));
+            user.setPassword(SecurityConfig.passwordEncoder().encode(user.getPassword()));
             userService.save(user);
-
-            emailService.send2FACode(user.getEmail(), code);
+            changeAndResendCode(code, user);
         } catch (Exception e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -214,17 +210,12 @@ public class AuthService {
 
     public void initiateChangePasswordRequest(String Email) {
         try {
-            String code = jwtUtil.generateCode2FA();
             User user = userService.findByEmail(Email);
-            if (user == null)
-                throw new ApiException(HttpStatus.BAD_REQUEST, "No user");
+            if (isNull(user))
+                throw new ApiException(HttpStatus.NOT_FOUND, "No user");
             if (!user.getIsEnabled())
-                throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid password change request");
-            user.setTemp2FACode(code);
-            user.setCodeExpiryTime(LocalDateTime.now().plusMinutes(codeExpiryMinutes));
-            userService.save(user);
-
-            emailService.send2FACode(Email, code);
+                throw new ApiException(HttpStatus.FORBIDDEN, "Invalid password change request");
+            changeAndResendCode(Email, user);
         } catch (Exception e) {
             System.out.println(e);
             System.out.println(e.getStackTrace());
@@ -266,6 +257,24 @@ public class AuthService {
         }
     }
 
+    @Transactional
+    public void changeAndResendCode(String email, User user) {
+        try {
+            String code = jwtUtil.generateCode2FA();
+            if (isNull(user)) {
+                user = userService.findByEmail(email);
+                if (isNull(user))
+                    throw new ApiException(HttpStatus.NOT_FOUND, "User not found");
+            }
+            user.setTemp2FACode(code);
+            user.setCodeExpiryTime(LocalDateTime.now().plusMinutes(codeExpiryMinutes));
+            userService.save(user);
+            emailService.send2FACode(email, code);
+        } catch (Exception e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
     // oauth section
     // to clean : merge, srp, extract to other service if necessary
 
@@ -287,7 +296,9 @@ public class AuthService {
             // "&scope=" + scope;
             return authUrl;
 
-        } else
+        }
+
+        else
             throw new ApiException(HttpStatus.BAD_REQUEST, "Oauth type not supported");
 
     }
@@ -322,7 +333,8 @@ public class AuthService {
             if (isNull(user)) {
                 user = userService
                         .saveOauthUser(
-                                new UserRequest(oauthUser.getUsername(), oauthUser.getEmail(), generateUUID()));
+                                UserRequest.builder().username(oauthUser.getUsername()).email(oauthUser.getEmail())
+                                        .password(generateUUID()).build());
 
             }
             return user;
@@ -337,9 +349,10 @@ public class AuthService {
             // to do encrypt all tokens before storing, decrypt before use , maybe override
             // setters and getters
             user.setProvider(provider);
-            user.setAccessToken(accessToken);
-            user.setRefreshToken(refreshToken);
-            user.setExpiresAt(expiresAt);
+            // currently don't need to store them
+            // user.setAccessToken(accessToken);
+            // user.setRefreshToken(refreshToken);
+            // user.setExpiresAt(expiresAt);
             userService.save(user);
 
         } catch (Exception e) {
@@ -467,7 +480,7 @@ public class AuthService {
 
     // generating jwts, uuids , etc
 
-    private String generateUUID() {
+    public static String generateUUID() {
         // to think of maybe add to jwt util and make static
         return UUID.randomUUID().toString();
     }

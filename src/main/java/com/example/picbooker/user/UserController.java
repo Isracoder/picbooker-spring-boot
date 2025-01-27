@@ -34,39 +34,29 @@ public class UserController {
     private TokenBlacklistService tokenBlacklistService;
 
     @GetMapping("/all")
-    public ApiResponse<?> findAllUsers(
+    public ApiResponse<List<UserResponse>> findAllUsers(
             @PageableDefault(size = 10, direction = Sort.Direction.ASC, sort = "id") Pageable page) {
-        try {
-            Page<UserResponse> usersResPage = service.findAll(page);
-            return ApiResponse.<List<UserResponse>>builder()
-                    .content(usersResPage.getContent())
-                    .status(HttpStatus.OK)
-                    .build();
-        } catch (Exception e) {
-            return ApiResponse.<String>builder()
-                    .content("Something went wrong :(")
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+
+        Page<UserResponse> usersResPage = service.findAll(page);
+        return ApiResponse.<List<UserResponse>>builder()
+                .content(usersResPage.getContent())
+                .status(HttpStatus.OK)
+                .build();
+
     }
 
     @GetMapping("/{id}")
-    public ApiResponse<?> findById(@PathVariable("id") long id) {
-        try {
-            return ApiResponse.<UserResponse>builder()
-                    .content(service.findUserResponseById(id))
-                    .status(HttpStatus.OK)
-                    .build();
-        } catch (Exception e) {
-            return ApiResponse.<String>builder()
-                    .content("Something went wrong :(")
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+    public ApiResponse<UserResponse> findById(@PathVariable("id") long id) {
+
+        return ApiResponse.<UserResponse>builder()
+                .content(service.findUserResponseById(id))
+                .status(HttpStatus.OK)
+                .build();
+
     }
 
     @DeleteMapping("/{id}") // to do secure only for admin
-    public ApiResponse<?> deleteById(@PathVariable("id") long id) {
+    public ApiResponse<String> deleteById(@PathVariable("id") long id) {
         try {
 
             service.delete(id);
@@ -93,28 +83,24 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ApiResponse<?> updateUserById(@PathVariable("id") long id, @RequestBody UserRequest userRequest) {
-        try {
-            UserResponse userRes = service.update(userRequest, id);
-            return ApiResponse.<UserResponse>builder()
-                    .content(userRes)
-                    .status(HttpStatus.OK)
-                    .build();
-        } catch (Exception e) {
-            return ApiResponse.<String>builder()
-                    .content(e.getLocalizedMessage())
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+    public ApiResponse<UserResponse> updateUserById(@PathVariable("id") long id, @RequestBody UserRequest userRequest) {
+
+        UserResponse userRes = service.update(userRequest, id);
+        return ApiResponse.<UserResponse>builder()
+                .content(userRes)
+                .status(HttpStatus.OK)
+                .build();
+
     }
 
     @PostMapping("/change-password")
-    public ApiResponse<?> changePassword(@RequestBody PasswordChangeDTO passwordChangeDTO) {
+    public ApiResponse<String> changePassword(@RequestBody PasswordChangeDTO passwordChangeDTO) {
         try {
             service.changePassword(passwordChangeDTO);
-            return ApiResponse.builder().status(HttpStatus.OK).content("Password changed successfully.").build();
+            return ApiResponse.<String>builder().status(HttpStatus.OK).content("Password changed successfully.")
+                    .build();
         } catch (ApiException e) {
-            return ApiResponse.builder()
+            return ApiResponse.<String>builder()
                     .status(e.getStatus())
                     .content(e.getMessage())
                     .build();
@@ -123,11 +109,11 @@ public class UserController {
     }
 
     @GetMapping("/info")
-    public ApiResponse<?> info() {
+    public ApiResponse<UserResponse> info() {
         // Retrieve the currently authenticated user's details
         User player = UserService.getLoggedInUser();
 
-        return ApiResponse.<Object>builder()
+        return ApiResponse.<UserResponse>builder()
                 .content(UserMapper.toResponse(player))
                 .status(HttpStatus.OK)
                 .build();

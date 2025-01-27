@@ -12,17 +12,18 @@ public class UserMapper {
     public static User toEntity(UserRequest userReq) {
         User user = User.builder().username(userReq.getUsername())
                 .email(userReq.getEmail())
-                // .phoneNumber(userReq.getPhoneNumber())
+                .DOB(userReq.getDOB())
                 .password(userReq.getPassword())
-                // .role(userReq.getRole())
+                .city(userReq.getCity())
+                .photoUrl(userReq.getPhotoURL())
+                .country(userReq.getCountry())
                 .build();
         return user;
     }
 
-    public static User toEntity(UserResponse userReq) {
-        User user = User.builder().username(userReq.getUsername())
-                .email(userReq.getEmail())
-                // .role(userReq.getRole())
+    public static User toEntity(UserResponse userResponse) {
+        User user = User.builder().username(userResponse.getUsername())
+                .email(userResponse.getEmail())
                 .build();
         return user;
     }
@@ -30,6 +31,7 @@ public class UserMapper {
     public static UserResponse toResponse(User user) {
         UserResponse userResponse = UserResponse.builder()
                 .username(user.getUsername())
+                .role(user.getRole())
                 .email(user.getEmail())
                 .id(user.getId())
                 .build();
@@ -42,7 +44,15 @@ public class UserMapper {
         if (userUpdates.getEmail() != null)
             finalUser.setEmail(userUpdates.getEmail());
         if (userUpdates.getPassword() != null)
-            finalUser.setPassword(userUpdates.getPassword());
+            finalUser.setPassword(userUpdates.getPassword()); // to do check encoding
+        if (userUpdates.getDOB() != null)
+            finalUser.setDOB(userUpdates.getDOB());
+        if (userUpdates.getPhotoUrl() != null)
+            finalUser.setPhotoUrl(userUpdates.getPhotoUrl());
+        if (userUpdates.getCountry() != null)
+            finalUser.setCountry(userUpdates.getCountry());
+        if (userUpdates.getCity() != null)
+            finalUser.setCity(userUpdates.getCity());
         return finalUser;
 
     }

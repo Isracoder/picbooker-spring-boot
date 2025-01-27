@@ -3,6 +3,7 @@ package com.example.picbooker.user;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Objects;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -12,6 +13,7 @@ import org.springframework.validation.annotation.Validated;
 
 import com.example.picbooker.RegexPatterns;
 import com.example.picbooker.security.OauthToken.OauthProviderType;
+import com.nimbusds.openid.connect.sdk.claims.Gender;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -73,20 +75,13 @@ public class User implements UserDetails {
     private LocalDateTime registerDate;
 
     @Column
-    private String accessToken;
+    private Date DOB;
 
     @Column
-    private String refreshToken;
+    private Gender gender;
 
     @Column
     private RoleType role;
-
-    @Column
-    private LocalDateTime expiresAt;
-
-    @Column
-    @Enumerated(EnumType.STRING)
-    private OauthProviderType provider;
 
     @Column
     private String photoUrl;
@@ -107,6 +102,7 @@ public class User implements UserDetails {
     @Default
     private Boolean isPro = false;
 
+    // end of data , start of auth :
     @Column
     @Default
     private Boolean isEnabled = false;
@@ -118,6 +114,22 @@ public class User implements UserDetails {
     // 2fa code expiry time
     @Column
     private LocalDateTime codeExpiryTime;
+
+    // for oauth :
+    @Column
+    private String accessToken;
+
+    @Column
+    private String refreshToken;
+
+    @Column
+    private LocalDateTime expiresAt; // for oauth
+
+    @Column
+    @Enumerated(EnumType.STRING)
+    private OauthProviderType provider;
+
+    // overriding functions
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

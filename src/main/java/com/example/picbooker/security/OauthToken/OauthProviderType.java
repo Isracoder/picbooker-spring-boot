@@ -6,5 +6,6 @@ import lombok.Getter;
 public enum OauthProviderType {
 
     APPLE,
-    GOOGLE
+    GOOGLE,
+
 }

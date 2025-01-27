@@ -1,5 +1,7 @@
 package com.example.picbooker.photographer;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -7,10 +9,13 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.picbooker.ApiResponse;
+import com.example.picbooker.additionalService.AdditionalService;
+import com.example.picbooker.workhours.WorkHour;
 
 @RestController
 @RequestMapping("/api/photographers")
@@ -108,9 +113,11 @@ public class PhotographerController {
     }
 
     @PutMapping("/{photographerId}/profile")
-    public ApiResponse<String> updateProfile(@PathVariable("photographerId") Long photographerId) {
+    public ApiResponse<String> updateProfile(@PathVariable("photographerId") Long photographerId,
+            @RequestBody PhotographerDTO photographerRequest) {
+
         // to do implement
-        photographerService.updateProfile(photographerId);
+        photographerService.updateProfile(photographerId, photographerRequest);
         return ApiResponse.<String>builder()
                 .content("Not implemented")
                 .status(HttpStatus.NOT_IMPLEMENTED)
@@ -126,20 +133,24 @@ public class PhotographerController {
                 .build();
     }
 
+    // to test
     @PostMapping("/{photographerId}/work-hours")
-    public ApiResponse<String> setWorkHours(@PathVariable("photographerId") Long photographerId) {
-        // to do implement
-        photographerService.setWorkHours(photographerId);
+    public ApiResponse<String> setWorkHours(@PathVariable("photographerId") Long photographerId,
+            @RequestBody List<WorkHour> workhours) {
+        // send data in format : [ {day: "Monday" , startHour: 8 , endHour: 15 } , {day:
+        // "Tuesday" , startHour : 8 , endHour: 15}]
+        photographerService.setWorkHours(photographerId, workhours);
         return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
+                .content("Succesfully updated")
+                .status(HttpStatus.OK)
                 .build();
     }
 
     @PostMapping("/{photographerId}/additional-services")
-    public ApiResponse<String> setAdditionalServices(@PathVariable("photographerId") Long photographerId) {
+    public ApiResponse<String> setAdditionalServices(@PathVariable("photographerId") Long photographerId,
+            @RequestBody List<AdditionalService> additionalServices) {
         // to do implement
-        photographerService.setAdditionalServices(photographerId);
+        photographerService.setAdditionalServices(photographerId, additionalServices);
         return ApiResponse.<String>builder()
                 .content("Not implemented")
                 .status(HttpStatus.NOT_IMPLEMENTED)
