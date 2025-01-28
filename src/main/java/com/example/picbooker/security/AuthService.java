@@ -113,7 +113,7 @@ public class AuthService {
         // return "";
     }
 
-    public void initiateLogin(UserRequest loginDto) throws MessagingException {
+    public String initiateLogin(UserRequest loginDto) throws MessagingException {
         try {
             String email = loginDto.getEmail(), password = loginDto.getPassword();
             User user = userService.findByEmail(email);
@@ -131,8 +131,9 @@ public class AuthService {
             }
 
             String token = jwtUtil.generateJwtToken(authentication);
-            tempTokens.put(email, token); // Temporarily store the token
-            changeAndResendCode(email, user);
+            return token;
+            // tempTokens.put(email, token); // Temporarily store the token
+            // changeAndResendCode(email, user);
         } catch (Exception e) {
             System.out.println(
                     "Authentication failed: " + e.getMessage() + " " + e.getLocalizedMessage() + " " + e.getClass());
@@ -202,7 +203,7 @@ public class AuthService {
             user.setIsEnabled(false); // Not enabled until 2FA is verified
             user.setPassword(SecurityConfig.passwordEncoder().encode(user.getPassword()));
             userService.save(user);
-            changeAndResendCode(code, user);
+            changeAndResendCode(user.getEmail(), user);
         } catch (Exception e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }

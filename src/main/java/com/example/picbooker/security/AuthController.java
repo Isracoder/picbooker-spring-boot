@@ -70,8 +70,8 @@ public class AuthController {
     public ApiResponse<String> login(@RequestBody UserRequest userRequest) {
         try {
             System.out.println("IN login");
-            authService.initiateLogin(userRequest);
-            return ApiResponse.<String>builder().status(HttpStatus.OK).content("2FA sent to email successfully.")
+            String jwt = authService.initiateLogin(userRequest);
+            return ApiResponse.<String>builder().status(HttpStatus.OK).content(jwt)
                     .build();
         } catch (Exception e) {
             return ApiResponse.<String>builder().status(HttpStatus.BAD_REQUEST)
@@ -90,16 +90,16 @@ public class AuthController {
 
     }
 
-    @PostMapping("/verify-login")
-    public ApiResponse<String> verifyLogin2FA(@RequestBody UserOTP verifyDto) {
+    // @PostMapping("/verify-login")
+    // public ApiResponse<String> verifyLogin2FA(@RequestBody UserOTP verifyDto) {
 
-        String token = authService.verifyLogin2FA(verifyDto);
-        return ApiResponse.<String>builder()
-                .status(HttpStatus.OK)
-                .content(token)
-                .build();
+    // String token = authService.verifyLogin2FA(verifyDto);
+    // return ApiResponse.<String>builder()
+    // .status(HttpStatus.OK)
+    // .content(token)
+    // .build();
 
-    }
+    // }
 
     // 1 email -> sends code
     @PostMapping("/forgot-password-request")

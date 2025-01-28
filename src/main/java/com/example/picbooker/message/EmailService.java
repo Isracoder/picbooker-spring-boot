@@ -3,6 +3,7 @@ package com.example.picbooker.message;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -17,6 +18,12 @@ import jakarta.mail.internet.MimeMessage;
 public class EmailService implements MessageSenderService {
 
     private final JavaMailSender emailSender;
+
+    @Value("${spring.mail.username}")
+    private String emailUsername;
+
+    @Value("${spring.mail.password}")
+    private String emailPassword;
 
     @Autowired
     public EmailService(JavaMailSender emailSender) {
@@ -41,9 +48,12 @@ public class EmailService implements MessageSenderService {
     public void send2FACode(String to, String code) throws MessagingException {
         MimeMessage message = emailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true);
+        System.out.println("Email password : " + emailPassword);
+        System.out.println("Email username : " + emailUsername);
+        System.out.println("To: " + to);
         helper.setTo(to);
-        helper.setSubject("Paranoia Zone 2FA Code");
-        helper.setText("Your 2FA code is: " + code);
+        helper.setSubject("Picbooker OTP Code");
+        helper.setText("Your OTP code is: " + code);
         emailSender.send(message);
     }
 }

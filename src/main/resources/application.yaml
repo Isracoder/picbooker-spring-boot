@@ -1,6 +1,6 @@
 app: 
   max-msgs-per-day : 20
-  jwt-secret: ${PB_JWT_SECRET:34394739743}
+  jwt-secret: ${PB_JWT_SECRET:mILTn8ajTaDN64ck1INHI8Me2gAiVzWMlxnGtfyf/m4=}
   code-expiry-minutes: 10
   jwt-expiration-days: 2
 
@@ -14,7 +14,6 @@ spring:
     name: paranoia-zone
   datasource:
     url: jdbc:postgresql://${PB_URL_HOST:localhost}:5432/picbooker
-
     username: ${PB_DB_USERNAME:postgres}
     password: ${PB_DB_PASSWORD:admin}
   security:

@@ -33,6 +33,17 @@ public class UserController {
     @Autowired
     private TokenBlacklistService tokenBlacklistService;
 
+    // put token in cookie
+    // {"Authorization" : "Bearer jwtoken" }
+    // get : /auth/login :
+    // function : from textbox -> object
+    // in onClick : (data)
+    // in js : fetch ("/localhost:880/auth.login").header("Authorization" : "Bearer
+    // :
+    // eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyMjExMDc2MUBzdHVkZW50cy5oZWJyb24uZWR1IiwiaWF0IjoxNzM4MDc5NzQzLCJleHAiOjE3MzgyNTI1NDN9.VvS4cQBYuLhh1wqaYKsg6EftOEQpffh08xt3P02DpJU")
+    // .method ("POST").requestBody(data).then (success -> redirect) .catch (alert
+    // user) ;
+
     @GetMapping("/all")
     public ApiResponse<List<UserResponse>> findAllUsers(
             @PageableDefault(size = 10, direction = Sort.Direction.ASC, sort = "id") Pageable page) {
