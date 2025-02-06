@@ -17,7 +17,7 @@ import com.example.picbooker.ApiResponse;
 import com.example.picbooker.additionalService.AdditionalService;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserService;
-import com.example.picbooker.workhours.WorkHour;
+import com.example.picbooker.workhours.WorkHourDTO;
 
 @RestController
 @RequestMapping("/api/photographers")
@@ -79,11 +79,11 @@ public class PhotographerController {
         }
 
         @GetMapping("/{photographerId}/work-hours")
-        public ApiResponse<String> getWorkHours(@PathVariable("photographerId") Long photographerId) {
-                photographerService.getWorkHours(photographerId);
-                return ApiResponse.<String>builder()
-                                .content("Not implemented")
-                                .status(HttpStatus.NOT_IMPLEMENTED)
+        public ApiResponse<List<WorkHourDTO>> getWorkHours(@PathVariable("photographerId") Long photographerId) {
+                List<WorkHourDTO> workhours = photographerService.getWorkHours(photographerId);
+                return ApiResponse.<List<WorkHourDTO>>builder()
+                                .content(workhours)
+                                .status(HttpStatus.OK)
                                 .build();
         }
 
@@ -139,6 +139,7 @@ public class PhotographerController {
                                 .build();
         }
 
+        // to do rename to me and get from token
         @PutMapping("/{photographerId}/profile")
         public ApiResponse<PhotographerResponse> updateProfile(@PathVariable("photographerId") Long photographerId,
                         @RequestBody PhotographerRequest photographerRequest) {
@@ -162,14 +163,14 @@ public class PhotographerController {
         }
 
         // to test
-        @PostMapping("/{photographerId}/work-hours")
-        public ApiResponse<String> setWorkHours(@PathVariable("photographerId") Long photographerId,
-                        @RequestBody List<WorkHour> workhours) {
+        @PostMapping("/work-hours")
+        public ApiResponse<List<WorkHourDTO>> setWorkHours(@PathVariable("photographerId") Long photographerId,
+                        @RequestBody List<WorkHourDTO> workhours) {
                 // send data in format : [ {day: "Monday" , startHour: 8 , endHour: 15 } , {day:
                 // "Tuesday" , startHour : 8 , endHour: 15}]
-                photographerService.setWorkHours(photographerId, workhours);
-                return ApiResponse.<String>builder()
-                                .content("Succesfully updated")
+                List<WorkHourDTO> updatedWorkHours = photographerService.setWorkHours(photographerId, workhours);
+                return ApiResponse.<List<WorkHourDTO>>builder()
+                                .content(updatedWorkHours)
                                 .status(HttpStatus.OK)
                                 .build();
         }

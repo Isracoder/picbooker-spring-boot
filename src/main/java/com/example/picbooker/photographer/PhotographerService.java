@@ -2,8 +2,10 @@ package com.example.picbooker.photographer;
 
 import static java.util.Objects.isNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,6 +17,7 @@ import com.example.picbooker.additionalService.AdditionalServiceRepository;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserService;
 import com.example.picbooker.workhours.WorkHour;
+import com.example.picbooker.workhours.WorkHourDTO;
 import com.example.picbooker.workhours.WorkHourService;
 
 import jakarta.transaction.Transactional;
@@ -63,12 +66,19 @@ public class PhotographerService {
 
     }
 
-    public void getWorkHours(Long id) {
-        // to do implement ;
+    public List<WorkHourDTO> getWorkHours(Long id) {
+        Photographer photographer = findByIdThrow(id);
+        if (isNull(photographer.getWorkhours()))
+            return new ArrayList<WorkHourDTO>();
+
+        return photographer.getWorkhours().stream()
+                .map(workhour -> new WorkHourDTO(workhour.getStartHour(), workhour.getEndHour(), workhour.getDay()))
+                .collect(Collectors.toList());
+
     }
 
     @Transactional
-    public void setWorkHours(Long id, List<WorkHour> workhours) {
+    public List<WorkHourDTO> setWorkHours(Long id, List<WorkHourDTO> workhours) {
 
         workhours.stream().forEach(workhour -> {
             WorkHour workHour = workHourService.findForPhotographerAndDay(id, workhour.getDay());
@@ -78,6 +88,7 @@ public class PhotographerService {
                 workHour.setEndHour(workhour.getEndHour());
             }
         });
+        return workhours;
     }
 
     public void getPortfolio(Long id) {

@@ -32,7 +32,7 @@ public class JwtUtil {
         Jwts.parser()
                 .verifyWith((SecretKey) getSigningKey())
                 .build()
-                .parse(token);
+                .parse(token.replace(" ", ""));
         return true;
     }
 
