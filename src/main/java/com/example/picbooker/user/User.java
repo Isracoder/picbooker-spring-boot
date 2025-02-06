@@ -12,6 +12,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.validation.annotation.Validated;
 
 import com.example.picbooker.RegexPatterns;
+import com.example.picbooker.client.Client;
+import com.example.picbooker.photographer.Photographer;
 import com.example.picbooker.security.OauthToken.OauthProviderType;
 import com.nimbusds.openid.connect.sdk.claims.Gender;
 
@@ -19,11 +21,13 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -97,6 +101,14 @@ public class User implements UserDetails {
 
     @Column
     private LocalDateTime subscriptionEnd;
+
+    // Bidirectional One-to-One Mapping with Client (if exists)
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    private Client client;
+
+    // Bidirectional One-to-One Mapping with Photographer (if exists)
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    private Photographer photographer;
 
     @Column
     @Default
