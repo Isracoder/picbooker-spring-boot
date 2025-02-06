@@ -6,10 +6,14 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.example.picbooker.ApiException;
 import com.example.picbooker.additionalService.AdditionalService;
 import com.example.picbooker.additionalService.AdditionalServiceRepository;
+import com.example.picbooker.user.User;
+import com.example.picbooker.user.UserService;
 import com.example.picbooker.workhours.WorkHour;
 import com.example.picbooker.workhours.WorkHourService;
 
@@ -23,6 +27,8 @@ public class PhotographerService {
 
     @Autowired
     private WorkHourService workHourService;
+    @Autowired
+    private UserService userService;
 
     @Autowired
     private AdditionalServiceRepository additionalServiceRepository;
@@ -41,6 +47,20 @@ public class PhotographerService {
 
     public Photographer save(Photographer photographer) {
         return photographerRepository.save(photographer);
+    }
+
+    @Transactional
+    public PhotographerResponse assignPhotographerRoleAndCreate(Long userId, PhotographerRequest photographerRequest) {
+        User user = userService.findByIdThrow(userId);
+        // Optionally, check if the user already has an associated role record
+        if (photographerRepository.existsByUser(user)) {
+            throw new ApiException(HttpStatus.CONFLICT, "User already has a photographer role");
+        }
+        Photographer photographer = save(PhotographerMapper.toEntityFromRequest(photographerRequest, user));
+        user.setPhotographer(photographer);
+
+        return PhotographerMapper.toResponse(photographer);
+
     }
 
     public void getWorkHours(Long id) {
@@ -80,14 +100,19 @@ public class PhotographerService {
     }
 
     @Transactional
-    public void updateProfile(Long photographerId, PhotographerDTO photographerDTO) {
+    public PhotographerResponse updateProfile(Long photographerId, PhotographerRequest photographerRequest) {
         Photographer photographer = findByIdThrow(photographerId);
-        if (!isNull(photographerDTO.getBufferTimeMinutes()))
-            photographer.setBufferTimeMinutes(photographerDTO.getBufferTimeMinutes());
-        if (!isNull(photographerDTO.getMinimumNoticeBeforeSessionMinutes()))
-            photographer.setMinimumNoticeBeforeSessionMinutes(photographerDTO.getMinimumNoticeBeforeSessionMinutes());
-        if (!isNull(photographerDTO.getStudio()))
-            photographer.setStudio(photographerDTO.getStudio());
+        if (!isNull(photographerRequest.getBufferTimeMinutes()))
+            photographer.setBufferTimeMinutes(photographerRequest.getBufferTimeMinutes());
+        if (!isNull(photographerRequest.getMinimumNoticeBeforeSessionMinutes()))
+            photographer
+                    .setMinimumNoticeBeforeSessionMinutes(photographerRequest.getMinimumNoticeBeforeSessionMinutes());
+        if (!isNull(photographerRequest.getStudio()))
+            photographer.setStudio(photographerRequest.getStudio());
+        if (!isNull(photographerRequest.getBio()))
+            photographer.setBio(photographerRequest.getBio());
+        return PhotographerMapper.toResponse(photographer);
+
     }
 
     public void getSessionTypes(Long id) {

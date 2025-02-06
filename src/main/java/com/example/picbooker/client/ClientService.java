@@ -4,12 +4,13 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.example.picbooker.ApiException;
 import com.example.picbooker.photographer.Photographer;
 import com.example.picbooker.review.Review;
 import com.example.picbooker.session.Session;
-import com.example.picbooker.user.RoleType;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserService;
 
@@ -25,7 +26,7 @@ public class ClientService {
     private UserService userService;
 
     public Client create(User user) {
-        return Client.builder().id(user.getId()).build();
+        return new Client(null, user, 0, null, null, null);
     }
 
     public Optional<Client> findById(Long id) {
@@ -41,11 +42,16 @@ public class ClientService {
     }
 
     @Transactional
-    public Client assignClientRoleAndCreate(Long userId) {
-        User user = userService.findById(userId);
-        user.setRole(RoleType.CLIENT);
-        return save(create(user));
+    public ClientResponse assignClientRoleAndCreate(Long userId) {
+        User user = userService.findByIdThrow(userId);
+        // Optionally, check if the user already has an associated role record
+        if (clientRepository.existsByUser(user)) {
+            throw new ApiException(HttpStatus.CONFLICT, "User already has a client role");
+        }
+        Client client = save(create(user));
+        user.setClient(client);
 
+        return ClientMapper.toResponse(client);
     }
 
     public List<Photographer> getClientFavoritePhotographers(Long clientId) {

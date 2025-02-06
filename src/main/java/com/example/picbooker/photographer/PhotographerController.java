@@ -15,157 +15,185 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.picbooker.ApiResponse;
 import com.example.picbooker.additionalService.AdditionalService;
+import com.example.picbooker.user.User;
+import com.example.picbooker.user.UserService;
 import com.example.picbooker.workhours.WorkHour;
 
 @RestController
 @RequestMapping("/api/photographers")
 public class PhotographerController {
 
-    @Autowired
-    private PhotographerService photographerService;
+        @Autowired
+        private PhotographerService photographerService;
 
-    @GetMapping("/{photographerId}/session-types")
-    public ApiResponse<String> getSessionTypes(@PathVariable("photographerId") Long photographerId) {
-        photographerService.getSessionTypes(photographerId);
-        return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
-                .build();
-    }
+        @GetMapping("/{photographerId}/session-types")
+        public ApiResponse<String> getSessionTypes(@PathVariable("photographerId") Long photographerId) {
+                photographerService.getSessionTypes(photographerId);
+                return ApiResponse.<String>builder()
+                                .content("Not implemented")
+                                .status(HttpStatus.NOT_IMPLEMENTED)
+                                .build();
+        }
 
-    @GetMapping("/{photographerId}")
-    public ApiResponse<String> getPhotographer(@PathVariable("photographerId") Long photographerId) {
-        photographerService.findById(photographerId);
-        return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
-                .build();
-    }
+        // seting yourself as client
+        @PostMapping("/")
+        public ApiResponse<PhotographerResponse> openPhotographerAccount(
+                        @RequestBody PhotographerRequest photographerRequest) {
+                User user = UserService.getLoggedInUserThrow();
+                PhotographerResponse photographer = photographerService.assignPhotographerRoleAndCreate(user.getId(),
+                                photographerRequest);
+                return ApiResponse.<PhotographerResponse>builder()
+                                .content(photographer)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
 
-    @GetMapping("/{photographerId}/additional-services")
-    public ApiResponse<String> getAdditionalServices(@PathVariable("photographerId") Long photographerId) {
-        photographerService.getAdditionalServices(photographerId);
-        return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
-                .build();
-    }
+        @PostMapping("/personal")
+        public ApiResponse<PhotographerResponse> editPhotographerInfo(
+                        @RequestBody PhotographerRequest photographerRequest) {
+                User user = UserService.getLoggedInUserThrow();
+                PhotographerResponse photographer = photographerService.assignPhotographerRoleAndCreate(user.getId(),
+                                photographerRequest);
+                return ApiResponse.<PhotographerResponse>builder()
+                                .content(photographer)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
 
-    @GetMapping("/{photographerId}/work-hours")
-    public ApiResponse<String> getWorkHours(@PathVariable("photographerId") Long photographerId) {
-        photographerService.getWorkHours(photographerId);
-        return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
-                .build();
-    }
+        @GetMapping("/{photographerId}")
+        public ApiResponse<PhotographerResponse> getPhotographer(@PathVariable("photographerId") Long photographerId) {
+                Photographer photographer = photographerService.findByIdThrow(photographerId);
+                return ApiResponse.<PhotographerResponse>builder()
+                                .content(PhotographerMapper.toResponse(photographer))
+                                .status(HttpStatus.OK)
+                                .build();
+        }
 
-    @GetMapping("/{photographerId}/portfolio")
-    public ApiResponse<String> getPortfolio(@PathVariable("photographerId") Long photographerId) {
-        // to do implement
-        photographerService.getPortfolio(photographerId);
-        // should I split for videos and photos ?
-        return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
-                .build();
-    }
+        @GetMapping("/{photographerId}/additional-services")
+        public ApiResponse<String> getAdditionalServices(@PathVariable("photographerId") Long photographerId) {
+                photographerService.getAdditionalServices(photographerId);
+                return ApiResponse.<String>builder()
+                                .content("Not implemented")
+                                .status(HttpStatus.NOT_IMPLEMENTED)
+                                .build();
+        }
 
-    @PostMapping("/{photographerId}/portfolio")
-    public ApiResponse<String> addToPortfolio(@PathVariable("photographerId") Long photographerId) {
-        // to do implement
-        photographerService.updatePortfolio(photographerId);
-        // should I split for videos and photos ?
-        return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
-                .build();
-    }
+        @GetMapping("/{photographerId}/work-hours")
+        public ApiResponse<String> getWorkHours(@PathVariable("photographerId") Long photographerId) {
+                photographerService.getWorkHours(photographerId);
+                return ApiResponse.<String>builder()
+                                .content("Not implemented")
+                                .status(HttpStatus.NOT_IMPLEMENTED)
+                                .build();
+        }
 
-    @PostMapping("/{photographerId}/session-types")
-    public ApiResponse<String> setSessionTypes(@PathVariable("photographerId") Long photographerId) {
-        photographerService.setSessionTypes(photographerId);
-        return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
-                .build();
-    }
+        @GetMapping("/{photographerId}/portfolio")
+        public ApiResponse<String> getPortfolio(@PathVariable("photographerId") Long photographerId) {
+                // to do implement
+                photographerService.getPortfolio(photographerId);
+                // should I split for videos and photos ?
+                return ApiResponse.<String>builder()
+                                .content("Not implemented")
+                                .status(HttpStatus.NOT_IMPLEMENTED)
+                                .build();
+        }
 
-    @GetMapping("/{photographerId}/bookings")
-    public ApiResponse<String> getBookings(@PathVariable("photographerId") Long photographerId) {
-        photographerService.getBookings(photographerId);
-        // to do get with from/to query params or status
-        // pending/cancelled/booked/open/etc
-        return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
-                .build();
-    }
+        @PostMapping("/{photographerId}/portfolio")
+        public ApiResponse<String> addToPortfolio(@PathVariable("photographerId") Long photographerId) {
+                // to do implement
+                photographerService.updatePortfolio(photographerId);
+                // should I split for videos and photos ?
+                return ApiResponse.<String>builder()
+                                .content("Not implemented")
+                                .status(HttpStatus.NOT_IMPLEMENTED)
+                                .build();
+        }
 
-    @GetMapping("/{photographerId}/reviews")
-    public ApiResponse<String> getReviews(@PathVariable("photographerId") Long photographerId) {
-        // to do implement
-        photographerService.getReviews(photographerId);
-        return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
-                .build();
-    }
+        @PostMapping("/{photographerId}/session-types")
+        public ApiResponse<String> setSessionTypes(@PathVariable("photographerId") Long photographerId) {
+                photographerService.setSessionTypes(photographerId);
+                return ApiResponse.<String>builder()
+                                .content("Not implemented")
+                                .status(HttpStatus.NOT_IMPLEMENTED)
+                                .build();
+        }
 
-    @PutMapping("/{photographerId}/profile")
-    public ApiResponse<String> updateProfile(@PathVariable("photographerId") Long photographerId,
-            @RequestBody PhotographerDTO photographerRequest) {
+        @GetMapping("/{photographerId}/bookings")
+        public ApiResponse<String> getBookings(@PathVariable("photographerId") Long photographerId) {
+                photographerService.getBookings(photographerId);
+                // to do get with from/to query params or status
+                // pending/cancelled/booked/open/etc
+                return ApiResponse.<String>builder()
+                                .content("Not implemented")
+                                .status(HttpStatus.NOT_IMPLEMENTED)
+                                .build();
+        }
 
-        // to do implement
-        photographerService.updateProfile(photographerId, photographerRequest);
-        return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
-                .build();
-    }
+        @GetMapping("/{photographerId}/reviews")
+        public ApiResponse<String> getReviews(@PathVariable("photographerId") Long photographerId) {
+                // to do implement
+                photographerService.getReviews(photographerId);
+                return ApiResponse.<String>builder()
+                                .content("Not implemented")
+                                .status(HttpStatus.NOT_IMPLEMENTED)
+                                .build();
+        }
 
-    @PostMapping("/{photographerId}/membership")
-    public ApiResponse<String> setMembership(@PathVariable("photographerId") Long photographerId) {
-        // to do implement
-        return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
-                .build();
-    }
+        @PutMapping("/{photographerId}/profile")
+        public ApiResponse<PhotographerResponse> updateProfile(@PathVariable("photographerId") Long photographerId,
+                        @RequestBody PhotographerRequest photographerRequest) {
 
-    // to test
-    @PostMapping("/{photographerId}/work-hours")
-    public ApiResponse<String> setWorkHours(@PathVariable("photographerId") Long photographerId,
-            @RequestBody List<WorkHour> workhours) {
-        // send data in format : [ {day: "Monday" , startHour: 8 , endHour: 15 } , {day:
-        // "Tuesday" , startHour : 8 , endHour: 15}]
-        photographerService.setWorkHours(photographerId, workhours);
-        return ApiResponse.<String>builder()
-                .content("Succesfully updated")
-                .status(HttpStatus.OK)
-                .build();
-    }
+                // to do implement
+                PhotographerResponse photographerResponse = photographerService.updateProfile(photographerId,
+                                photographerRequest);
+                return ApiResponse.<PhotographerResponse>builder()
+                                .content(photographerResponse)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
 
-    @PostMapping("/{photographerId}/additional-services")
-    public ApiResponse<String> setAdditionalServices(@PathVariable("photographerId") Long photographerId,
-            @RequestBody List<AdditionalService> additionalServices) {
-        // to do implement
-        photographerService.setAdditionalServices(photographerId, additionalServices);
-        return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
-                .build();
-    }
+        @PostMapping("/{photographerId}/membership")
+        public ApiResponse<String> setMembership(@PathVariable("photographerId") Long photographerId) {
+                // to do implement
+                return ApiResponse.<String>builder()
+                                .content("Not implemented")
+                                .status(HttpStatus.NOT_IMPLEMENTED)
+                                .build();
+        }
 
-    @PatchMapping("/{photographerId}/bookings/{bookingId}/deposit")
-    public ApiResponse<String> updateDepositStatus(@PathVariable("photographerId") Long photographerId,
-            @PathVariable("bookingId") Long bookingId) {
-        // to do implement
-        // maybe not here
-        return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
-                .build();
-    }
+        // to test
+        @PostMapping("/{photographerId}/work-hours")
+        public ApiResponse<String> setWorkHours(@PathVariable("photographerId") Long photographerId,
+                        @RequestBody List<WorkHour> workhours) {
+                // send data in format : [ {day: "Monday" , startHour: 8 , endHour: 15 } , {day:
+                // "Tuesday" , startHour : 8 , endHour: 15}]
+                photographerService.setWorkHours(photographerId, workhours);
+                return ApiResponse.<String>builder()
+                                .content("Succesfully updated")
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @PostMapping("/{photographerId}/additional-services")
+        public ApiResponse<String> setAdditionalServices(@PathVariable("photographerId") Long photographerId,
+                        @RequestBody List<AdditionalService> additionalServices) {
+                // to do implement
+                photographerService.setAdditionalServices(photographerId, additionalServices);
+                return ApiResponse.<String>builder()
+                                .content("Not implemented")
+                                .status(HttpStatus.NOT_IMPLEMENTED)
+                                .build();
+        }
+
+        @PatchMapping("/{photographerId}/bookings/{bookingId}/deposit")
+        public ApiResponse<String> updateDepositStatus(@PathVariable("photographerId") Long photographerId,
+                        @PathVariable("bookingId") Long bookingId) {
+                // to do implement
+                // maybe not here
+                return ApiResponse.<String>builder()
+                                .content("Not implemented")
+                                .status(HttpStatus.NOT_IMPLEMENTED)
+                                .build();
+        }
 
 }

@@ -122,7 +122,7 @@ public class UserController {
     @GetMapping("/info")
     public ApiResponse<UserResponse> info() {
         // Retrieve the currently authenticated user's details
-        User player = UserService.getLoggedInUser();
+        User player = UserService.getLoggedInUserThrow();
 
         return ApiResponse.<UserResponse>builder()
                 .content(UserMapper.toResponse(player))

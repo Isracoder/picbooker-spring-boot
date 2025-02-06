@@ -24,15 +24,14 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-    public User findById(Long userId) {
-        Optional<User> opt = userRepository.findById(userId);
-        if (!opt.isPresent())
-            throw new RuntimeException("User not found");
-        return opt.get();
+    public User findByIdThrow(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
+
     }
 
     public UserResponse findUserResponseById(Long id) {
-        UserResponse userres = UserMapper.toResponse(findById(id));
+        UserResponse userres = UserMapper.toResponse(findByIdThrow(id));
         return userres;
     }
 
@@ -111,12 +110,15 @@ public class UserService {
         if (userWithUpdates.getId() == null || !userRepository.existsById(userWithUpdates.getId())) {
             throw new IllegalArgumentException("User ID must be set and valid for update.");
         }
-        User actualUser = findById(userWithUpdates.getId());
+        User actualUser = findByIdThrow(userWithUpdates.getId());
         return UserMapper.toResponse((UserMapper.merge(userWithUpdates, actualUser)));
     }
 
-    public static User getLoggedInUser() {
+    public static User getLoggedInUserThrow() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "User not authenticated");
+        }
         return (User) authentication.getPrincipal();
     }
 

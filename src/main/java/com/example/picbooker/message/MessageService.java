@@ -21,7 +21,7 @@ public class MessageService {
 
     public MessageResponse handleMessage(MessageRequest messageDTO, UserService userService) {
 
-        User user = userService.findById(messageDTO.getSenderId());
+        User user = userService.findByIdThrow(messageDTO.getSenderId());
 
         MessageSenderService service = messageServiceFactory.getMessageService(user,
                 messageDTO.getRecipient());

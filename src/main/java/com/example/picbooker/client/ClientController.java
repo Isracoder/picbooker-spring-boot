@@ -16,6 +16,8 @@ import com.example.picbooker.ApiResponse;
 import com.example.picbooker.photographer.Photographer;
 import com.example.picbooker.review.Review;
 import com.example.picbooker.session.Session;
+import com.example.picbooker.user.User;
+import com.example.picbooker.user.UserService;
 
 @RestController
 @RequestMapping("/api/clients")
@@ -29,6 +31,17 @@ public class ClientController {
 
         return ApiResponse.<Client>builder()
                 .content(clientService.findByIdThrow(clientId))
+                .status(HttpStatus.OK)
+                .build();
+    }
+
+    // seting yourself as client
+    @PostMapping("/")
+    public ApiResponse<ClientResponse> openClientAccount() {
+        User user = UserService.getLoggedInUserThrow();
+        ClientResponse client = clientService.assignClientRoleAndCreate(user.getId());
+        return ApiResponse.<ClientResponse>builder()
+                .content(client)
                 .status(HttpStatus.OK)
                 .build();
     }

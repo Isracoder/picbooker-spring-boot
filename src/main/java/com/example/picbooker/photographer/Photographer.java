@@ -55,6 +55,9 @@ public class Photographer {
     private String studio; // optional
 
     @Column
+    private String bio; // optional
+
+    @Column
     private Integer bufferTimeMinutes; // buffer time between each sesion and the next
 
     @Column

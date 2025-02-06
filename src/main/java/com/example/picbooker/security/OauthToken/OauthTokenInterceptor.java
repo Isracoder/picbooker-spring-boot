@@ -26,7 +26,7 @@ public class OauthTokenInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws Exception {
         System.out.println("Intercepting...");
-        User user = UserService.getLoggedInUser();
+        User user = UserService.getLoggedInUserThrow();
 
         if (!isNull(user.getExpiresAt()) && user.getExpiresAt().isBefore(LocalDateTime.now())) {
             String newAccessToken = authService.refreshAccessToken(user.getRefreshToken(),

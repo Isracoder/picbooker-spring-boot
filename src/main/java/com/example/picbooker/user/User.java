@@ -85,9 +85,6 @@ public class User implements UserDetails {
     private Gender gender;
 
     @Column
-    private RoleType role;
-
-    @Column
     private String photoUrl;
 
     @Column
