@@ -1,6 +1,7 @@
 app: 
   max-msgs-per-day : 20
-  jwt-secret: ${PB_JWT_SECRET}
+  # jwt-secret: ${PB_JWT_SECRET:mILTn8ajTaDN64ck1INHI8Me2gAiVzWMlxnGtfyf/m4=}
+  jwt-secret: mILTn8ajTaDN64ck1INHI8Me2gAiVzWMlxnGtfyf/m4=
   code-expiry-minutes: 10
   jwt-expiration-days: 2
 

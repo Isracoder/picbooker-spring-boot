@@ -2,6 +2,7 @@ package com.example.picbooker.workhours;
 
 import java.time.DayOfWeek;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -15,5 +16,6 @@ public class WorkHourDTO {
 
     private Integer endHour;
 
+    @NotNull
     private DayOfWeek day;
 }

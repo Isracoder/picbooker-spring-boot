@@ -19,6 +19,8 @@ import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserService;
 import com.example.picbooker.workhours.WorkHourDTO;
 
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/photographers")
 public class PhotographerController {
@@ -164,11 +166,14 @@ public class PhotographerController {
 
         // to test
         @PostMapping("/work-hours")
-        public ApiResponse<List<WorkHourDTO>> setWorkHours(@PathVariable("photographerId") Long photographerId,
-                        @RequestBody List<WorkHourDTO> workhours) {
+        public ApiResponse<List<WorkHourDTO>> setWorkHours(
+                        @Valid @RequestBody List<WorkHourDTO> workhours) {
                 // send data in format : [ {day: "Monday" , startHour: 8 , endHour: 15 } , {day:
                 // "Tuesday" , startHour : 8 , endHour: 15}]
-                List<WorkHourDTO> updatedWorkHours = photographerService.setWorkHours(photographerId, workhours);
+
+                List<WorkHourDTO> updatedWorkHours = photographerService.setWorkHours(
+                                photographerService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()),
+                                workhours);
                 return ApiResponse.<List<WorkHourDTO>>builder()
                                 .content(updatedWorkHours)
                                 .status(HttpStatus.OK)
