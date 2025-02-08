@@ -45,6 +45,7 @@ public class PhotographerMapper {
                                 .minimumNoticeBeforeSessionMinutes(photographer.getMinimumNoticeBeforeSessionMinutes())
                                 .bufferTimeMinutes(photographer.getBufferTimeMinutes())
                                 .bio(photographer.getBio())
+                                .personalName(photographer.getPersonalName())
                                 .workhours(photographer.getWorkhours())
                                 .id(photographer.getId())
                                 .build();

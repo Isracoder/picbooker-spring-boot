@@ -21,6 +21,7 @@ public class PhotographerResponse {
     private UserResponse userResponse;
     private String studio;
     private String bio;
+    private String personalName;
 
     private Integer bufferTimeMinutes; // buffer time between each sesion and the next
 
