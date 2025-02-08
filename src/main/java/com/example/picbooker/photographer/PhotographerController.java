@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -40,18 +39,6 @@ public class PhotographerController {
         // seting yourself as client
         @PostMapping("/")
         public ApiResponse<PhotographerResponse> openPhotographerAccount(
-                        @RequestBody PhotographerRequest photographerRequest) {
-                User user = UserService.getLoggedInUserThrow();
-                PhotographerResponse photographer = photographerService.assignPhotographerRoleAndCreate(user.getId(),
-                                photographerRequest);
-                return ApiResponse.<PhotographerResponse>builder()
-                                .content(photographer)
-                                .status(HttpStatus.OK)
-                                .build();
-        }
-
-        @PostMapping("/personal")
-        public ApiResponse<PhotographerResponse> editPhotographerInfo(
                         @RequestBody PhotographerRequest photographerRequest) {
                 User user = UserService.getLoggedInUserThrow();
                 PhotographerResponse photographer = photographerService.assignPhotographerRoleAndCreate(user.getId(),
@@ -142,12 +129,13 @@ public class PhotographerController {
         }
 
         // to do rename to me and get from token
-        @PutMapping("/{photographerId}/profile")
-        public ApiResponse<PhotographerResponse> updateProfile(@PathVariable("photographerId") Long photographerId,
+        @PatchMapping("/profile")
+        public ApiResponse<PhotographerResponse> updateProfile(
                         @RequestBody PhotographerRequest photographerRequest) {
 
-                // to do implement
-                PhotographerResponse photographerResponse = photographerService.updateProfile(photographerId,
+                User user = UserService.getLoggedInUserThrow();
+                PhotographerResponse photographerResponse = photographerService.updateProfile(
+                                photographerService.getPhotographerFromUserThrow(user),
                                 photographerRequest);
                 return ApiResponse.<PhotographerResponse>builder()
                                 .content(photographerResponse)
@@ -168,8 +156,8 @@ public class PhotographerController {
         @PostMapping("/work-hours")
         public ApiResponse<List<WorkHourDTO>> setWorkHours(
                         @Valid @RequestBody List<WorkHourDTO> workhours) {
-                // send data in format : [ {day: "Monday" , startHour: 8 , endHour: 15 } , {day:
-                // "Tuesday" , startHour : 8 , endHour: 15}]
+                // send data in format : [ {day: "MONDAY" , startHour: 8 , endHour: 15 } , {day:
+                // "TUESDAY" , startHour : 8 , endHour: 15}]
 
                 List<WorkHourDTO> updatedWorkHours = photographerService.setWorkHours(
                                 photographerService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()),

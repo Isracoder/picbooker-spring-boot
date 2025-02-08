@@ -3,7 +3,7 @@ package com.example.picbooker.photographer;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.example.picbooker.workhours.WorkHour;
+import com.example.picbooker.workhours.WorkHourDTO;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,6 +23,10 @@ public class PhotographerRequest {
 
     private String bio;
 
+    private String photoURL;
+
+    private String personalName;
+
     @Default
     private Integer bufferTimeMinutes = 15; // buffer time between each sesion and the next
 
@@ -32,6 +36,6 @@ public class PhotographerRequest {
 
     // my workhours
     @Default
-    List<WorkHour> workhours = new ArrayList<>();
+    List<WorkHourDTO> workhours = new ArrayList<>();
 
 }

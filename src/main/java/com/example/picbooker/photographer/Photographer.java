@@ -52,6 +52,9 @@ public class Photographer {
     private User user;
 
     @Column
+    private String personalName;
+
+    @Column
     private String studio; // optional
 
     @Column

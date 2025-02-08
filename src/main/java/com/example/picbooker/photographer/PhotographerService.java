@@ -148,8 +148,8 @@ public class PhotographerService {
     }
 
     @Transactional
-    public PhotographerResponse updateProfile(Long photographerId, PhotographerRequest photographerRequest) {
-        Photographer photographer = findByIdThrow(photographerId);
+    public PhotographerResponse updateProfile(Photographer photographer, PhotographerRequest photographerRequest) {
+        // Photographer photographer = findByIdThrow(photographerId);
         if (!isNull(photographerRequest.getBufferTimeMinutes()))
             photographer.setBufferTimeMinutes(photographerRequest.getBufferTimeMinutes());
         if (!isNull(photographerRequest.getMinimumNoticeBeforeSessionMinutes()))
