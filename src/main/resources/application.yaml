@@ -5,6 +5,7 @@ app:
   code-expiry-minutes: 10
   jwt-expiration-days: 2
   web-redirect: ${PB_WEB_REDIRECT}
+  web-home-redirect: ${PB_WEB_HOME_REDIRECT}
   jwt-cookie-name: jwt
 
     

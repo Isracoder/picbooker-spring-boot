@@ -1,5 +1,7 @@
 package com.example.picbooker.user;
 
+import static java.util.Objects.isNull;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -8,7 +10,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -148,26 +153,28 @@ public class UserController {
     }
 
     @PostMapping("/logout")
-    public ApiResponse<String> logout(HttpServletRequest request) {
-        try {
+    public ResponseEntity<Void> logout(HttpServletRequest request) {
 
-            String token = request.getHeader("Authorization").replace("Bearer ", "");
+        String token = request.getHeader("Authorization");
+        if (!isNull(token)) {
+            token.replace("Bearer ", "");
             tokenBlacklistService.blacklistToken(token);
-
-            return ApiResponse.<String>builder()
-                    .content("Logout Successful")
-                    .status(HttpStatus.OK)
-                    .build();
-        } catch (ApiException e) {
-            return ApiResponse.<String>builder()
-                    .content(e.getMessage())
-                    .status(e.getStatus())
-                    .build();
         }
+        ResponseCookie jwtCookie = ResponseCookie.from("jwt", "")
+                .httpOnly(true)
+                .secure(false) // Only in production with HTTPS
+                .path("/")
+                .maxAge(0) // Expire immediately
+                .build();
+
+        return ResponseEntity.noContent()
+                .header(HttpHeaders.SET_COOKIE, jwtCookie.toString())
+                .build();
+
     }
 
     @PostMapping("/{id}/subscriptions/pro")
-    public ApiResponse<String> subscribeToPro() {
+    public ApiResponse<String> subscribeToPro(@PathVariable("id") long id) {
         try {
             // to do implement
             // send userId in body maybe , with type

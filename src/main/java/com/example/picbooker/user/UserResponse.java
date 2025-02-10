@@ -18,7 +18,6 @@ public class UserResponse {
 
     private String username;
     private String email;
-    private RoleType role;
 
     private Long photographerId;
     private Long clientId;

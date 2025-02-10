@@ -19,6 +19,8 @@ public class WebConfig {
                                 "https://localhost:8080", // Local API testing (HTTPS)
                                 "http://localhost:8080", // Local API testing (HTTP)
                                 "https://127.0.0.1:8000", // Local testing
+                                "https://127.0.0.1:3000",
+                                "http://127.0.0.1:3000",
                                 "http://localhost:3000",
                                 "https://localhost:3000")
                         .allowedMethods("*")
