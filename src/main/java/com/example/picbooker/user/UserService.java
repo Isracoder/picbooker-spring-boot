@@ -79,10 +79,14 @@ public class UserService {
         return UserMapper.toResponse(userRepository.save(user));
     }
 
+    public boolean checkEmailOwnership(String email, Long userId) {
+        return userRepository.emailIsForUserId(email, userId);
+    }
+
     public User saveOauthUser(UserRequest userRequest) {
         // change to user oauth request for profile pic or add it as field
         User user = UserMapper.toEntity(userRequest); // can add type of oauth provider to users
-        user.setIsEnabled(true);
+        user.setIsEmailVerified(true);
         return userRepository.save(user);
     }
 

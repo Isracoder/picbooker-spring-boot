@@ -19,6 +19,7 @@ import com.example.picbooker.security.OauthToken.OauthProviderType;
 import com.example.picbooker.security.passwordReset.PasswordResetDTO;
 import com.example.picbooker.user.UserOTP;
 import com.example.picbooker.user.UserRequest;
+import com.example.picbooker.user.UserResponse;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -67,12 +68,12 @@ public class AuthController {
 
     // 1st register step -> send otp
     @PostMapping("/register")
-    public ApiResponse<String> register(@RequestBody UserRequest user) {
+    public ApiResponse<UserResponse> register(@RequestBody UserRequest user) {
 
         System.out.println("IN register");
         // UserResponse res = userService.save(user);
-        authService.initiateRegister(user);
-        return ApiResponse.<String>builder().status(HttpStatus.OK).content("2FA code sent to email successfully.")
+        UserResponse response = authService.initiateRegister(user);
+        return ApiResponse.<UserResponse>builder().status(HttpStatus.OK).content(response)
                 .build();
 
     }

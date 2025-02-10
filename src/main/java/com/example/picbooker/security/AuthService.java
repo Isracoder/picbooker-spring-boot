@@ -35,6 +35,7 @@ import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserMapper;
 import com.example.picbooker.user.UserOTP;
 import com.example.picbooker.user.UserRequest;
+import com.example.picbooker.user.UserResponse;
 import com.example.picbooker.user.UserService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -119,7 +120,7 @@ public class AuthService {
             User user = userService.findByEmail(email);
             if (isNull(user))
                 throw new ApiException(HttpStatus.NOT_FOUND, "No user");
-            if (!user.getIsEnabled()) {
+            if (!user.getIsEmailVerified()) {
                 throw new ApiException(HttpStatus.FORBIDDEN, "User isn't verified");
             }
             System.out.println(SecurityConfig.passwordEncoder().matches(password, user.getPassword()));
@@ -179,7 +180,7 @@ public class AuthService {
             User user = verifyCode(verifyDto.getCode(), verifyDto.getEmail());
 
             if (!isNull(user)) {
-                user.setIsEnabled(true);
+                user.setIsEmailVerified(true);
                 user.setTemp2FACode(null);
                 user.setCodeExpiryTime(null);
                 user.setRegisterDate(LocalDateTime.now());
@@ -196,14 +197,15 @@ public class AuthService {
         }
     }
 
-    public void initiateRegister(UserRequest userRequest) {
+    public UserResponse initiateRegister(UserRequest userRequest) {
         try {
             String code = jwtUtil.generateCode2FA();
             User user = UserMapper.toEntity(userRequest);
-            user.setIsEnabled(false); // Not enabled until 2FA is verified
+            user.setIsEmailVerified(false); // Not enabled until 2FA is verified
             user.setPassword(SecurityConfig.passwordEncoder().encode(user.getPassword()));
-            userService.save(user);
+            UserResponse response = userService.save(user);
             changeAndResendCode(user.getEmail(), user);
+            return response;
         } catch (Exception e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -214,7 +216,7 @@ public class AuthService {
             User user = userService.findByEmail(Email);
             if (isNull(user))
                 throw new ApiException(HttpStatus.NOT_FOUND, "No user");
-            if (!user.getIsEnabled())
+            if (!user.getIsEmailVerified())
                 throw new ApiException(HttpStatus.FORBIDDEN, "Invalid password change request");
             changeAndResendCode(Email, user);
         } catch (Exception e) {

@@ -1,5 +1,6 @@
 package com.example.picbooker.photographer;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Builder.Default;
@@ -15,6 +16,9 @@ import lombok.Setter;
 public class PhotographerRequest {
 
     private String studio; // optional
+
+    @NotNull
+    private Long userId;
 
     private String bio;
 

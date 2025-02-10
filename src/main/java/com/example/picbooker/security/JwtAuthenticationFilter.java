@@ -52,7 +52,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 throw new BadCredentialsException("Token has been invalidated.");
             }
 
-            String username = jwtUtil.getUsername(token);
+            String username = jwtUtil.getEmail(token);
 
             UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 

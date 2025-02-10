@@ -31,7 +31,7 @@ public class UserMapper {
     public static UserResponse toResponse(User user) {
         UserResponse userResponse = UserResponse.builder()
                 .username(user.getUsername())
-
+                .isEmailVerified(user.getIsEmailVerified())
                 .email(user.getEmail())
                 .id(user.getId())
                 .build();

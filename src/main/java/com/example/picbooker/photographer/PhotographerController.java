@@ -1,10 +1,13 @@
 package com.example.picbooker.photographer;
 
+import static java.util.Objects.isNull;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,8 +16,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.example.picbooker.ApiException;
 import com.example.picbooker.ApiResponse;
 import com.example.picbooker.additionalService.AdditionalService;
+import com.example.picbooker.security.JwtUtil;
 import com.example.picbooker.socialLinks.SocialLink;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserService;
@@ -28,6 +33,9 @@ public class PhotographerController {
 
         @Autowired
         private PhotographerService photographerService;
+
+        @Autowired
+        private JwtUtil jwtUtil;
 
         @GetMapping("/{photographerId}/session-types")
         public ApiResponse<String> getSessionTypes(@PathVariable("photographerId") Long photographerId) {
@@ -52,9 +60,27 @@ public class PhotographerController {
         // seting yourself as client
         @PostMapping("/")
         public ApiResponse<PhotographerResponse> openPhotographerAccount(
-                        @RequestBody PhotographerRequest photographerRequest) {
-                User user = UserService.getLoggedInUserThrow();
-                PhotographerResponse photographer = photographerService.assignPhotographerRoleAndCreate(user.getId(),
+                        @Valid @RequestBody PhotographerRequest photographerRequest,
+                        @CookieValue(name = "jwt", required = false) String token) {
+
+                Long loggedInUserId = null;
+                System.out.println("Is cookie token null ? " + isNull(token));
+                if (token != null) {
+                        loggedInUserId = jwtUtil.getUserId(token);
+                }
+
+                // If JWT is present, use the ID from the token (more secure)
+                if (loggedInUserId != null) {
+                        System.out.println("Logged in id: " + loggedInUserId + " , sent user Id: "
+                                        + photographerRequest.getUserId());
+                        if (!loggedInUserId.equals(photographerRequest.getUserId())) {
+                                throw new ApiException(HttpStatus.UNAUTHORIZED,
+                                                "You are not authorized to perform this action.");
+                        }
+                        photographerRequest.setUserId(loggedInUserId);
+                }
+                PhotographerResponse photographer = photographerService.assignPhotographerRoleAndCreate(
+                                photographerRequest.getUserId(),
                                 photographerRequest);
                 return ApiResponse.<PhotographerResponse>builder()
                                 .content(photographer)

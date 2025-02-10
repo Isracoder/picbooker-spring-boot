@@ -52,6 +52,7 @@ public class JwtUtil {
 
         return Jwts.builder()
                 .subject(user.getEmail())
+                .claim("userId", user.getId())
                 .issuedAt(new Date())
                 .expiration(new Date((new Date()).getTime() + TimeUnit.MILLISECONDS.convert(
                         jwtExpirationDays, TimeUnit.DAYS)))
@@ -64,7 +65,7 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String getUsername(String token) {
+    public String getEmail(String token) {
 
         return Jwts.parser()
                 .verifyWith((SecretKey) getSigningKey())
@@ -72,6 +73,16 @@ public class JwtUtil {
                 .parseSignedClaims(token)
                 .getPayload()
                 .getSubject();
+    }
+
+    public Long getUserId(String token) {
+
+        return Jwts.parser()
+                .verifyWith((SecretKey) getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload()
+                .get("userId", Long.class);
     }
 
     public String generateCode2FA() {

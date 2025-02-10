@@ -13,6 +13,10 @@ import org.springframework.stereotype.Repository;
 public interface UserRepository extends JpaRepository<User, Long> {
         Optional<User> findByEmail(String email);
 
+        @Query("SELECT CASE WHEN COUNT(u) > 0 THEN TRUE ELSE FALSE END " +
+                        "FROM User u WHERE u.email = :email AND u.id = :userId")
+        Boolean emailIsForUserId(@Param("email") String email, @Param("userId") Long userId);
+
         Optional<User> findByUsernameOrEmail(String username, String email);
 
         Optional<User> findByUsername(String username);

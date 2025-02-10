@@ -18,6 +18,7 @@ public class UserResponse {
 
     private String username;
     private String email;
+    private Boolean isEmailVerified;
 
     private Long photographerId;
     private Long clientId;

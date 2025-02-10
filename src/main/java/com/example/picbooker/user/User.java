@@ -114,7 +114,7 @@ public class User implements UserDetails {
     // end of data , start of auth :
     @Column
     @Default
-    private Boolean isEnabled = false;
+    private Boolean isEmailVerified = false;
 
     // temporary 2fa code needed while waiting for the user to enter it
     @Column
