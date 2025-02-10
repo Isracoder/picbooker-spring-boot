@@ -1,7 +1,10 @@
 package com.example.picbooker.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,6 +19,8 @@ import com.example.picbooker.security.passwordReset.PasswordResetDTO;
 import com.example.picbooker.user.UserOTP;
 import com.example.picbooker.user.UserRequest;
 
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 
@@ -27,6 +32,9 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+
+    @Value("${app.web-redirect}")
+    private String redirectURL;
 
     // for testing
     @GetMapping("/hi")
@@ -67,12 +75,27 @@ public class AuthController {
 
     // 1st login step -> send otp (in case of 2fa enabled)
     @PostMapping("/login")
-    public ApiResponse<String> login(@RequestBody UserRequest userRequest) {
+    public ResponseEntity<String> login(HttpServletRequest request, @RequestBody UserRequest userRequest) {
         try {
+
+            boolean isMobile = SecurityConfig.isMobile(request);
             System.out.println("IN login");
             String jwt = authService.initiateLogin(userRequest);
-            return ApiResponse.<String>builder().status(HttpStatus.OK).content(jwt)
-                    .build();
+
+            if (isMobile) {
+                return ApiResponse.<String>builder().status(HttpStatus.OK).content(jwt)
+                        .build();
+            } else {
+                // Web: set JWT in HttpOnly cookie
+                return ApiResponse.ok()
+                        .header(HttpHeaders.SET_COOKIE, "jwt=" + jwt + "; HttpOnly; Secure; ")
+                        // .header(HttpHeaders.SET_COOKIE, "jwt=" + jwt + "; HttpOnly; Secure;
+                        // SameSite=None") // for prod use samesite none
+                        .build();
+                // return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, "jwt=" + jwt + ";
+                // HttpOnly; Secure; SameSite=None")
+                // .build();
+            }
         } catch (Exception e) {
             return ApiResponse.<String>builder().status(HttpStatus.BAD_REQUEST)
                     .content(e.getMessage())
@@ -82,11 +105,26 @@ public class AuthController {
 
     // 2nd register step -> get jwt
     @PostMapping("/verify-register")
-    public ApiResponse<String> verify2FA(@RequestBody UserOTP verifyDto) {
+    public ResponseEntity<String> verify2FA(HttpServletRequest request, @RequestBody UserOTP verifyDto) {
 
-        String token = authService.verifyRegister2FA(verifyDto);
-        return ApiResponse.<String>builder().status(HttpStatus.OK).content(token)
-                .build();
+        boolean isMobile = SecurityConfig.isMobile(request);
+        String jwt = authService.verifyRegister2FA(verifyDto);
+
+        if (isMobile) {
+            return ApiResponse.<String>builder().status(HttpStatus.OK).content(jwt)
+                    .build();
+
+        } else {
+            // Web: set JWT in HttpOnly cookie
+            return ApiResponse.ok()
+                    .header(HttpHeaders.SET_COOKIE, "jwt=" + jwt + "; HttpOnly; Secure; ")
+                    // .header(HttpHeaders.SET_COOKIE, "jwt=" + jwt + "; HttpOnly; Secure;
+                    // SameSite=None") // for prod use samesite none
+                    .build();
+            // return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, "jwt=" + jwt + ";
+            // HttpOnly; Secure; SameSite=None")
+            // .build();
+        }
 
     }
 
@@ -172,23 +210,66 @@ public class AuthController {
 
     // exchange code for access token apple and get jwt
     @GetMapping("/oauth2/code/google")
-    public ApiResponse<String> getAuthCodeGoogle(@RequestParam("code") String code, @RequestParam("scope") String scope,
-            @RequestParam("authuser") String authUser, @RequestParam("prompt") String prompt) {
+    public void getAuthCodeGoogle(@RequestParam("code") String code,
+            @RequestParam("scope") String scope,
+            @RequestParam("authuser") String authUser, @RequestParam("prompt") String prompt,
+            HttpServletResponse response) {
+
         try {
-            // login via google
             System.out.println("In get auth code");
             System.out.println("code: " + code);
             String jwt = authService.processGrantCode(code, OauthProviderType.GOOGLE);
-            return ApiResponse.<String>builder()
-                    .status(HttpStatus.OK)
-                    .content("Bearer token: " + jwt)
-                    .build();
-        } catch (ApiException e) {
-            return ApiResponse.<String>builder()
-                    .status(e.getStatus())
-                    .content(e.getMessage())
-                    .build();
+
+            String redirectUrl = redirectURL + "?token=" + jwt; // Pass token in query
+            response.sendRedirect(redirectUrl);
+            // ResponseCookie cookie = ResponseCookie.from("jwt", jwt)
+            // .httpOnly(true)
+            // .path("/")
+            // .sameSite("None") // Required for cross-origin cookies
+            // .secure(false) // Set to true if using HTTPS
+            // .build();
+            // return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE,
+            // cookie.toString()).body("Logged in");
+
+            // response.addCookie(null);
+            // Set the redirect URL
+            // Cookie jwtCookie = new Cookie("jwt", jwt);
+            // jwtCookie.setHttpOnly(true);
+            // jwtCookie.setSecure(false); // Set to true in production (HTTPS only)
+            // jwtCookie.setPath("/");
+            // jwtCookie.setMaxAge(7200); // 2 hours
+
+            // // Correct way to set the cookie
+            // response.addCookie(jwtCookie);
+            // response.setStatus(HttpServletResponse.SC_FOUND); // 302 Found
+            // response.setHeader(HttpHeaders.LOCATION, redirectURL);
+            // response.sendRedirect(redirectURL);
+
+        } catch (Exception e) {
+            // TODO: handle exception
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Io Exception ");
+
         }
+        // login via google
 
     }
 }
+
+// return ResponseEntity.status(HttpStatus.OK)
+// .header(HttpHeaders.SET_COOKIE, "jwt=" + jwt + "; HttpOnly; Secure; ") // to
+// do add same
+// // site none
+// // prod SameSite=None
+// .header(HttpHeaders.LOCATION, redirectURL) // Redirect URL
+// .build();
+// return ResponseEntity.ok()
+// .header(HttpHeaders.SET_COOKIE, "jwt=" + jwt + "; HttpOnly; Secure; ")
+// .body("<script>window.location.href='" + redirectURL + "';</script>");
+
+// ResponseEntity.ok()
+// .header(HttpHeaders.SET_COOKIE, "jwt=" + jwt + "; HttpOnly; Secure;
+// SameSite=None")
+// .body(Map.of("redirectUrl", "http://localhost:3000/PostSignup"));
+
+// Redirect without JWT in URL
+// response.sendRedirect("http://localhost:3000/PostSignup");

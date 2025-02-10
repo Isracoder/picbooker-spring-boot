@@ -1,20 +1,18 @@
-package com.example.picbooker.workhours;
-
-import java.time.DayOfWeek;
-import java.time.LocalTime;
+package com.example.picbooker.socialLinks;
 
 import com.example.picbooker.photographer.Photographer;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,24 +23,27 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table
-public class WorkHour {
+@Table(uniqueConstraints = {
+        @UniqueConstraint(columnNames = { "photographer", "platform" })
+})
+public class SocialLink {
     @Id
     @Column(name = "id")
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // photographer id
     @ManyToOne
+    @JsonIgnore
     @JoinColumn(name = "photographer", nullable = false)
     private Photographer photographer;
 
-    @Column
-    private LocalTime startTime;
+    @Column(nullable = false)
+    @NotNull
+    private String linkUrl;
 
-    @Column
-    private LocalTime endTime;
+    @Column(nullable = false)
+    @NotNull
+    private Platform platform;
 
-    @Column
-    @Enumerated(EnumType.STRING)
-    private DayOfWeek day;
 }

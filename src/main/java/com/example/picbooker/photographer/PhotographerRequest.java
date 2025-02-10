@@ -1,10 +1,5 @@
 package com.example.picbooker.photographer;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import com.example.picbooker.workhours.WorkHourDTO;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Builder.Default;
@@ -33,9 +28,5 @@ public class PhotographerRequest {
     @Default
     private Integer minimumNoticeBeforeSessionMinutes = 24 * 60; // set as one day ?
     // minimum notice time before booking a sesson in minutes ;
-
-    // my workhours
-    @Default
-    List<WorkHourDTO> workhours = new ArrayList<>();
 
 }

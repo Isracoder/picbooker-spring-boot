@@ -3,6 +3,7 @@ package com.example.picbooker.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -13,6 +14,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+import jakarta.servlet.http.HttpServletRequest;
 
 @Configuration
 @EnableWebSecurity
@@ -36,6 +39,13 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    public static Boolean isMobile(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        return userAgent != null && (userAgent.contains("Android") || userAgent.contains("iPhone")
+                || userAgent.contains("ReactNative"));
+
+    }
+
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
         return configuration.getAuthenticationManager();
@@ -45,9 +55,11 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http
+                .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests((authorize) -> {
                     authorize.requestMatchers("/api/auth/**", "/css/**", "/v3/api-docs/**",
+                            "/api/photographers/", "/api/photographers", // to allo
                             "/swagger-ui/**",
                             "/swagger-ui.html", "/js/**",
                             "/oauth2/**",
@@ -56,9 +68,9 @@ public class SecurityConfig {
                             "/webjars/**",
                             "/**.css", "/**.js",
                             "/**.png", "/**.jpg", "/ws/**", "/", "/**.html").permitAll();
+                    authorize.requestMatchers(HttpMethod.OPTIONS);
                     authorize.anyRequest().authenticated();
                 })
-                // .oauth2Login(Customizer.withDefaults())
                 .httpBasic(Customizer.withDefaults());
 
         http.exceptionHandling(exception -> exception.authenticationEntryPoint(authenticationEntryPoint));

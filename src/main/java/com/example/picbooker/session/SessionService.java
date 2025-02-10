@@ -58,10 +58,10 @@ public class SessionService {
         if (!isNull(workhours)) {
             List<AppointmentDTO> availableAppointments = new ArrayList<>();
 
-            Integer startTime = workhours.getStartHour();
-            Integer endTime = workhours.getEndHour();
+            LocalTime startTime = workhours.getStartTime();
+            LocalTime endTime = workhours.getEndTime();
 
-            List<Integer> allTimeSlots = generateTimeSlots(startTime, endTime);
+            List<LocalTime> allTimeSlots = generateTimeSlots(startTime, endTime);
 
             List<Session> bookedSessions = sessionRepository.findBookedSessionsByPhotographer_IdAndDate(photographerId,
                     date);
@@ -71,13 +71,13 @@ public class SessionService {
                     .map(Session::getStartTime)
                     .collect(Collectors.toList());
 
-            for (Integer timeSlot : allTimeSlots) {
-                if (!bookedTimeSlots.contains(LocalTime.of(timeSlot, 0))) {
+            for (LocalTime timeSlot : allTimeSlots) {
+                if (!bookedTimeSlots.contains(timeSlot)) {
                     AppointmentDTO appointment = new AppointmentDTO();
                     // appointment.set(photographerId);
                     appointment.setDate(date);
-                    appointment.setStartTime(LocalTime.of(timeSlot, 0));
-                    appointment.setEndTime(LocalTime.of(timeSlot + sessionLengthHours, 0));
+                    appointment.setStartTime(timeSlot);
+                    appointment.setEndTime(timeSlot.plusHours(sessionLengthHours));
                     availableAppointments.add(appointment);
                 }
             }
@@ -88,12 +88,12 @@ public class SessionService {
         return Collections.emptyList();
     }
 
-    private List<Integer> generateTimeSlots(Integer startTime, Integer endTime) {
-        List<Integer> timeSlots = new ArrayList<>();
+    private List<LocalTime> generateTimeSlots(LocalTime startTime, LocalTime endTime) {
+        List<LocalTime> timeSlots = new ArrayList<>();
         // LocalTime currentTime = startTime;
-        while (startTime < endTime) {
+        while (endTime.isAfter(startTime)) {
             timeSlots.add(startTime);
-            startTime += sessionLengthHours;
+            startTime.plusHours(sessionLengthHours);
         }
 
         // while (currentTime.isBefore(endTime)) {

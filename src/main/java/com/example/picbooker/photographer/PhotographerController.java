@@ -1,5 +1,6 @@
 package com.example.picbooker.photographer;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.picbooker.ApiResponse;
 import com.example.picbooker.additionalService.AdditionalService;
+import com.example.picbooker.socialLinks.SocialLink;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserService;
 import com.example.picbooker.workhours.WorkHourDTO;
@@ -72,6 +74,15 @@ public class PhotographerController {
                 List<WorkHourDTO> workhours = photographerService.getWorkHours(photographerId);
                 return ApiResponse.<List<WorkHourDTO>>builder()
                                 .content(workhours)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @GetMapping("/{photographerId}/socials")
+        public ApiResponse<List<SocialLink>> getSocials(@PathVariable("photographerId") Long photographerId) {
+                List<SocialLink> socials = photographerService.getSocials(photographerId);
+                return ApiResponse.<List<SocialLink>>builder()
+                                .content(socials)
                                 .status(HttpStatus.OK)
                                 .build();
         }
@@ -143,6 +154,20 @@ public class PhotographerController {
                                 .build();
         }
 
+        @PatchMapping("/profile/socials")
+        public ApiResponse<List<SocialLink>> updateSocialLinks(
+                        @RequestBody ArrayList<SocialLink> socialLinks) {
+
+                User user = UserService.getLoggedInUserThrow();
+                List<SocialLink> socials = photographerService.updateSocialLinks(
+                                photographerService.getPhotographerFromUserThrow(user),
+                                socialLinks);
+                return ApiResponse.<List<SocialLink>>builder()
+                                .content(socials)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
         @PostMapping("/{photographerId}/membership")
         public ApiResponse<String> setMembership(@PathVariable("photographerId") Long photographerId) {
                 // to do implement
@@ -153,7 +178,7 @@ public class PhotographerController {
         }
 
         // to test
-        @PostMapping("/work-hours")
+        @PatchMapping("/work-hours")
         public ApiResponse<List<WorkHourDTO>> setWorkHours(
                         @Valid @RequestBody List<WorkHourDTO> workhours) {
                 // send data in format : [ {day: "MONDAY" , startHour: 8 , endHour: 15 } , {day:

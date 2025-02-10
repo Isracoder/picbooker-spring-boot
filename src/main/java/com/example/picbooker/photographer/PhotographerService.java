@@ -14,6 +14,8 @@ import org.springframework.stereotype.Service;
 import com.example.picbooker.ApiException;
 import com.example.picbooker.additionalService.AdditionalService;
 import com.example.picbooker.additionalService.AdditionalServiceRepository;
+import com.example.picbooker.socialLinks.SocialLink;
+import com.example.picbooker.socialLinks.SocialLinkService;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserService;
 import com.example.picbooker.workhours.WorkHour;
@@ -30,6 +32,10 @@ public class PhotographerService {
 
     @Autowired
     private WorkHourService workHourService;
+
+    @Autowired
+    private SocialLinkService socialLinkService;
+
     @Autowired
     private UserService userService;
 
@@ -72,8 +78,17 @@ public class PhotographerService {
             return new ArrayList<WorkHourDTO>();
 
         return photographer.getWorkhours().stream()
-                .map(workhour -> new WorkHourDTO(workhour.getStartHour(), workhour.getEndHour(), workhour.getDay()))
+                .map(workhour -> new WorkHourDTO(workhour.getStartTime(), workhour.getEndTime(), workhour.getDay()))
                 .collect(Collectors.toList());
+
+    }
+
+    public List<SocialLink> getSocials(Long id) {
+        Photographer photographer = findByIdThrow(id);
+        if (isNull(photographer.getSocialLinks()))
+            return new ArrayList<SocialLink>();
+
+        return photographer.getSocialLinks();
 
     }
 
@@ -89,43 +104,77 @@ public class PhotographerService {
     @Transactional
     public void setWorkHours(Long id, List<WorkHourDTO> workHours) {
 
-        workHours.stream().forEach(workhour -> {
-            WorkHour workHour = workHourService.findForPhotographerAndDay(id, workhour.getDay());
-            if (isNull(workHour)) {
-                workHour = new WorkHour(id, null, null, null, workhour.getDay());
+        workHours.stream().forEach(newWorkHour -> {
+            WorkHour previousWorkHour = workHourService.findForPhotographerAndDay(id, newWorkHour.getDay());
+            if (isNull(previousWorkHour)) {
+                previousWorkHour = new WorkHour(id, null, null, null, newWorkHour.getDay());
             }
             // to do , should I check more valid hours
-            // when that day is off either allow both nulls or delete workhour .
-            if (!isNull(workhour) && (!isNull(workHour.getStartHour()) && !isNull(workhour.getEndHour()))) {
-                workHour.setStartHour(workhour.getStartHour());
-                workHour.setEndHour(workhour.getEndHour());
+
+            if (!isNull(newWorkHour) && (!isNull(newWorkHour.getStartTime()) && !isNull(newWorkHour.getEndTime()))
+                    && newWorkHour.getEndTime().isAfter(newWorkHour.getStartTime())) {
+                previousWorkHour.setStartTime(newWorkHour.getStartTime());
+                previousWorkHour.setEndTime(newWorkHour.getEndTime());
+            }
+
+            // when clearing the day delete work hour
+            if (!isNull(newWorkHour) && (isNull(newWorkHour.getStartTime()) && isNull(newWorkHour.getEndTime()))
+                    && !isNull(previousWorkHour.getId())) {
+                workHourService.delete(previousWorkHour.getId());
+
             }
         });
     }
 
     @Transactional
     public List<WorkHourDTO> setWorkHours(Photographer photographer, List<WorkHourDTO> workHours) {
-        workHours.stream().forEach(workhour -> {
+        workHours.stream().forEach(newWorkHour -> {
             // find previous workhour settings for that day,
             // if there are none create one with no hours
             WorkHour previousWorkHour = photographer.getWorkhours().stream()
-                    .filter(wh -> wh.getDay() == workhour.getDay()).findFirst().orElse(null);
+                    .filter(wh -> wh.getDay() == newWorkHour.getDay()).findFirst().orElse(null);
             if (isNull(previousWorkHour)) {
-                previousWorkHour = (new WorkHour(null, photographer, null, null, workhour.getDay()));
+                previousWorkHour = (new WorkHour(null, photographer, null, null, newWorkHour.getDay()));
                 photographer.getWorkhours().add(previousWorkHour);
             }
-            System.out.println("Workhour day: " + previousWorkHour.getDay());
-            if (!isNull(workhour) && !isNull(workhour.getStartHour()) && !isNull(workhour.getEndHour())) {
-                previousWorkHour.setStartHour(workhour.getStartHour());
-                previousWorkHour.setEndHour(workhour.getEndHour());
+            if (!isNull(newWorkHour) && (!isNull(newWorkHour.getStartTime()) && !isNull(newWorkHour.getEndTime()))
+                    && newWorkHour.getEndTime().isAfter(newWorkHour.getStartTime())) {
+                previousWorkHour.setStartTime(newWorkHour.getStartTime());
+                previousWorkHour.setEndTime(newWorkHour.getEndTime());
+                workHourService.save(previousWorkHour);
+                save(photographer);
             }
-            workHourService.save(previousWorkHour);
-            save(photographer);
+
+            // when clearing the day delete work hour
+            if (!isNull(newWorkHour) && (isNull(newWorkHour.getStartTime()) && isNull(newWorkHour.getEndTime()))) {
+                photographer.getWorkhours().remove(previousWorkHour);
+
+            }
+
         });
         return photographer.getWorkhours().isEmpty() ? new ArrayList<WorkHourDTO>()
                 : photographer.getWorkhours().stream().map(
-                        workhour -> new WorkHourDTO(workhour.getStartHour(), workhour.getEndHour(), workhour.getDay()))
+                        workhour -> new WorkHourDTO(workhour.getStartTime(), workhour.getEndTime(), workhour.getDay()))
                         .toList();
+    }
+
+    @Transactional
+    public List<SocialLink> updateSocialLinks(Photographer photographer, ArrayList<SocialLink> socialLinks) {
+
+        if (!isNull(socialLinks)) {
+            socialLinks.stream().forEach(social -> {
+                SocialLink oldSocialLink = photographer.getSocialLinks().stream()
+                        .filter(photographerSocial -> photographerSocial.getPlatform() == social.getPlatform())
+                        .findFirst()
+                        .orElse(new SocialLink(null, photographer, social.getLinkUrl(), social.getPlatform()));
+                oldSocialLink.setLinkUrl(social.getLinkUrl());
+                oldSocialLink.setPlatform(social.getPlatform());
+                socialLinkService.save(oldSocialLink);
+                photographer.getSocialLinks().add(oldSocialLink);
+            });
+        }
+        save(photographer);
+        return photographer.getSocialLinks();
     }
 
     public void getPortfolio(Long id) {

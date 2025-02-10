@@ -11,6 +11,7 @@ import com.example.picbooker.photographer_additionalService.PhotographerAddition
 import com.example.picbooker.photographer_sessionType.PhotographerSessionType;
 import com.example.picbooker.review.Review;
 import com.example.picbooker.session.Session;
+import com.example.picbooker.socialLinks.SocialLink;
 import com.example.picbooker.user.User;
 import com.example.picbooker.video.Video;
 import com.example.picbooker.workhours.WorkHour;
@@ -76,6 +77,10 @@ public class Photographer {
     @Default
     @ManyToMany(mappedBy = "favoritePhotographers")
     private Set<Client> clients = new HashSet<>();
+
+    @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL)
+    // @JsonManagedReference
+    private List<SocialLink> socialLinks;
 
     // sessions that i'm the photographer for
     @Default

@@ -24,6 +24,7 @@ public class WebConfig {
                         .allowedMethods("*")
                         .allowedHeaders("*")
                         .allowCredentials(true);
+                // "http://localhost:3000/PostSignup",
             }
         };
     }

@@ -39,6 +39,14 @@ public class WorkHourService {
         return workHourRepository.findByDayAndPhotographer_Id(day, photographerId);
     }
 
+    public void delete(WorkHour workHour) {
+        workHourRepository.delete(workHour);
+    }
+
+    public void delete(Long id) {
+        workHourRepository.deleteById(id);
+    }
+
     public void updateForPhotographer() {
         // to do implement ;
         // specific day workhour

@@ -2,7 +2,6 @@ package com.example.picbooker.photographer;
 
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserMapper;
-import com.example.picbooker.workhours.WorkHour;
 
 public class PhotographerMapper {
 
@@ -11,11 +10,11 @@ public class PhotographerMapper {
                 photographer.setBufferTimeMinutes(photographerReq.getBufferTimeMinutes());
                 photographer.setMinimumNoticeBeforeSessionMinutes(
                                 photographerReq.getMinimumNoticeBeforeSessionMinutes());
-                photographer.setWorkhours(photographerReq.getWorkhours() != null
-                                ? (photographerReq.getWorkhours().stream().map(workhour -> new WorkHour(null,
-                                                photographer, workhour.getStartHour(), workhour.getEndHour(),
-                                                workhour.getDay())).toList())
-                                : null);
+                // photographer.setWorkhours(photographerReq.getWorkhours() != null
+                // ? (photographerReq.getWorkhours().stream().map(workhour -> new WorkHour(null,
+                // photographer, workhour.getStartHour(), workhour.getEndHour(),
+                // workhour.getDay())).toList())
+                // : null);
 
                 return photographer;
         }
@@ -30,11 +29,12 @@ public class PhotographerMapper {
                                 .bio(photographerRequest.getBio())
                                 .personalName(photographerRequest.getPersonalName())
                                 .build();
-                photographer.setWorkhours(photographerRequest.getWorkhours() != null
-                                ? (photographerRequest.getWorkhours().stream().map(workhour -> new WorkHour(null,
-                                                photographer, workhour.getStartHour(), workhour.getEndHour(),
-                                                workhour.getDay())).toList())
-                                : null);
+                // photographer.setWorkhours(photographerRequest.getWorkhours() != null
+                // ? (photographerRequest.getWorkhours().stream().map(workhour -> new
+                // WorkHour(null,
+                // photographer, workhour.getStartHour(), workhour.getEndHour(),
+                // workhour.getDay())).toList())
+                // : null);
                 return photographer;
         }
 

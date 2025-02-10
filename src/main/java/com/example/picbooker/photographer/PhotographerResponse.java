@@ -1,12 +1,15 @@
 package com.example.picbooker.photographer;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import com.example.picbooker.socialLinks.SocialLink;
 import com.example.picbooker.user.UserResponse;
 import com.example.picbooker.workhours.WorkHour;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -28,5 +31,8 @@ public class PhotographerResponse {
     private Integer minimumNoticeBeforeSessionMinutes;
 
     private List<WorkHour> workhours;
+
+    @Default
+    List<SocialLink> socialLinks = new ArrayList<>();
 
 }
