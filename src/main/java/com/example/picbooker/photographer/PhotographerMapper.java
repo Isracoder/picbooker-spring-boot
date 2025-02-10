@@ -1,7 +1,10 @@
 package com.example.picbooker.photographer;
 
+import java.util.stream.Collectors;
+
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserMapper;
+import com.example.picbooker.workhours.WorkHourDTO;
 
 public class PhotographerMapper {
 
@@ -40,14 +43,18 @@ public class PhotographerMapper {
 
         public static PhotographerResponse toResponse(Photographer photographer) {
                 PhotographerResponse photographerResponse = PhotographerResponse.builder()
+                                .id(photographer.getId())
                                 .userResponse(UserMapper.toResponse(photographer.getUser()))
                                 .studio(photographer.getStudio())
                                 .minimumNoticeBeforeSessionMinutes(photographer.getMinimumNoticeBeforeSessionMinutes())
                                 .bufferTimeMinutes(photographer.getBufferTimeMinutes())
                                 .bio(photographer.getBio())
                                 .personalName(photographer.getPersonalName())
-                                .workhours(photographer.getWorkhours())
-                                .id(photographer.getId())
+                                .workhours(photographer.getWorkhours().stream()
+                                                .map(workhour -> new WorkHourDTO(workhour.getStartTime(),
+                                                                workhour.getEndTime(), workhour.getDay()))
+                                                .collect(Collectors.toList()))
+                                .socialLinks(photographer.getSocialLinks())
                                 .build();
                 return photographerResponse;
         }

@@ -38,6 +38,17 @@ public class PhotographerController {
                                 .build();
         }
 
+        @GetMapping("/me")
+        public ApiResponse<PhotographerResponse> info() {
+                // Retrieve the currently authenticated user's details
+                PhotographerResponse response = PhotographerMapper.toResponse(
+                                photographerService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()));
+                return ApiResponse.<PhotographerResponse>builder()
+                                .content(response)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
         // seting yourself as client
         @PostMapping("/")
         public ApiResponse<PhotographerResponse> openPhotographerAccount(

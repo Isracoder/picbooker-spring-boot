@@ -1,6 +1,7 @@
 package com.example.picbooker.user;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -19,6 +20,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.picbooker.ApiException;
 import com.example.picbooker.ApiResponse;
+import com.example.picbooker.client.Client;
+import com.example.picbooker.client.ClientService;
+import com.example.picbooker.photographer.Photographer;
+import com.example.picbooker.photographer.PhotographerService;
 import com.example.picbooker.security.TokenBlacklistService;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,6 +34,12 @@ public class UserController {
 
     @Autowired
     private UserService service;
+
+    @Autowired
+    private ClientService clientService;
+
+    @Autowired
+    private PhotographerService photographerService;
 
     @Autowired
     private TokenBlacklistService tokenBlacklistService;
@@ -119,13 +130,19 @@ public class UserController {
 
     }
 
-    @GetMapping("/info")
+    @GetMapping("/me")
     public ApiResponse<UserResponse> info() {
         // Retrieve the currently authenticated user's details
-        User player = UserService.getLoggedInUserThrow();
-
+        User user = UserService.getLoggedInUserThrow();
+        Optional<Photographer> opt1 = photographerService.getPhotographerFromUser(user);
+        Optional<Client> opt2 = clientService.getClientFromUser(user);
+        UserResponse response = UserMapper.toResponse(user);
+        if (opt1.isPresent())
+            response.setPhotographerId(opt1.get().getId());
+        if (opt2.isPresent())
+            response.setClientId(opt2.get().getId());
         return ApiResponse.<UserResponse>builder()
-                .content(UserMapper.toResponse(player))
+                .content(response)
                 .status(HttpStatus.OK)
                 .build();
     }

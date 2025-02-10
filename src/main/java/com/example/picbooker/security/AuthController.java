@@ -220,8 +220,8 @@ public class AuthController {
             System.out.println("code: " + code);
             String jwt = authService.processGrantCode(code, OauthProviderType.GOOGLE);
 
-            String redirectUrl = redirectURL + "?token=" + jwt; // Pass token in query
-            response.sendRedirect(redirectUrl);
+            // String redirectUrl = redirectURL + "?token=" + jwt; // Pass token in query
+            // response.sendRedirect(redirectUrl);
             // ResponseCookie cookie = ResponseCookie.from("jwt", jwt)
             // .httpOnly(true)
             // .path("/")
@@ -253,6 +253,7 @@ public class AuthController {
         // login via google
 
     }
+
 }
 
 // return ResponseEntity.status(HttpStatus.OK)

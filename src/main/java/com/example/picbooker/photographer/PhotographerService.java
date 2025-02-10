@@ -101,6 +101,13 @@ public class PhotographerService {
         return photographer.get();
     }
 
+    public Optional<Photographer> getPhotographerFromUser(User user) {
+        // Photographer photographer = photographerRepository.findbyUser(user);
+        // if (isNull(photographer))
+        Optional<Photographer> photographer = photographerRepository.findByUser(user);
+        return photographer;
+    }
+
     @Transactional
     public void setWorkHours(Long id, List<WorkHourDTO> workHours) {
 

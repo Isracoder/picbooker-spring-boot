@@ -5,7 +5,7 @@ import java.util.List;
 
 import com.example.picbooker.socialLinks.SocialLink;
 import com.example.picbooker.user.UserResponse;
-import com.example.picbooker.workhours.WorkHour;
+import com.example.picbooker.workhours.WorkHourDTO;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -30,7 +30,7 @@ public class PhotographerResponse {
 
     private Integer minimumNoticeBeforeSessionMinutes;
 
-    private List<WorkHour> workhours;
+    private List<WorkHourDTO> workhours;
 
     @Default
     List<SocialLink> socialLinks = new ArrayList<>();

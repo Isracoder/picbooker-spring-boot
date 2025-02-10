@@ -20,6 +20,9 @@ public class UserResponse {
     private String email;
     private RoleType role;
 
+    private Long photographerId;
+    private Long clientId;
+
     private LocalDateTime registerDate;
 
 }

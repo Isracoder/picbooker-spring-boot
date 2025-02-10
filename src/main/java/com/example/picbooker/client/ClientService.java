@@ -29,6 +29,18 @@ public class ClientService {
         return new Client(null, user, 0, null, null, null);
     }
 
+    public Client getClientFromUserThrow(User user) {
+        Optional<Client> client = clientRepository.findByUser(user);
+        if (!client.isPresent())
+            throw new ApiException(HttpStatus.NOT_FOUND, "Client not found");
+        return client.get();
+    }
+
+    public Optional<Client> getClientFromUser(User user) {
+        Optional<Client> client = clientRepository.findByUser(user);
+        return client;
+    }
+
     public Optional<Client> findById(Long id) {
         return clientRepository.findById(id);
     }

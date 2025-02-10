@@ -35,6 +35,17 @@ public class ClientController {
                 .build();
     }
 
+    @GetMapping("/me")
+    public ApiResponse<ClientResponse> info() {
+        // Retrieve the currently authenticated user's details
+        ClientResponse response = ClientMapper
+                .toResponse(clientService.getClientFromUserThrow(UserService.getLoggedInUserThrow()));
+        return ApiResponse.<ClientResponse>builder()
+                .content(response)
+                .status(HttpStatus.OK)
+                .build();
+    }
+
     // seting yourself as client
     @PostMapping("/")
     public ApiResponse<ClientResponse> openClientAccount() {
