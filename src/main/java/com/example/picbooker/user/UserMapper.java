@@ -1,5 +1,7 @@
 package com.example.picbooker.user;
 
+import static java.util.Objects.isNull;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -13,7 +15,9 @@ public class UserMapper {
         User user = User.builder().username(userReq.getUsername())
                 .email(userReq.getEmail())
                 .DOB(userReq.getDOB())
+                .phoneNumber(userReq.getPhoneNumber())
                 .password(userReq.getPassword())
+                .gender(userReq.getGender())
                 .city(userReq.getCity())
                 .photoUrl(userReq.getPhotoURL())
                 .country(userReq.getCountry())
@@ -31,28 +35,34 @@ public class UserMapper {
     public static UserResponse toResponse(User user) {
         UserResponse userResponse = UserResponse.builder()
                 .username(user.getUsername())
+                .phoneNumber(user.getPhoneNumber())
                 .isEmailVerified(user.getIsEmailVerified())
                 .email(user.getEmail())
+                .gender(user.getGender())
+                .country(user.getCountry())
+                .city(user.getCity())
+                .gender(user.getGender())
+                .DOB(user.getDOB())
                 .id(user.getId())
                 .build();
         return userResponse;
     }
 
-    public static User merge(User userUpdates, User finalUser) {
-        if (userUpdates.getUsername() != null)
-            finalUser.setUsername(userUpdates.getUsername());
-        if (userUpdates.getEmail() != null)
-            finalUser.setEmail(userUpdates.getEmail());
-        if (userUpdates.getPassword() != null)
-            finalUser.setPassword(userUpdates.getPassword()); // to do check encoding
+    public static User merge(UserRequest userUpdates, User finalUser) {
+        // if (userUpdates.getUsername() != null)
+        // finalUser.setUsername(userUpdates.getUsername()); // for later check jwt no
+        // break
+        if (!isNull(userUpdates.getPhoneNumber()))
+            finalUser.setPhoneNumber(userUpdates.getPhoneNumber());
         if (userUpdates.getDOB() != null)
             finalUser.setDOB(userUpdates.getDOB());
-        if (userUpdates.getPhotoUrl() != null)
-            finalUser.setPhotoUrl(userUpdates.getPhotoUrl());
         if (userUpdates.getCountry() != null)
             finalUser.setCountry(userUpdates.getCountry());
         if (userUpdates.getCity() != null)
             finalUser.setCity(userUpdates.getCity());
+        if (!isNull(userUpdates.getGender()))
+            finalUser.setGender(userUpdates.getGender());
+        System.out.println("Account merged successfully for user " + finalUser.getId());
         return finalUser;
 
     }

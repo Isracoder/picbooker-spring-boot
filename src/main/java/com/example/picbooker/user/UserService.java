@@ -1,5 +1,7 @@
 package com.example.picbooker.user;
 
+import static java.util.Objects.isNull;
+
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -90,7 +92,7 @@ public class UserService {
         return userRepository.save(user);
     }
 
-    public UserDetails loadUserByUsername(String usernameOrEmail) throws UsernameNotFoundException {
+    public UserDetails loadUserByEmail(String usernameOrEmail) throws UsernameNotFoundException {
 
         User user = userRepository.findByUsernameOrEmail(usernameOrEmail, usernameOrEmail)
                 .orElseThrow(() -> new UsernameNotFoundException("User not exists by Username or Email"));
@@ -108,14 +110,21 @@ public class UserService {
         userRepository.deleteById(id);
     }
 
-    public UserResponse update(UserRequest userRequest, Long id) {
-        User userWithUpdates = UserMapper.toEntity(userRequest);
-        userWithUpdates.setId(id);
-        if (userWithUpdates.getId() == null || !userRepository.existsById(userWithUpdates.getId())) {
+    @Transactional
+    public UserResponse updateAccountById(Long id, UserRequest userRequest) {
+
+        if (isNull(id) || !userRepository.existsById(id)) {
             throw new IllegalArgumentException("User ID must be set and valid for update.");
         }
-        User actualUser = findByIdThrow(userWithUpdates.getId());
-        return UserMapper.toResponse((UserMapper.merge(userWithUpdates, actualUser)));
+        User actualUser = findByIdThrow(id);
+        return (save(UserMapper.merge(userRequest, actualUser)));
+    }
+
+    // @Transactional could not commit jpa transaction
+    public UserResponse updateAccount(User user, UserRequest userRequest) {
+
+        User updatedUser = UserMapper.merge(userRequest, user);
+        return UserMapper.toResponse(userRepository.saveAndFlush(updatedUser));
     }
 
     public static User getLoggedInUserThrow() {

@@ -56,6 +56,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public ApiResponse<String> handleRunTimeException(RuntimeException ex) {
         System.err.println("RunTime Exception: " + ex.getMessage());
+        System.out.println(ex);
         HttpStatus stat = HttpStatus.BAD_REQUEST;
         String content = "Runtime Exception";
         if (ex.getMessage().contains("Expired") || ex.getMessage().contains("Access Denied")) {

@@ -74,6 +74,13 @@ public class User implements UserDetails {
     @Pattern(regexp = RegexPatterns.passwordRegex, message = "Password must contain both letters and numbers")
     private String password;
 
+    @Column
+    // @NotNull(message = "PhoneNumber cannot be null")
+    // @NotBlank(message = "PhoneNumber cannot be blank")
+    @Size(min = 8, message = "PhoneNumber must be at least 8 characters long")
+    @Pattern(regexp = RegexPatterns.phoneRegex, message = "Phone number must contain both letters and numbers")
+    private String phoneNumber;
+
     @Column(updatable = false)
     @CreationTimestamp
     private LocalDateTime registerDate;

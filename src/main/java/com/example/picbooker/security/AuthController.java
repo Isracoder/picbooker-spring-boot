@@ -85,6 +85,7 @@ public class AuthController {
             boolean isMobile = SecurityConfig.isMobile(request);
             System.out.println("IN login , ismobile: " + isMobile);
             String jwt = authService.initiateLogin(userRequest);
+            System.out.println("jwt: " + jwt);
 
             if (isMobile) {
                 return ApiResponse.<String>builder().status(HttpStatus.OK).content(jwt)
@@ -119,6 +120,7 @@ public class AuthController {
 
         boolean isMobile = SecurityConfig.isMobile(request);
         String jwt = authService.verifyRegister2FA(verifyDto);
+        System.out.println("jwt: " + jwt);
         System.out.println("Is mobile: " + isMobile);
         if (isMobile) {
             return ApiResponse.<String>builder().status(HttpStatus.OK).content(jwt)
@@ -233,6 +235,7 @@ public class AuthController {
             System.out.println("In get auth code");
             System.out.println("code: " + code);
             String jwt = authService.processGrantCode(code, OauthProviderType.GOOGLE);
+            System.out.println("jwt: " + jwt);
 
             // String redirectUrl = redirectURL + "?token=" + jwt; // Pass token in query
             // response.sendRedirect(redirectUrl);

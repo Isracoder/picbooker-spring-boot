@@ -23,6 +23,7 @@ public class UserRequest {
 
     private String password;
     private String photoURL;
+    private String phoneNumber;
 
     private Date DOB;
 
