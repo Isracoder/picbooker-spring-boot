@@ -140,7 +140,8 @@ public class UserController {
     @PostMapping("/change-password")
     public ApiResponse<String> changePassword(@RequestBody PasswordChangeDTO passwordChangeDTO) {
         try {
-            service.changePassword(passwordChangeDTO);
+
+            service.changePassword(passwordChangeDTO, UserService.getLoggedInUserThrow());
             return ApiResponse.<String>builder().status(HttpStatus.OK).content("Password changed successfully.")
                     .build();
         } catch (ApiException e) {

@@ -12,7 +12,7 @@ import lombok.Setter;
 
 public class PasswordChangeDTO {
 
-    private String email;
+    // private String email;
 
     private String oldPassword;
 

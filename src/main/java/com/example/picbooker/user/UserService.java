@@ -59,11 +59,8 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public void changePassword(PasswordChangeDTO passwordChangeDTO) {
-        // verify user identity
-        User user = findByEmail(passwordChangeDTO.getEmail());
-        if (user == null)
-            throw new ApiException(HttpStatus.BAD_REQUEST, "No user");
+    public void changePassword(PasswordChangeDTO passwordChangeDTO, User user) {
+
         if (!SecurityConfig.passwordEncoder().matches(passwordChangeDTO.getOldPassword(), user.getPassword())) {
             throw new RuntimeException("Invalid credentials.");
         }
