@@ -182,6 +182,7 @@ public class PhotographerController {
                         @RequestBody PhotographerRequest photographerRequest) {
 
                 User user = UserService.getLoggedInUserThrow();
+
                 PhotographerResponse photographerResponse = photographerService.updateProfile(
                                 photographerService.getPhotographerFromUserThrow(user),
                                 photographerRequest);

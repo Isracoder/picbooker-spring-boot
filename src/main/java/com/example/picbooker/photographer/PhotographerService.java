@@ -215,6 +215,8 @@ public class PhotographerService {
             photographer.setStudio(photographerRequest.getStudio());
         if (!isNull(photographerRequest.getBio()))
             photographer.setBio(photographerRequest.getBio());
+        if (!isNull(photographerRequest.getPersonalName()))
+            photographer.setPersonalName(photographerRequest.getPersonalName());
         return PhotographerMapper.toResponse(photographer);
 
     }
