@@ -99,7 +99,7 @@ public class Photographer {
 
     // my workhours
     @Default
-    @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     List<WorkHour> workhours = new ArrayList<>();
 
     // my photos

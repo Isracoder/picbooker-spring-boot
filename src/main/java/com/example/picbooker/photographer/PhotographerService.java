@@ -108,6 +108,7 @@ public class PhotographerService {
         return photographer;
     }
 
+    // not used currently
     @Transactional
     public void setWorkHours(Long id, List<WorkHourDTO> workHours) {
 
@@ -155,7 +156,7 @@ public class PhotographerService {
             // when clearing the day delete work hour
             if (!isNull(newWorkHour) && (isNull(newWorkHour.getStartTime()) && isNull(newWorkHour.getEndTime()))) {
                 photographer.getWorkhours().remove(previousWorkHour);
-
+                // previousWorkHour.setPhotographer(null);
             }
 
         });
