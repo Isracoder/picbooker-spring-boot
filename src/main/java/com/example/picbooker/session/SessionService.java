@@ -47,7 +47,7 @@ public class SessionService {
         // to do implement ;
     }
 
-    public void addAdditionalServicesToSessions(Long id) {
+    public void addAddOnsToSessions(Long id) {
         // to do implement ;
     }
 

@@ -21,7 +21,7 @@ public class PhotographerSessionTypeId implements Serializable {
     private Long photographerId;
 
     @Column(name = "session_type_id")
-    private Integer sessionTypeId;
+    private Long sessionTypeId;
 
     @Override
     public boolean equals(Object o) {

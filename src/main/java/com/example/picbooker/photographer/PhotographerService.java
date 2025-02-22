@@ -12,8 +12,15 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.example.picbooker.ApiException;
-import com.example.picbooker.additionalService.AdditionalService;
-import com.example.picbooker.additionalService.AdditionalServiceRepository;
+import com.example.picbooker.additionalService.AddOnType;
+import com.example.picbooker.photographer_additionalService.PhotographerAddOn;
+import com.example.picbooker.photographer_additionalService.PhotographerAddOnDTO;
+import com.example.picbooker.photographer_additionalService.PhotographerAddOnService;
+import com.example.picbooker.photographer_sessionType.PhotographerSessionType;
+import com.example.picbooker.photographer_sessionType.PhotographerSessionTypeDTO;
+import com.example.picbooker.photographer_sessionType.PhotographerSessionTypeService;
+import com.example.picbooker.review.Review;
+import com.example.picbooker.review.ReviewService;
 import com.example.picbooker.socialLinks.SocialLink;
 import com.example.picbooker.socialLinks.SocialLinkService;
 import com.example.picbooker.user.User;
@@ -37,10 +44,16 @@ public class PhotographerService {
     private SocialLinkService socialLinkService;
 
     @Autowired
+    private PhotographerAddOnService photographerAddOnService;
+
+    @Autowired
+    private PhotographerSessionTypeService photographerSessionTypeService;
+
+    @Autowired
     private UserService userService;
 
     @Autowired
-    private AdditionalServiceRepository additionalServiceRepository;
+    private ReviewService reviewService;
 
     public void create() {
         // to do implement ;
@@ -199,9 +212,15 @@ public class PhotographerService {
         // maybe not here ? or call booking service ;
     }
 
-    public void getReviews(Long photographerId) {
-        // to do implement ;
-        // maybe not here ? or call review service ;
+    public List<Review> getReviews(Long photographerId) {
+        // to do paginate
+        return reviewService.findForPhotographer(photographerId);
+
+    }
+
+    public List<Review> getReviews(Photographer photographer) {
+        // to do map them , paginate
+        return photographer.getReviews();
     }
 
     @Transactional
@@ -222,24 +241,51 @@ public class PhotographerService {
 
     }
 
-    public void getSessionTypes(Long id) {
-        // to do implement ;
+    public List<PhotographerSessionType> getSessionTypes(Long id) {
+        return findByIdThrow(id).getSessionTypes();
     }
 
-    public void setSessionTypes(Long id) {
-        // to do implement ;
+    public PhotographerSessionType updateSessionType(Photographer photographer, Long photographerSessionTypeId,
+            PhotographerSessionTypeDTO request) {
+        PhotographerSessionType photographerSessionType = photographerSessionTypeService
+                .findByIdThrow(photographerSessionTypeId);
+        if (photographerSessionType.getPhotographer().getId() != photographer.getId())
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Not your resource");
+        return photographerSessionTypeService.updatePhotographerSessionType(photographerSessionType, request);
     }
 
-    public void setAdditionalServices(Long photographerId, List<AdditionalService> additionalServices) {
-        // to do implement ,
-        // think of having one for edit , one for addition
-        additionalServices.stream().forEach(additionalService -> {
-            // additionalServiceRepository.save() ;
-        });
+    public PhotographerAddOn createAddOn(Photographer photographer, PhotographerAddOnDTO request) {
+
+        return photographerAddOnService.addAddOn(photographer, request);
+
     }
 
-    public void getAdditionalServices(Long id) {
-        // to do implement ;
+    public List<PhotographerAddOn> getAddOnsForPhotographer(Long id) {
+        return findByIdThrow(id).getAdditionalServices();
+    }
+
+    public PhotographerAddOn updateAddOn(Photographer photographer, Long addOnId, PhotographerAddOnDTO request) {
+        PhotographerAddOn addOn = getAddOnByIdThrow(addOnId);
+        if (addOn.getPhotographer().getId() != photographer.getId())
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Not your resource");
+        return photographerAddOnService.updateAddOn(addOn, request);
+    }
+
+    @Transactional
+    public void deleteAddOnById(Photographer photographer, Long addOnId) {
+        PhotographerAddOn addOn = photographerAddOnService.findByIdThrow(addOnId);
+        if (photographer.getId() != addOn.getPhotographer().getId())
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Unauthorized delete");
+        photographer.getAdditionalServices().remove(addOn);
+        photographerAddOnService.deleteById(addOnId);
+    }
+
+    public PhotographerAddOn getAddOnByIdThrow(Long addOnId) {
+        return photographerAddOnService.findByIdThrow(addOnId);
+    }
+
+    public PhotographerAddOn getAddOnByNameAndPhotographer(Long photographerId, AddOnType type) {
+        return photographerAddOnService.findForPhotographerAndAddOn(photographerId, type);
     }
 
     // function to create custom private session and generate link to send to client

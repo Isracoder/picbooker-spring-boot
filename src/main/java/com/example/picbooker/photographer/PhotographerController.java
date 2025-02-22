@@ -8,6 +8,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,7 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.picbooker.ApiException;
 import com.example.picbooker.ApiResponse;
-import com.example.picbooker.additionalService.AdditionalService;
+import com.example.picbooker.photographer_additionalService.PhotographerAddOn;
+import com.example.picbooker.photographer_additionalService.PhotographerAddOnDTO;
+import com.example.picbooker.photographer_sessionType.PhotographerSessionType;
+import com.example.picbooker.photographer_sessionType.PhotographerSessionTypeDTO;
+import com.example.picbooker.photographer_sessionType.PhotographerSessionTypeService;
+import com.example.picbooker.review.Review;
 import com.example.picbooker.security.JwtUtil;
 import com.example.picbooker.socialLinks.SocialLink;
 import com.example.picbooker.user.User;
@@ -35,16 +41,10 @@ public class PhotographerController {
         private PhotographerService photographerService;
 
         @Autowired
-        private JwtUtil jwtUtil;
+        private PhotographerSessionTypeService photographerSessionTypeService;
 
-        @GetMapping("/{photographerId}/session-types")
-        public ApiResponse<String> getSessionTypes(@PathVariable("photographerId") Long photographerId) {
-                photographerService.getSessionTypes(photographerId);
-                return ApiResponse.<String>builder()
-                                .content("Not implemented")
-                                .status(HttpStatus.NOT_IMPLEMENTED)
-                                .build();
-        }
+        @Autowired
+        private JwtUtil jwtUtil;
 
         @GetMapping("/me")
         public ApiResponse<PhotographerResponse> info() {
@@ -88,6 +88,59 @@ public class PhotographerController {
                                 .build();
         }
 
+        // GET /photographers/{id}/session-types → Get all session types for a
+        // photographer
+        // POST /photographers/{id}/session-types → Add a session type to a photographer
+        // DELETE /photographers/{id}/session-types/{sessionTypeId} → Remove a session
+        // type
+        // PUT /photographers/{id}/session-types/{sessionTypeId}
+
+        @PostMapping("/session-types")
+        public ApiResponse<PhotographerSessionType> setSessionTypes(
+                        @RequestBody PhotographerSessionTypeDTO photographerSessionTypeDTO) {
+                PhotographerSessionType photoSessionType = photographerSessionTypeService.addSessionType(
+                                photographerService.findByIdThrow(UserService.getLoggedInUserThrow().getId()),
+                                photographerSessionTypeDTO);
+                return ApiResponse.<PhotographerSessionType>builder()
+                                .content(photoSessionType)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @PatchMapping("/session-types/{sessionTypeId}")
+        public ApiResponse<PhotographerSessionType> updateSessionType(@PathVariable("sessionTypeId") Long sessionTypeId,
+                        @RequestBody PhotographerSessionTypeDTO photographerSessionTypeDTO) {
+                PhotographerSessionType photoSessionType = photographerService.updateSessionType(
+                                photographerService.findByIdThrow(UserService.getLoggedInUserThrow().getId()),
+                                sessionTypeId,
+                                photographerSessionTypeDTO);
+                return ApiResponse.<PhotographerSessionType>builder()
+                                .content(photoSessionType)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @GetMapping("/{photographerId}/session-types")
+        public ApiResponse<List<PhotographerSessionType>> getSessionTypes(
+                        @PathVariable("photographerId") Long photographerId) {
+                // TODO: add ability to get specific session type
+                return ApiResponse.<List<PhotographerSessionType>>builder()
+                                .content(photographerService.getSessionTypes(photographerId))
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @DeleteMapping("/session-types/{sessionTypeId}")
+        public ApiResponse<String> deleteByTypeId(@PathVariable("sessionTypeId") Long sessionTypeId) {
+                photographerSessionTypeService.deleteById(
+                                photographerService.findByIdThrow(UserService.getLoggedInUserThrow().getId()),
+                                sessionTypeId);
+                return ApiResponse.<String>builder()
+                                .content("Successfully deleted")
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
         @GetMapping("/{photographerId}")
         public ApiResponse<PhotographerResponse> getPhotographer(@PathVariable("photographerId") Long photographerId) {
                 Photographer photographer = photographerService.findByIdThrow(photographerId);
@@ -97,12 +150,47 @@ public class PhotographerController {
                                 .build();
         }
 
-        @GetMapping("/{photographerId}/additional-services")
-        public ApiResponse<String> getAdditionalServices(@PathVariable("photographerId") Long photographerId) {
-                photographerService.getAdditionalServices(photographerId);
+        @GetMapping("/{photographerId}/add-ons")
+        public ApiResponse<List<PhotographerAddOn>> getAddOns(@PathVariable("photographerId") Long photographerId) {
+
+                return ApiResponse.<List<PhotographerAddOn>>builder()
+                                .content(photographerService.getAddOnsForPhotographer(photographerId))
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @PatchMapping("/add-ons/{add-onId}")
+        public ApiResponse<PhotographerAddOn> updateAddOn(@PathVariable("add-onId") Long addOnId,
+                        @RequestBody PhotographerAddOnDTO request) {
+                PhotographerAddOn addOn = photographerService.updateAddOn(
+                                photographerService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()),
+                                addOnId, request);
+                return ApiResponse.<PhotographerAddOn>builder()
+                                .content(addOn)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @PostMapping("/add-ons")
+        public ApiResponse<PhotographerAddOn> createAdditionalService(
+                        @RequestBody PhotographerAddOnDTO photographerAddOnDTO) {
+                PhotographerAddOn addOn = photographerService.createAddOn(
+                                photographerService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()),
+                                photographerAddOnDTO);
+                return ApiResponse.<PhotographerAddOn>builder()
+                                .content(addOn)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @DeleteMapping("/add-ons/{add-onId}")
+        public ApiResponse<String> deleteAdditionalServiceByName(@PathVariable("add-onId") Long addOnId) {
+                photographerService.deleteAddOnById(
+                                photographerService.findByIdThrow(UserService.getLoggedInUserThrow().getId()),
+                                addOnId);
                 return ApiResponse.<String>builder()
-                                .content("Not implemented")
-                                .status(HttpStatus.NOT_IMPLEMENTED)
+                                .content("Successfully deleted")
+                                .status(HttpStatus.OK)
                                 .build();
         }
 
@@ -146,15 +234,6 @@ public class PhotographerController {
                                 .build();
         }
 
-        @PostMapping("/{photographerId}/session-types")
-        public ApiResponse<String> setSessionTypes(@PathVariable("photographerId") Long photographerId) {
-                photographerService.setSessionTypes(photographerId);
-                return ApiResponse.<String>builder()
-                                .content("Not implemented")
-                                .status(HttpStatus.NOT_IMPLEMENTED)
-                                .build();
-        }
-
         @GetMapping("/{photographerId}/bookings")
         public ApiResponse<String> getBookings(@PathVariable("photographerId") Long photographerId) {
                 photographerService.getBookings(photographerId);
@@ -167,12 +246,12 @@ public class PhotographerController {
         }
 
         @GetMapping("/{photographerId}/reviews")
-        public ApiResponse<String> getReviews(@PathVariable("photographerId") Long photographerId) {
+        public ApiResponse<List<Review>> getReviews(@PathVariable("photographerId") Long photographerId) {
                 // to do implement
-                photographerService.getReviews(photographerId);
-                return ApiResponse.<String>builder()
-                                .content("Not implemented")
-                                .status(HttpStatus.NOT_IMPLEMENTED)
+                List<Review> reviews = photographerService.getReviews(photographerId);
+                return ApiResponse.<List<Review>>builder()
+                                .content(reviews)
+                                .status(HttpStatus.OK)
                                 .build();
         }
 
@@ -228,17 +307,6 @@ public class PhotographerController {
                 return ApiResponse.<List<WorkHourDTO>>builder()
                                 .content(updatedWorkHours)
                                 .status(HttpStatus.OK)
-                                .build();
-        }
-
-        @PostMapping("/{photographerId}/additional-services")
-        public ApiResponse<String> setAdditionalServices(@PathVariable("photographerId") Long photographerId,
-                        @RequestBody List<AdditionalService> additionalServices) {
-                // to do implement
-                photographerService.setAdditionalServices(photographerId, additionalServices);
-                return ApiResponse.<String>builder()
-                                .content("Not implemented")
-                                .status(HttpStatus.NOT_IMPLEMENTED)
                                 .build();
         }
 

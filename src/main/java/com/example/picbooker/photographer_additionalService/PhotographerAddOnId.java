@@ -15,7 +15,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class PhotographerAdditionalServiceId implements Serializable {
+public class PhotographerAddOnId implements Serializable {
 
     @Column(name = "photographer_id")
     private Long photographerId;
@@ -27,11 +27,11 @@ public class PhotographerAdditionalServiceId implements Serializable {
     public boolean equals(Object o) {
         if (this == o)
             return true;
-        if (!(o instanceof PhotographerAdditionalServiceId))
+        if (!(o instanceof PhotographerAddOnId))
             return false;
-        PhotographerAdditionalServiceId photographerAdditionalServiceId = (PhotographerAdditionalServiceId) o;
-        return Objects.equals(additionalServiceId, photographerAdditionalServiceId.additionalServiceId) &&
-                Objects.equals(photographerId, photographerAdditionalServiceId.photographerId);
+        PhotographerAddOnId photographerAddOnId = (PhotographerAddOnId) o;
+        return Objects.equals(additionalServiceId, photographerAddOnId.additionalServiceId) &&
+                Objects.equals(photographerId, photographerAddOnId.photographerId);
     }
 
     @Override

@@ -7,7 +7,7 @@ import java.util.Set;
 
 import com.example.picbooker.client.Client;
 import com.example.picbooker.photo.Photo;
-import com.example.picbooker.photographer_additionalService.PhotographerAdditionalService;
+import com.example.picbooker.photographer_additionalService.PhotographerAddOn;
 import com.example.picbooker.photographer_sessionType.PhotographerSessionType;
 import com.example.picbooker.review.Review;
 import com.example.picbooker.session.Session;
@@ -78,8 +78,8 @@ public class Photographer {
     @ManyToMany(mappedBy = "favoritePhotographers")
     private Set<Client> clients = new HashSet<>();
 
-    @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL)
     // @JsonManagedReference
+    @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL)
     private List<SocialLink> socialLinks;
 
     // sessions that i'm the photographer for
@@ -90,7 +90,7 @@ public class Photographer {
     // additional services that I offer
     @Default
     @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    List<PhotographerAdditionalService> additionalServices = new ArrayList<>();
+    List<PhotographerAddOn> additionalServices = new ArrayList<>();
 
     // session types that I specialize in
     @Default

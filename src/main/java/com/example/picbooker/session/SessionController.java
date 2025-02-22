@@ -60,10 +60,10 @@ public class SessionController {
     }
 
     @PostMapping("/{id}/additional-services")
-    public ApiResponse<String> addAdditionalServicesToSession(@PathVariable("id") long sessionId) {
+    public ApiResponse<String> addAddOnsToSession(@PathVariable("id") long sessionId) {
         // add additional services in reqbody
         // to do implement
-        sessionService.addAdditionalServicesToSessions(sessionId);
+        sessionService.addAddOnsToSessions(sessionId);
         return ApiResponse.<String>builder()
                 .content("not implemented")
                 .status(HttpStatus.OK)

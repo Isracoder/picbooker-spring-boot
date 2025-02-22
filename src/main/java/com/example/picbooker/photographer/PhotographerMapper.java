@@ -1,5 +1,6 @@
 package com.example.picbooker.photographer;
 
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.example.picbooker.user.User;
@@ -57,6 +58,10 @@ public class PhotographerMapper {
                                 .socialLinks(photographer.getSocialLinks())
                                 .build();
                 return photographerResponse;
+        }
+
+        public static Set<PhotographerResponse> toResponseSet(Set<Photographer> photographers) {
+                return photographers.stream().map(PhotographerMapper::toResponse).collect(Collectors.toSet());
         }
 
 }

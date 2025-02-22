@@ -10,6 +10,7 @@ import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 // import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.servlet.NoHandlerFoundException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -49,6 +50,19 @@ public class GlobalExceptionHandler {
         return ApiResponse.<String>builder()
                 .content("Requested entity not found")
                 .status(HttpStatus.NOT_FOUND)
+                .build();
+
+    }
+
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ApiResponse<String> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException ex) {
+
+        HttpStatus stat = HttpStatus.BAD_REQUEST;
+        String content = "Method Argument Type Mismatch Exception";
+
+        return ApiResponse.<String>builder()
+                .content(content)
+                .status(stat)
                 .build();
 
     }

@@ -1,10 +1,10 @@
-// package com.example.picbooker.sessionType;
+// package com.example.picbooker.additionalService;
 
 // import java.util.ArrayList;
 // import java.util.List;
 
 // import
-// com.example.picbooker.photographer_sessionType.PhotographerSessionType;
+// com.example.picbooker.photographer_additionalService.PhotographerAddOn;
 
 // import jakarta.persistence.CascadeType;
 // import jakarta.persistence.Column;
@@ -31,22 +31,20 @@
 // @Entity
 // @Table
 // @Builder
-// public class SessionType {
+// public class AddOn {
 // @Id
 // @Column(name = "id")
 // @GeneratedValue(strategy = GenerationType.AUTO)
 // private Long id;
 
 // @Default
-// @OneToMany(mappedBy = "sessionType", cascade = CascadeType.ALL, fetch =
+// @OneToMany(mappedBy = "additionalService", cascade = CascadeType.ALL, fetch =
 // FetchType.LAZY)
-// List<PhotographerSessionType> photographerSessionTypes = new ArrayList<>();
+// List<PhotographerAddOn> photographerAddOns = new ArrayList<>();
 
 // @Enumerated(EnumType.STRING)
 // @Column
-// private SessionTypeName type; // idea can be null if custom
-
-// // private String customType; // Null unless "OTHER" is selected
+// private AddOnType type;
 
 // @Column
 // private String description;

@@ -70,5 +70,5 @@ public class Session {
     @JoinColumn(name = "deposit_id", referencedColumnName = "id")
     private Deposit deposit;
 
-    // many to many with photographerAdditionalService
+    // many to many with photographerAddOn
 }

@@ -199,7 +199,7 @@ public class AuthService {
 
     public UserResponse initiateRegister(UserRequest userRequest) {
         try {
-            String code = jwtUtil.generateCode2FA();
+
             User user = UserMapper.toEntity(userRequest);
             user.setIsEmailVerified(false); // Not enabled until 2FA is verified
             user.setPassword(SecurityConfig.passwordEncoder().encode(user.getPassword()));

@@ -231,36 +231,30 @@ public class AuthController {
             @RequestParam("authuser") String authUser, @RequestParam("prompt") String prompt,
             HttpServletResponse response) {
 
-        try {
-            System.out.println("In get auth code");
-            System.out.println("code: " + code);
-            String jwt = authService.processGrantCode(code, OauthProviderType.GOOGLE);
-            System.out.println("jwt: " + jwt);
+        System.out.println("In get auth code");
+        System.out.println("code: " + code);
+        String jwt = authService.processGrantCode(code, OauthProviderType.GOOGLE);
+        System.out.println("jwt: " + jwt);
 
-            // String redirectUrl = redirectURL + "?token=" + jwt; // Pass token in query
-            // response.sendRedirect(redirectUrl);
-            // Set HTTP-only cookie
-            ResponseCookie jwtCookie = ResponseCookie.from("jwt", jwt)
-                    .httpOnly(true)
-                    .secure(false) // Only in production with HTTPS
-                    .path("/") // Available across the site
-                    .maxAge(86400) // 1 day expiration
-                    .build();
+        // String redirectUrl = redirectURL + "?token=" + jwt; // Pass token in query
+        // response.sendRedirect(redirectUrl);
+        // Set HTTP-only cookie
+        ResponseCookie jwtCookie = ResponseCookie.from("jwt", jwt)
+                .httpOnly(true)
+                .secure(false) // Only in production with HTTPS
+                .path("/") // Available across the site
+                .maxAge(86400) // 1 day expiration
+                .build();
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.add(HttpHeaders.SET_COOKIE, jwtCookie.toString());
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.SET_COOKIE, jwtCookie.toString());
 
-            // Redirect user back to frontend (PostSignup if no role, Home otherwise)
-            return ResponseEntity.status(302)
-                    .header("Location", oauthredirectURL)
-                    .headers(headers)
-                    .build();
+        // Redirect user back to frontend (PostSignup if no role, Home otherwise)
+        return ResponseEntity.status(302)
+                .header("Location", oauthredirectURL)
+                .headers(headers)
+                .build();
 
-        } catch (Exception e) {
-            // TODO: handle exception
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Io Exception ");
-
-        }
         // login via google
 
     }

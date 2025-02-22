@@ -5,6 +5,7 @@ import static java.util.Objects.isNull;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -23,7 +24,8 @@ public class OauthTokenInterceptor implements HandlerInterceptor {
 
     // handle intercepting calls and updates access token to new one if expired ;
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+    public boolean preHandle(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
+            @NonNull Object handler)
             throws Exception {
         System.out.println("Intercepting...");
         User user = UserService.getLoggedInUserThrow();

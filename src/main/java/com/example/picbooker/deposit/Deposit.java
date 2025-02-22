@@ -1,6 +1,7 @@
 package com.example.picbooker.deposit;
 
 import java.time.LocalDateTime;
+import java.util.Currency;
 
 import com.example.picbooker.session.Session;
 
@@ -14,6 +15,8 @@ import jakarta.persistence.Id;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -24,6 +27,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Entity
 @Table
+@Builder
 public class Deposit {
     @Id
     @Column(name = "id")
@@ -37,8 +41,9 @@ public class Deposit {
     @Column
     private Double amount;
 
+    @Default
     @Column
-    private String currency; // to do look into
+    private Currency currency = Currency.getInstance("USD");
 
     @Column
     private LocalDateTime paidAt;

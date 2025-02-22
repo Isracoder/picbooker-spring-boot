@@ -3,10 +3,12 @@ package com.example.picbooker.client;
 import static java.util.Objects.isNull;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,8 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.picbooker.ApiException;
 import com.example.picbooker.ApiResponse;
-import com.example.picbooker.photographer.Photographer;
+import com.example.picbooker.photographer.PhotographerResponse;
 import com.example.picbooker.review.Review;
+import com.example.picbooker.review.ReviewDTO;
 import com.example.picbooker.security.JwtUtil;
 import com.example.picbooker.session.Session;
 import com.example.picbooker.user.UserService;
@@ -80,21 +83,35 @@ public class ClientController {
                                 .build();
         }
 
-        @GetMapping("/{clientId}/favorite")
-        public ApiResponse<List<Photographer>> getClientFavoritePhotographers(@PathVariable("clientId") Long clientId) {
-
-                return ApiResponse.<List<Photographer>>builder()
+        @GetMapping("/{clientId}/favorites")
+        public ApiResponse<Set<PhotographerResponse>> getClientFavoritePhotographers(
+                        @PathVariable("clientId") Long clientId) {
+                // to think of mapping to photographer favorite response
+                // minimal photographer information
+                return ApiResponse.<Set<PhotographerResponse>>builder()
                                 .content(clientService.getClientFavoritePhotographers(clientId))
                                 .status(HttpStatus.OK)
                                 .build();
         }
 
-        @PostMapping("/{clientId}/favorite")
-        public ApiResponse<String> setClientFavoritePhotographers(@PathVariable("clientId") Long clientId,
+        @PostMapping("/favorites")
+        public ApiResponse<String> setClientFavoritePhotographers(
                         @RequestBody Long photographerId) {
-                clientService.addToClientFavoritePhotographers(clientId, photographerId);
+                Client client = clientService.getClientFromUserThrow(UserService.getLoggedInUserThrow());
+                clientService.addToClientFavoritePhotographers(client, photographerId);
                 return ApiResponse.<String>builder()
                                 .content("Succesfully added photographer " + photographerId + " as a favorite")
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @DeleteMapping("/favorites")
+        public ApiResponse<String> removeFromClientFavoritePhotographers(
+                        @RequestBody Long photographerId) {
+                Client client = clientService.getClientFromUserThrow(UserService.getLoggedInUserThrow());
+                clientService.removeFromClientFavoritePhotographers(client, photographerId);
+                return ApiResponse.<String>builder()
+                                .content("Succesfully removed photographer " + photographerId + " from favorites")
                                 .status(HttpStatus.OK)
                                 .build();
         }
@@ -112,6 +129,15 @@ public class ClientController {
 
                 return ApiResponse.<List<Review>>builder()
                                 .content(clientService.getReviews(clientId))
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @PostMapping("/reviews")
+        public ApiResponse<Review> addReview(@RequestBody ReviewDTO reviewDTO) {
+                Client client = clientService.getClientFromUserThrow(UserService.getLoggedInUserThrow());
+                return ApiResponse.<Review>builder()
+                                .content(clientService.writeReview(client, reviewDTO))
                                 .status(HttpStatus.OK)
                                 .build();
         }
