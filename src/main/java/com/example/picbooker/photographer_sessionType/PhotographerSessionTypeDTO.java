@@ -12,6 +12,8 @@ public class PhotographerSessionTypeDTO {
 
     private SessionTypeName type;
 
+    private String customSessionType;
+
     private Double pricePerDuration;
 
     @Default

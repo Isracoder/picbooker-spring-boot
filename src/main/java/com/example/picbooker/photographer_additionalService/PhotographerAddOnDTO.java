@@ -13,6 +13,8 @@ public class PhotographerAddOnDTO {
 
     private AddOnType type;
 
+    private String customSessionType;
+
     private Boolean multipleAllowedInSession;
 
     private Double fee;

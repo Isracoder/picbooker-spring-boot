@@ -48,6 +48,9 @@ public class PhotographerSessionType {
     private SessionTypeName type;
 
     @Column
+    private String customSessionType;
+
+    @Column
     private Double pricePerDuration;
 
     @Column

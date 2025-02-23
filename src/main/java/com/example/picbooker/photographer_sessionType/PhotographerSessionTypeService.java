@@ -23,7 +23,7 @@ public class PhotographerSessionTypeService {
 
     public PhotographerSessionType create(Photographer photographer, SessionTypeName sessionType, Double perHour,
             Currency currency, Integer duration, String description, String location, Boolean keepPrivate,
-            Boolean requiresDeposit, Double depositAmount) {
+            Boolean requiresDeposit, Double depositAmount, String customSessionType) {
 
         return PhotographerSessionType.builder()
                 .currency(currency)
@@ -33,6 +33,7 @@ public class PhotographerSessionTypeService {
                 .photographer(photographer)
                 .pricePerDuration(perHour)
                 .location(location)
+                .customSessionType(customSessionType)
                 .keepPrivate(keepPrivate)
                 .requiresDeposit(requiresDeposit)
                 .depositAmount(depositAmount)
@@ -54,10 +55,10 @@ public class PhotographerSessionTypeService {
 
     public PhotographerSessionType createAndSave(Photographer photographer, SessionTypeName sessionType, Double perHour,
             Currency currency, Integer duration, String description, String location, Boolean keepPrivate,
-            Boolean requiresDeposit, Double depositAmount) {
+            Boolean requiresDeposit, Double depositAmount, String customSessionType) {
         System.out.println("photographer id : " + photographer.getId());
         return save(create(photographer, sessionType, perHour, currency, duration, description, location, keepPrivate,
-                requiresDeposit, depositAmount));
+                requiresDeposit, depositAmount, customSessionType));
     }
 
     public PhotographerSessionType findForPhotographerAndSessionType(Long photographerId, SessionTypeName type) {
@@ -84,7 +85,8 @@ public class PhotographerSessionTypeService {
                 Currency.getInstance(photographerSessionTypeDTO.getCurrencyCode()),
                 photographerSessionTypeDTO.getDurationMinutes(), photographerSessionTypeDTO.getDescription(),
                 photographerSessionTypeDTO.getLocation(), photographerSessionTypeDTO.getKeepPrivate(),
-                photographerSessionTypeDTO.getRequiresDeposit(), photographerSessionTypeDTO.getDepositAmount());
+                photographerSessionTypeDTO.getRequiresDeposit(), photographerSessionTypeDTO.getDepositAmount(),
+                photographerSessionTypeDTO.getCustomSessionType());
 
     }
 
@@ -125,7 +127,8 @@ public class PhotographerSessionTypeService {
 
         if (!isNull(request.getType()))
             photographerSessionType.setType(request.getType());
-
+        if (!isNull(request.getCustomSessionType()))
+            photographerSessionType.setCustomSessionType(request.getCustomSessionType());
         if (!isNull(request.getDepositAmount()))
             photographerSessionType.setDepositAmount(request.getDepositAmount());
         if (!isNull(request.getDescription()))
@@ -141,6 +144,9 @@ public class PhotographerSessionTypeService {
         // to add validation rules
         if (isNull(photographerSessionType.getRequiresDeposit()) || !photographerSessionType.getRequiresDeposit())
             photographerSessionType.setDepositAmount(0.0D);
+        if (photographerSessionType.getType() != SessionTypeName.OTHER)
+            photographerSessionType.setCustomSessionType(null);
+
         return (photographerSessionType);
 
     }

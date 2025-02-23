@@ -32,8 +32,9 @@ public class PhotographerAddOnService {
     }
 
     public PhotographerAddOn create(Photographer photographer, AddOnType addOnType, Double perHour,
-            Currency currency, String description, Boolean multPerSession) {
-        return new PhotographerAddOn(null, photographer, addOnType, multPerSession, description, perHour,
+            Currency currency, String description, Boolean multPerSession, String customSessionType) {
+        return new PhotographerAddOn(null, photographer, addOnType, customSessionType, multPerSession, description,
+                perHour,
                 currency);
 
     }
@@ -43,9 +44,9 @@ public class PhotographerAddOnService {
     }
 
     public PhotographerAddOn createAndSave(Photographer photographer, AddOnType addOnType, Double perHour,
-            Currency currency, String description, Boolean multPerSession) {
+            Currency currency, String description, Boolean multPerSession, String customSessionType) {
         return save(create(photographer, addOnType, perHour, currency, description,
-                multPerSession));
+                multPerSession, customSessionType));
     }
 
     public PhotographerAddOn findForPhotographerAndAddOn(Long photographerId, AddOnType type) {
@@ -58,7 +59,7 @@ public class PhotographerAddOnService {
 
         return createAndSave(photographer, photographerAddOnDTO.getType(), photographerAddOnDTO.getFee(),
                 Currency.getInstance(photographerAddOnDTO.getCurrencyCode()), photographerAddOnDTO.getDescription(),
-                photographerAddOnDTO.getMultipleAllowedInSession());
+                photographerAddOnDTO.getMultipleAllowedInSession(), photographerAddOnDTO.getCustomSessionType());
 
     }
 
@@ -86,6 +87,12 @@ public class PhotographerAddOnService {
 
         if (!isNull(request.getType()))
             photographerAddOn.setType(request.getType());
+        if (!isNull(request.getCustomSessionType()))
+            photographerAddOn.setCustomSessionType(request.getCustomSessionType());
+
+        // validation
+        if (photographerAddOn.getType() != AddOnType.OTHER)
+            photographerAddOn.setCustomSessionType(null);
         return (photographerAddOn);
 
     }
