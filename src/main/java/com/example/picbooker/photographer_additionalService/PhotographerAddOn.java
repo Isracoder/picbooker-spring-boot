@@ -1,6 +1,7 @@
 package com.example.picbooker.photographer_additionalService;
 
 import java.util.Currency;
+import java.util.Date;
 
 import com.example.picbooker.additionalService.AddOnType;
 import com.example.picbooker.photographer.Photographer;
@@ -57,6 +58,14 @@ public class PhotographerAddOn {
     @Column
     private Double fee;
     // to think , add free Boolean ?
+    @Column
+    private Boolean isPrivate;
+
+    @Column
+    private Boolean isSpecialOffer;
+
+    @Column
+    private Date endDate;
 
     @Default
     @Column

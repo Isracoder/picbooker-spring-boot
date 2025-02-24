@@ -1,6 +1,8 @@
 
 package com.example.picbooker.photographer_additionalService;
 
+import java.util.Date;
+
 import com.example.picbooker.additionalService.AddOnType;
 
 import lombok.Builder;
@@ -18,6 +20,12 @@ public class PhotographerAddOnDTO {
     private Boolean multipleAllowedInSession;
 
     private Double fee;
+
+    private Boolean isPrivate;
+
+    private Boolean isSpecialOffer;
+
+    private Date endDate;
 
     @Default
     private String currencyCode = "USD";

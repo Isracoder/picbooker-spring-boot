@@ -34,7 +34,7 @@ public class PhotographerSessionTypeService {
                 .pricePerDuration(perHour)
                 .location(location)
                 .customSessionType(customSessionType)
-                .keepPrivate(keepPrivate)
+                .isPrivate(keepPrivate)
                 .requiresDeposit(requiresDeposit)
                 .depositAmount(depositAmount)
                 .build();
@@ -84,7 +84,7 @@ public class PhotographerSessionTypeService {
                 photographerSessionTypeDTO.getPricePerDuration(),
                 Currency.getInstance(photographerSessionTypeDTO.getCurrencyCode()),
                 photographerSessionTypeDTO.getDurationMinutes(), photographerSessionTypeDTO.getDescription(),
-                photographerSessionTypeDTO.getLocation(), photographerSessionTypeDTO.getKeepPrivate(),
+                photographerSessionTypeDTO.getLocation(), photographerSessionTypeDTO.getIsPrivate(),
                 photographerSessionTypeDTO.getRequiresDeposit(), photographerSessionTypeDTO.getDepositAmount(),
                 photographerSessionTypeDTO.getCustomSessionType());
 
@@ -134,8 +134,8 @@ public class PhotographerSessionTypeService {
         if (!isNull(request.getDescription()))
             photographerSessionType.setDescription(request.getDescription());
 
-        if (!isNull(request.getKeepPrivate()))
-            photographerSessionType.setKeepPrivate(request.getKeepPrivate());
+        if (!isNull(request.getIsPrivate()))
+            photographerSessionType.setIsPrivate(request.getIsPrivate());
         if (!isNull(request.getLocation()))
             photographerSessionType.setLocation(request.getLocation());
         if (!isNull(request.getRequiresDeposit()))

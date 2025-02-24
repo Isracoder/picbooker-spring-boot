@@ -3,6 +3,7 @@ package com.example.picbooker.photographer_additionalService;
 import static java.util.Objects.isNull;
 
 import java.util.Currency;
+import java.util.Date;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,10 +33,10 @@ public class PhotographerAddOnService {
     }
 
     public PhotographerAddOn create(Photographer photographer, AddOnType addOnType, Double perHour,
-            Currency currency, String description, Boolean multPerSession, String customSessionType) {
+            Currency currency, String description, Boolean multPerSession, String customSessionType,
+            Boolean isPrivate, Boolean isSpecialOffer, Date endDate) {
         return new PhotographerAddOn(null, photographer, addOnType, customSessionType, multPerSession, description,
-                perHour,
-                currency);
+                perHour, isPrivate, isSpecialOffer, endDate, currency);
 
     }
 
@@ -44,9 +45,10 @@ public class PhotographerAddOnService {
     }
 
     public PhotographerAddOn createAndSave(Photographer photographer, AddOnType addOnType, Double perHour,
-            Currency currency, String description, Boolean multPerSession, String customSessionType) {
+            Currency currency, String description, Boolean multPerSession, String customSessionType,
+            Boolean isPrivate, Boolean isSpecialOffer, Date endDate) {
         return save(create(photographer, addOnType, perHour, currency, description,
-                multPerSession, customSessionType));
+                multPerSession, customSessionType, isPrivate, isSpecialOffer, endDate));
     }
 
     public PhotographerAddOn findForPhotographerAndAddOn(Long photographerId, AddOnType type) {
@@ -59,7 +61,9 @@ public class PhotographerAddOnService {
 
         return createAndSave(photographer, photographerAddOnDTO.getType(), photographerAddOnDTO.getFee(),
                 Currency.getInstance(photographerAddOnDTO.getCurrencyCode()), photographerAddOnDTO.getDescription(),
-                photographerAddOnDTO.getMultipleAllowedInSession(), photographerAddOnDTO.getCustomSessionType());
+                photographerAddOnDTO.getMultipleAllowedInSession(), photographerAddOnDTO.getCustomSessionType(),
+                photographerAddOnDTO.getIsPrivate(), photographerAddOnDTO.getIsSpecialOffer(),
+                photographerAddOnDTO.getEndDate());
 
     }
 
@@ -89,6 +93,15 @@ public class PhotographerAddOnService {
             photographerAddOn.setType(request.getType());
         if (!isNull(request.getCustomSessionType()))
             photographerAddOn.setCustomSessionType(request.getCustomSessionType());
+
+        if (!isNull(request.getIsPrivate()))
+            photographerAddOn.setIsPrivate(request.getIsPrivate());
+
+        if (!isNull(request.getIsSpecialOffer()))
+            photographerAddOn.setIsSpecialOffer(request.getIsSpecialOffer());
+
+        if (!isNull(request.getEndDate()))
+            photographerAddOn.setEndDate(request.getEndDate());
 
         // validation
         if (photographerAddOn.getType() != AddOnType.OTHER)

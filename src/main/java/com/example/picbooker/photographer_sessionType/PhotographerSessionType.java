@@ -62,7 +62,7 @@ public class PhotographerSessionType {
     // info about deposit
     // required/not , if so amount
     @Column
-    private Boolean keepPrivate;
+    private Boolean isPrivate;
 
     @Column
     private Boolean requiresDeposit;

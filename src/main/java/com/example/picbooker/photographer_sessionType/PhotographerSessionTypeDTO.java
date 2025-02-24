@@ -23,7 +23,7 @@ public class PhotographerSessionTypeDTO {
 
     private String location;
 
-    private Boolean keepPrivate;
+    private Boolean isPrivate;
 
     private Boolean requiresDeposit;
 
