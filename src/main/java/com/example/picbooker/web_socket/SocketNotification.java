@@ -1,0 +1,16 @@
+package com.example.picbooker.web_socket;
+
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+public class SocketNotification<T> {
+    private String roomId;
+    private T data;
+
+}

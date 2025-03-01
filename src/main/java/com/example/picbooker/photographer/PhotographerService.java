@@ -55,9 +55,7 @@ public class PhotographerService {
     @Autowired
     private ReviewService reviewService;
 
-    public void create() {
-        // to do implement ;
-    }
+    
 
     public Optional<Photographer> findById(Long id) {
         return photographerRepository.findById(id);

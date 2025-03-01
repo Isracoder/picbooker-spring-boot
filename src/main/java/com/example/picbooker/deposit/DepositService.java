@@ -1,9 +1,13 @@
 package com.example.picbooker.deposit;
 
+import java.time.LocalDateTime;
+import java.util.Currency;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import com.example.picbooker.session.Session;
 
 @Service
 public class DepositService {
@@ -11,8 +15,19 @@ public class DepositService {
     @Autowired
     private DepositRepository depositRepository;
 
-    public void create() {
-        // to do implement ;
+    public Deposit create(Session session, Double amount, Currency currency, LocalDateTime paidAt,
+            PaymentMethod method) {
+
+        return new Deposit(null, session, amount, currency, paidAt, method);
+    }
+
+    public Deposit createAndSave(Session session, Double amount, Currency currency, LocalDateTime paidAt,
+            PaymentMethod method) {
+        return save(create(session, amount, currency, paidAt, method));
+    }
+
+    public Deposit save(Deposit deposit) {
+        return depositRepository.save(deposit);
     }
 
     public Optional<Deposit> findById(Long id) {
@@ -21,10 +36,6 @@ public class DepositService {
 
     public Deposit findByIdThrow(Long id) {
         return depositRepository.findById(id).orElseThrow();
-    }
-
-    public Deposit save(Deposit deposit) {
-        return depositRepository.save(deposit);
     }
 
 }

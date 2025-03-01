@@ -26,11 +26,11 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import com.example.picbooker.ApiException;
-import com.example.picbooker.message.EmailService;
 import com.example.picbooker.security.OauthToken.OauthProviderType;
 import com.example.picbooker.security.passwordReset.PasswordResetDTO;
 import com.example.picbooker.security.passwordReset.PasswordResetService;
 import com.example.picbooker.security.passwordReset.PasswordResetToken;
+import com.example.picbooker.system_message.EmailService;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserMapper;
 import com.example.picbooker.user.UserOTP;

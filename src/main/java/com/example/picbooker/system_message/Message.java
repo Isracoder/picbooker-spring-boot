@@ -1,4 +1,4 @@
-package com.example.picbooker.message;
+package com.example.picbooker.system_message;
 
 import java.time.LocalDateTime;
 

@@ -1,4 +1,4 @@
-package com.example.picbooker.message;
+package com.example.picbooker.system_message;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

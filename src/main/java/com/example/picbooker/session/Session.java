@@ -2,6 +2,7 @@ package com.example.picbooker.session;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Currency;
 
 import com.example.picbooker.client.Client;
 import com.example.picbooker.deposit.Deposit;
@@ -50,6 +51,9 @@ public class Session {
 
     @Column
     private Double totalPrice;
+
+    @Column
+    private Currency currency;
 
     @Enumerated(EnumType.STRING)
     @Column

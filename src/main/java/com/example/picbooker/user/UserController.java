@@ -84,19 +84,13 @@ public class UserController {
 
     @DeleteMapping("/{id}") // to do secure only for admin
     public ApiResponse<String> deleteById(@PathVariable("id") long id) {
-        try {
 
-            service.delete(id);
-            return ApiResponse.<String>builder()
-                    .content("Successful deletion")
-                    .status(HttpStatus.OK)
-                    .build();
-        } catch (Exception e) {
-            return ApiResponse.<String>builder()
-                    .content("Something went wrong :(")
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+        service.delete(id);
+        return ApiResponse.<String>builder()
+                .content("Successful deletion")
+                .status(HttpStatus.OK)
+                .build();
+
     }
 
     @PostMapping("/")

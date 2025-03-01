@@ -29,19 +29,13 @@ public class ReviewController {
 
     @DeleteMapping("/{id}") // to do secure only for admin
     public ApiResponse<?> deleteById(@PathVariable("id") long id) {
-        try {
 
-            // to do implement
-            return ApiResponse.<String>builder()
-                    .content("Successful deletion")
-                    .status(HttpStatus.OK)
-                    .build();
-        } catch (Exception e) {
-            return ApiResponse.<String>builder()
-                    .content("Something went wrong :(")
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+        // to do implement
+        return ApiResponse.<String>builder()
+                .content("Successful deletion")
+                .status(HttpStatus.OK)
+                .build();
+
     }
 
 }
