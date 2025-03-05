@@ -37,6 +37,8 @@ public class ChatRoom {
     @CreationTimestamp
     private LocalDateTime createdAt;
 
+    // should I have it like this (broken many to many)
+    // or should I have a sender and receiver
     @Default
     @OneToMany(mappedBy = "chatRoom", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ChatParticipant> participants = new ArrayList<>();

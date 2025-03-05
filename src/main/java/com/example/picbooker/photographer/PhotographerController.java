@@ -245,6 +245,18 @@ public class PhotographerController {
                                 .build();
         }
 
+        @GetMapping("/{photographerId}/profile-completion")
+        public ApiResponse<ProfileCompletionDTO> getProfileCompletion(
+                        @PathVariable("photographerId") Long photographerId) {
+                ProfileCompletionDTO profileCompletionDTO = photographerService.getProfileCompletion(photographerId);
+                // object with percentage : 70% , booleans representing (profile pic set ,
+                // location , bio, workhours, social media, sessiontypes, portfolio)
+                return ApiResponse.<ProfileCompletionDTO>builder()
+                                .content(profileCompletionDTO)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
         @GetMapping("/{photographerId}/reviews")
         public ApiResponse<List<Review>> getReviews(@PathVariable("photographerId") Long photographerId) {
                 // to do implement

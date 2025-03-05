@@ -17,5 +17,11 @@ public class SessionSearchDTO {
     private LocalDate date;
     private Double price;
     private Currency currency;
-    // maybe time if possible
+    private Integer durationMinutes;
+    private Double depositAmount;
+    private String typeOrCustomType;
+    // , date , session.getPricePerDuration() , session.getCurrency() ,
+    // session.getDurationMinutes()
+    // , session.getType() ? session.getType().toString() :
+    // session.getCustomSessionType() ,
 }

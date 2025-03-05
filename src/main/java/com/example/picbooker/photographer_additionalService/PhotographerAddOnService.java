@@ -4,7 +4,10 @@ import static java.util.Objects.isNull;
 
 import java.util.Currency;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -54,6 +57,14 @@ public class PhotographerAddOnService {
     public PhotographerAddOn findForPhotographerAndAddOn(Long photographerId, AddOnType type) {
 
         return photographerAddOnRepository.findFirstByTypeAndPhotographer_Id(type, photographerId);
+    }
+
+    public List<PhotographerAddOn> findAllByIds(List<Long> ids) {
+        return photographerAddOnRepository.findAllById(ids);
+    }
+
+    public Set<PhotographerAddOn> findSetByIds(List<Long> ids) {
+        return photographerAddOnRepository.findAllById(ids).stream().collect(Collectors.toSet());
     }
 
     public PhotographerAddOn addAddOn(Photographer photographer,

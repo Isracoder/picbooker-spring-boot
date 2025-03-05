@@ -3,10 +3,14 @@ package com.example.picbooker.session;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Currency;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.example.picbooker.client.Client;
 import com.example.picbooker.deposit.Deposit;
 import com.example.picbooker.photographer.Photographer;
+import com.example.picbooker.photographer_additionalService.PhotographerAddOn;
+import com.example.picbooker.photographer_sessionType.PhotographerSessionType;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -17,10 +21,14 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Builder.Default;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -31,6 +39,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @Entity
 @Table
+@Builder
 public class Session {
     @Id
     @Column(name = "id")
@@ -50,6 +59,9 @@ public class Session {
     private String location;
 
     @Column
+    private String privateComment;
+
+    @Column
     private Double totalPrice;
 
     @Column
@@ -60,11 +72,15 @@ public class Session {
     private SessionStatus status;
 
     // relationships
-    // deposit , client , sessiontype , photographerId
+    // deposit , client , sessionType, Addon , photographerId
 
     @ManyToOne
     @JoinColumn(name = "client", nullable = false)
     private Client client;
+
+    @ManyToOne
+    @JoinColumn(name = "sessionType", nullable = false)
+    private PhotographerSessionType sessionType;
 
     @ManyToOne
     @JoinColumn(name = "photographer", nullable = false)
@@ -74,5 +90,9 @@ public class Session {
     @JoinColumn(name = "deposit_id", referencedColumnName = "id")
     private Deposit deposit;
 
-    // many to many with photographerAddOn
+    @Default
+    @ManyToMany
+    @JoinTable(name = "add_ons", joinColumns = @JoinColumn(name = "addOn_id"), inverseJoinColumns = @JoinColumn(name = "session_id"))
+    private Set<PhotographerAddOn> sessionAddOns = new HashSet<>();
+
 }

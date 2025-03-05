@@ -17,4 +17,8 @@ public interface ChatParticipantRepository extends JpaRepository<ChatParticipant
                 HAVING COUNT(DISTINCT cp.user.id) = 2
             """)
     Optional<Long> findChatRoomIdBetweenUsers(@Param("user1") Long user1, @Param("user2") Long user2);
+
+    Boolean existsByChatRoom_IdAndUser_Id(Long chatRoomId, Long userId);
+
+    ChatParticipant findByUserAndChat(Long chatRoomId, Long userId);
 }

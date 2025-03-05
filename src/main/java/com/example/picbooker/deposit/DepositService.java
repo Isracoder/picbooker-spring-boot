@@ -16,14 +16,16 @@ public class DepositService {
     private DepositRepository depositRepository;
 
     public Deposit create(Session session, Double amount, Currency currency, LocalDateTime paidAt,
+            DepositStatus depositStatus,
             PaymentMethod method) {
 
-        return new Deposit(null, session, amount, currency, paidAt, method);
+        return new Deposit(null, session, amount, currency, paidAt, depositStatus, method);
     }
 
     public Deposit createAndSave(Session session, Double amount, Currency currency, LocalDateTime paidAt,
+            DepositStatus depositStatus,
             PaymentMethod method) {
-        return save(create(session, amount, currency, paidAt, method));
+        return save(create(session, amount, currency, paidAt, depositStatus, method));
     }
 
     public Deposit save(Deposit deposit) {

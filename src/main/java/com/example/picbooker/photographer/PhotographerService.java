@@ -55,8 +55,6 @@ public class PhotographerService {
     @Autowired
     private ReviewService reviewService;
 
-    
-
     public Optional<Photographer> findById(Long id) {
         return photographerRepository.findById(id);
     }
@@ -286,6 +284,32 @@ public class PhotographerService {
         return photographerAddOnService.findForPhotographerAndAddOn(photographerId, type);
     }
 
+    public ProfileCompletionDTO getProfileCompletion(Long photographerId) {
+        Photographer photographer = findByIdThrow(photographerId);
+        User user = photographer.getUser();
+        Boolean profilePictureSet = user.getPhotoUrl() != null;
+        Boolean locationSet = user.getCountry() != null && user.getCity() != null;
+        // to do check if has valid workhours , and if has non-private session types
+        Boolean workHoursSet = false;
+        Boolean sessionTypesSet = false;
+        Boolean portfolioSet = (photographer.getPhotos() != null || photographer.getVideos() != null); // check if has
+                                                                                                       // photo or video
+
+        Boolean socialMediaSet = photographer.getSocialLinks() != null;
+        Boolean emailVerified = user.getIsEmailVerified();
+        Boolean bioSet = photographer.getBio() != null;
+
+        int listOfThings = ProfileCompletionDTO.class.getClass().getDeclaredFields().length - 1;
+        int complete = (profilePictureSet ? 1 : 0) + (sessionTypesSet ? 1 : 0) + (workHoursSet ? 1 : 0)
+                + (socialMediaSet ? 1 : 0) + (portfolioSet ? 1 : 0) + (locationSet ? 1 : 0) + (emailVerified ? 1 : 0)
+                + (bioSet ? 1 : 0);
+        return new ProfileCompletionDTO(complete * 1.0 / listOfThings, profilePictureSet, workHoursSet, sessionTypesSet,
+                socialMediaSet, portfolioSet, locationSet, emailVerified, bioSet);
+    }
+
+    public List<Photographer> findByCity(String city) {
+        return photographerRepository.findByCityIgnoreCase(city);
+    }
     // function to create custom private session and generate link to send to client
 
     // get photos from instagram integration

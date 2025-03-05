@@ -49,6 +49,9 @@ public class Deposit {
     private LocalDateTime paidAt;
 
     @Column
+    private DepositStatus status;
+
+    @Column
     @Enumerated(EnumType.STRING)
     private PaymentMethod method;
 

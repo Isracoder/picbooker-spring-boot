@@ -1,17 +1,32 @@
-// package com.example.picbooker.session;
+package com.example.picbooker.session;
 
-// import com.example.picbooker.sessionType.SessionType;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
 
-// import lombok.Getter;
-// import lombok.Setter;
+import com.example.picbooker.deposit.PaymentMethod;
 
-// @Getter
-// @Setter
-// public class SessionDTO {
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
-// private Long photographerId;
-// private SessionType sessionType; // maybe change to string
-// // add object class of clientDetails : name , email , phoneNumber
-// // add additional Services ;
+@Getter
+@Setter
+@AllArgsConstructor
+@Builder
+public class SessionDTO {
 
-// }
+    private Long photographerId;
+    private Long photographerSessionTypeId;
+    private LocalDate date;
+    private LocalTime startTime;
+    private LocalTime endTime;
+    private String location;
+    private String privateComment;
+    private PaymentMethod paymentMethod;
+    private List<Long> photographerAddOnIds; // 1 , 3
+    // to do add modified client (name,phone,etc) info ;
+    //
+
+}

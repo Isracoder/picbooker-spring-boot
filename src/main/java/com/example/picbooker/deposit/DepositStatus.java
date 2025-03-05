@@ -1,5 +1,5 @@
 package com.example.picbooker.deposit;
 
-public class DepositStatus {
-
+public enum DepositStatus {
+    PAID, UNPAID
 }

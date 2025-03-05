@@ -1,5 +1,7 @@
 package com.example.picbooker.chat_message;
 
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -8,9 +10,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.picbooker.ApiResponse;
+import com.example.picbooker.user.UserService;
 
 @RestController
 @RequestMapping("/api/chats")
@@ -19,66 +23,70 @@ public class ChatController {
     @Autowired
     private ChatService chatService;
 
-    @GetMapping("/history")
-    public ApiResponse<String> findById() {
-        // also have another for unread messages content and count
-        // with user1Id , user2Id as params, or chatRoomId, limit, pagination
-        return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
+    // to paginate
+    @GetMapping("/{chatRoomId}/messages")
+    public ApiResponse<List<ChatMessageDTO>> getMessageHistory(@PathVariable("chatRoomId") Long chatRoomId,
+            @RequestParam(name = "limit", defaultValue = "20") int limit) {
+        List<ChatMessageDTO> messages = chatService.getLastMessagesForMyRoom(chatRoomId,
+                UserService.getLoggedInUserThrow().getId(), limit);
+        return ApiResponse.<List<ChatMessageDTO>>builder()
+                .content(messages)
+                .status(HttpStatus.OK)
                 .build();
 
     }
 
-    @PutMapping("/history")
-    public ApiResponse<String> markRead() {
+    @PutMapping("/{chatRoomId}/read")
+    public ApiResponse<String> markRead(@PathVariable("chatRoomId") Long chatRoomId) {
         // send chat room id
+        chatService.markChatAsRead(UserService.getLoggedInUserThrow().getId(), chatRoomId);
         return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
+                .content("Success")
+                .status(HttpStatus.OK)
                 .build();
 
     }
 
     @GetMapping("/active")
-    public ApiResponse<String> getUsersWithActiveChat() {
+    public ApiResponse<List<ChatRoomDTO>> getUsersWithActiveChat() {
         // return users that I have a chat with
         // maybe last message as well to display
-        return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
+        return ApiResponse.<List<ChatRoomDTO>>builder()
+                .content(chatService.getUserChats(UserService.getLoggedInUserThrow().getId()))
+                .status(HttpStatus.OK)
                 .build();
 
     }
 
     // GET /chat/room?user1Id=2&user2Id=5
     @GetMapping("/room")
-    public ApiResponse<String> getChatRoomBetweenUsers() {
+    public ApiResponse<ChatRoomDTO> getChatRoomBetweenUsers(@RequestParam("user1") Long user1Id,
+            @RequestParam("user2") Long user2Id) {
         // return chat room info(id, last 10 messages, ...) for those 2 users
-        //
-        return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
+        // to think maybe check if i'm one of them via log-in
+        return ApiResponse.<ChatRoomDTO>builder()
+                .content(chatService.getChatRoomInfoForPair(user1Id, user2Id))
+                .status(HttpStatus.OK)
                 .build();
 
     }
 
-    @PostMapping("/room")
-    public ApiResponse<String> deleteChatRoom() {
-
+    @DeleteMapping("/room/{chatRoomId}")
+    public ApiResponse<String> deleteChatRoom(@PathVariable("chatRoomId") long chatRoomId) {
+        chatService.deleteMyChat(chatRoomId, UserService.getLoggedInUserThrow().getId());
         return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
+                .content("Success")
+                .status(HttpStatus.OK)
                 .build();
 
     }
 
-    @DeleteMapping("/message/{id}")
-    public ApiResponse<String> deleteById(@PathVariable("id") long id) {
-
+    @DeleteMapping("/message/{messageId}")
+    public ApiResponse<String> deleteById(@PathVariable("messageId") long messageId) {
+        chatService.deleteMyMessage(UserService.getLoggedInUserThrow().getId(), messageId);
         return ApiResponse.<String>builder()
-                .content("Not implemented")
-                .status(HttpStatus.NOT_IMPLEMENTED)
+                .content("Success")
+                .status(HttpStatus.OK)
                 .build();
 
     }

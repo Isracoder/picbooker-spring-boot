@@ -91,6 +91,7 @@ public class User implements UserDetails {
     @Column
     private Gender gender;
 
+    // to do rethink this being here
     @Column
     private String photoUrl;
 
