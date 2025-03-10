@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -24,6 +25,7 @@ import com.example.picbooker.client.Client;
 import com.example.picbooker.deposit.Deposit;
 import com.example.picbooker.deposit.DepositService;
 import com.example.picbooker.deposit.DepositStatus;
+import com.example.picbooker.deposit.PaymentMethod;
 import com.example.picbooker.photographer.Photographer;
 import com.example.picbooker.photographer.PhotographerMapper;
 import com.example.picbooker.photographer.PhotographerService;
@@ -32,6 +34,7 @@ import com.example.picbooker.photographer_additionalService.PhotographerAddOnSer
 import com.example.picbooker.photographer_sessionType.PhotographerSessionType;
 import com.example.picbooker.photographer_sessionType.PhotographerSessionTypeService;
 import com.example.picbooker.sessionType.SessionTypeName;
+import com.example.picbooker.system_message.EmailService;
 import com.example.picbooker.workhours.WorkHour;
 import com.example.picbooker.workhours.WorkHourService;
 
@@ -48,6 +51,9 @@ public class SessionService {
 
     @Autowired
     private PhotographerService photographerService;
+
+    @Autowired
+    private EmailService emailService;
 
     @Autowired
     private PhotographerSessionTypeService photographerSessionTypeService;
@@ -198,33 +204,59 @@ public class SessionService {
 
     // to do continue, more payment logic,
     @Transactional
-    public void createBooking(SessionDTO sessionDTO, Client client) {
-        if (isNull(client))
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Client must not be null");
-        // get necessary info: email, name, phone number
-        // photographer, session type(length, cost, deposit)
-        // what if he changed default client info ?
-        Photographer photographer = photographerService.findByIdThrow(sessionDTO.getPhotographerId());
-        PhotographerSessionType photographerSessionType = photographerSessionTypeService
-                .findByIdThrow(sessionDTO.getPhotographerSessionTypeId());
-        Set<PhotographerAddOn> photographerAddOns = photographerAddOnService
-                .findSetByIds(sessionDTO.getPhotographerAddOnIds());
-        // to do check that addons and session type are of same currency ;
-        // maybe have currency fixed in p settings.
-        Double addOnPrice = 0d;
-        Double price = photographerSessionType.getPricePerDuration() + addOnPrice;
+    public SessionResponse createBooking(SessionDTO sessionDTO, Client client) {
+        try {
 
-        Session session = createAndSave(sessionDTO.getDate(), sessionDTO.getStartTime(), sessionDTO.getEndTime(),
-                sessionDTO.getLocation(), sessionDTO.getPrivateComment(), price, photographerSessionType.getCurrency(),
-                SessionStatus.AWAITING_APPROVAL, client, photographer, null, photographerSessionType,
-                photographerAddOns);
-        if (photographerSessionType.getRequiresDeposit()) {
+            if (isNull(client))
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Client must not be null");
+            // get necessary info: email, name, phone number
+            // photographer, session type(length, cost, deposit)
+            // what if he changed default client info ?
+            Photographer photographer = photographerService.findByIdThrow(sessionDTO.getPhotographerId());
+            PhotographerSessionType photographerSessionType = photographerSessionTypeService
+                    .findByIdThrow(sessionDTO.getPhotographerSessionTypeId());
+            Set<PhotographerAddOn> photographerAddOns = photographerAddOnService
+                    .findSetByIds(sessionDTO.getPhotographerAddOnIds());
+            // to do check that addons and session type are of same currency ;
+            // maybe have currency fixed in p settings.
+            Double addOnPrice = 0d;
+            for (PhotographerAddOn addon : photographerAddOns) {
+                addOnPrice += addon.getFee();
+            }
+            Double price = photographerSessionType.getPricePerDuration() + addOnPrice;
 
-            Deposit deposit = depositService.createAndSave(session, photographerSessionType.getDepositAmount(),
-                    photographerSessionType.getCurrency(), null, DepositStatus.UNPAID, (sessionDTO.getPaymentMethod()));
-            session.setDeposit(deposit);
+            Session session = createAndSave(sessionDTO.getDate(), sessionDTO.getStartTime(), sessionDTO.getEndTime(),
+                    sessionDTO.getLocation(), sessionDTO.getPrivateComment(), price,
+                    photographerSessionType.getCurrency(),
+                    SessionStatus.AWAITING_APPROVAL, client, photographer, null, photographerSessionType,
+                    photographerAddOns);
+            Deposit deposit = null;
+            if (photographerSessionType.getRequiresDeposit()) {
+
+                deposit = depositService.createAndSave(session, photographerSessionType.getDepositAmount(),
+                        photographerSessionType.getCurrency(), null, DepositStatus.UNPAID,
+                        (sessionDTO.getPaymentMethod()));
+                session.setDeposit(deposit);
+            }
+
+            emailService.sendGeneralEmail(client.getUser().getEmail(),
+                    "Booking Request Sent to Photographer Confirmation",
+                    sessionDTO.toString());
+            session = save(session);
+            return toSessionResponse(session.getId(), sessionDTO, session.getStatus(), deposit, price);
+        } catch (Exception e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Something went wrong: " + e.getLocalizedMessage());
         }
 
+    }
+
+    public SessionResponse toSessionResponse(Long sessionId, SessionDTO sessionDTO, SessionStatus sessionStatus,
+            Deposit deposit,
+            Double totalPrice) {
+        return new SessionResponse(sessionId, sessionDTO, sessionStatus, deposit.getStatus(), deposit.getId(),
+                deposit.getMethod(),
+                totalPrice, deposit.getAmount());
     }
 
     // gets in one-hours slots
@@ -235,13 +267,13 @@ public class SessionService {
         PhotographerSessionType photographerSessionType = photographerSessionTypeService.findByIdThrow(sessionTypeID);
         DayOfWeek dayOfWeek = date.getDayOfWeek();
         Integer slotLengthMinutes = photographerSessionType.getDurationMinutes();
-        WorkHour workhours = workHourService
+        WorkHour workHours = workHourService
                 .findForPhotographerAndDay(photographerSessionType.getPhotographer().getId(), dayOfWeek);
-        if (!isNull(workhours)) {
+        if (!isNull(workHours)) {
             List<AppointmentDTO> availableAppointments = new ArrayList<>();
 
-            LocalTime startTime = workhours.getStartTime();
-            LocalTime endTime = workhours.getEndTime();
+            LocalTime startTime = workHours.getStartTime();
+            LocalTime endTime = workHours.getEndTime();
 
             List<LocalTime> allTimeSlots = generateTimeSlots(startTime, endTime, slotLengthMinutes);
 
@@ -262,6 +294,10 @@ public class SessionService {
                     appointment.setStartTime(timeSlot);
                     appointment.setEndTime(timeSlot.plusMinutes(slotLengthMinutes));
                     availableAppointments.add(appointment);
+                    appointment.setLocation(photographerSessionType.getLocation());
+                    appointment.setSessionType(photographerSessionType.getType() != SessionTypeName.OTHER
+                            ? photographerSessionType.getType().toString()
+                            : photographerSessionType.getCustomSessionType());
                 }
             }
 
@@ -297,6 +333,59 @@ public class SessionService {
         // generate it as link ?
     }
 
-    // gener
+    public void approveSessionRequest(Long sessionId) {
+        try {
+            Session session = sessionRepository.findById(sessionId)
+                    .orElseThrow(() -> new RuntimeException("Session not found"));
+            session.setStatus(SessionStatus.BOOKED);
+            sessionRepository.save(session);
+
+            if (!isNull(session.getDeposit()) && session.getDeposit().getMethod() != PaymentMethod.CASH) {
+
+                // Send payment link to client
+                String paymentLink = "http://your-frontend-url.com/payment/" + sessionId;
+                emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Session Approved",
+                        "Your Session Request was approved by the photographer.\nPlease pay your deposit here: "
+                                + paymentLink
+                                + "\n\nIf 2 days or less is left until your session and you haven't yet paid the deposit your session will be cancelled according to policy.");
+            }
+        } catch (Exception e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void confirmSessionDepositPayment(Long sessionId) {
+        try {
+
+            Session session = sessionRepository.findById(sessionId)
+                    .orElseThrow(() -> new RuntimeException("Session not found"));
+            session.getDeposit().setStatus(DepositStatus.PAID);
+            session.getDeposit().setPaidAt(LocalDateTime.now());
+            sessionRepository.save(session);
+
+            // Notify the client and photographer
+            emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Session Confirmed",
+                    "Your session has been confirmed!");
+        } catch (Exception e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void failSessionDepositPayment(Long sessionId) {
+        try {
+            Session session = sessionRepository.findById(sessionId)
+                    .orElseThrow(() -> new RuntimeException("Session not found"));
+            session.getDeposit().setStatus(DepositStatus.UNPAID);
+            sessionRepository.save(session);
+
+            // Notify the client
+            emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Payment Failed",
+                    "Your payment failed. Please try again.");
+        } catch (Exception e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
 
 }

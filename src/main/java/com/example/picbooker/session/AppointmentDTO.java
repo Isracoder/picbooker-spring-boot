@@ -22,4 +22,6 @@ public class AppointmentDTO {
 
     private String location;
 
+    private String sessionType;
+
 }

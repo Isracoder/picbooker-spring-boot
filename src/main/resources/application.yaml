@@ -8,6 +8,9 @@ app:
   web-home-redirect: ${PB_WEB_HOME_REDIRECT}
   jwt-cookie-name: jwt
 
+stripe:
+  api: 
+    key: ${STRIPE_API_KEY}
     
 server : 
   port: ${PB_PORT:8080}

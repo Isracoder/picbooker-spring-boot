@@ -29,6 +29,7 @@ import lombok.Setter;
 @Table
 @Builder
 public class Deposit {
+
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.AUTO)
