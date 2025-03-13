@@ -91,10 +91,6 @@ public class User implements UserDetails {
     @Column
     private Gender gender;
 
-    // to do rethink this being here
-    @Column
-    private String photoUrl;
-
     @Column
     private String country;
 
@@ -150,7 +146,7 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // currently no authoritites/roles
+        // currently no authorities/roles
         return new ArrayList<>();
 
     }

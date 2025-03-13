@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.picbooker.ApiException;
 import com.example.picbooker.additionalService.AddOnType;
@@ -83,11 +84,11 @@ public class PhotographerService {
 
     public List<WorkHourDTO> getWorkHours(Long id) {
         Photographer photographer = findByIdThrow(id);
-        if (isNull(photographer.getWorkhours()))
+        if (isNull(photographer.getWorkHours()))
             return new ArrayList<WorkHourDTO>();
 
-        return photographer.getWorkhours().stream()
-                .map(workhour -> new WorkHourDTO(workhour.getStartTime(), workhour.getEndTime(), workhour.getDay()))
+        return photographer.getWorkHours().stream()
+                .map(workHour -> new WorkHourDTO(workHour.getStartTime(), workHour.getEndTime(), workHour.getDay()))
                 .collect(Collectors.toList());
 
     }
@@ -146,13 +147,13 @@ public class PhotographerService {
     @Transactional
     public List<WorkHourDTO> setWorkHours(Photographer photographer, List<WorkHourDTO> workHours) {
         workHours.stream().forEach(newWorkHour -> {
-            // find previous workhour settings for that day,
+            // find previous workHour settings for that day,
             // if there are none create one with no hours
-            WorkHour previousWorkHour = photographer.getWorkhours().stream()
+            WorkHour previousWorkHour = photographer.getWorkHours().stream()
                     .filter(wh -> wh.getDay() == newWorkHour.getDay()).findFirst().orElse(null);
             if (isNull(previousWorkHour)) {
                 previousWorkHour = (new WorkHour(null, photographer, null, null, newWorkHour.getDay()));
-                photographer.getWorkhours().add(previousWorkHour);
+                photographer.getWorkHours().add(previousWorkHour);
             }
             if (!isNull(newWorkHour) && (!isNull(newWorkHour.getStartTime()) && !isNull(newWorkHour.getEndTime()))
                     && newWorkHour.getEndTime().isAfter(newWorkHour.getStartTime())) {
@@ -164,14 +165,14 @@ public class PhotographerService {
 
             // when clearing the day delete work hour
             if (!isNull(newWorkHour) && (isNull(newWorkHour.getStartTime()) && isNull(newWorkHour.getEndTime()))) {
-                photographer.getWorkhours().remove(previousWorkHour);
+                photographer.getWorkHours().remove(previousWorkHour);
                 // previousWorkHour.setPhotographer(null);
             }
 
         });
-        return photographer.getWorkhours().isEmpty() ? new ArrayList<WorkHourDTO>()
-                : photographer.getWorkhours().stream().map(
-                        workhour -> new WorkHourDTO(workhour.getStartTime(), workhour.getEndTime(), workhour.getDay()))
+        return photographer.getWorkHours().isEmpty() ? new ArrayList<WorkHourDTO>()
+                : photographer.getWorkHours().stream().map(
+                        workHour -> new WorkHourDTO(workHour.getStartTime(), workHour.getEndTime(), workHour.getDay()))
                         .toList();
     }
 
@@ -287,13 +288,13 @@ public class PhotographerService {
     public ProfileCompletionDTO getProfileCompletion(Long photographerId) {
         Photographer photographer = findByIdThrow(photographerId);
         User user = photographer.getUser();
-        Boolean profilePictureSet = user.getPhotoUrl() != null;
+        Boolean profilePictureSet = photographer.getProfilePhotoUrl() != null;
         Boolean locationSet = user.getCountry() != null && user.getCity() != null;
-        // to do check if has valid workhours , and if has non-private session types
+        // to do check if has valid workHours , and if has non-private session types
         Boolean workHoursSet = false;
         Boolean sessionTypesSet = false;
-        Boolean portfolioSet = (photographer.getPhotos() != null || photographer.getVideos() != null); // check if has
-                                                                                                       // photo or video
+        Boolean portfolioSet = (photographer.getMediaUploads() != null); // check if has
+                                                                         // photo or video
 
         Boolean socialMediaSet = photographer.getSocialLinks() != null;
         Boolean emailVerified = user.getIsEmailVerified();
@@ -309,6 +310,11 @@ public class PhotographerService {
 
     public List<Photographer> findByCity(String city) {
         return photographerRepository.findByCityIgnoreCase(city);
+    }
+
+    public String uploadProfilePhoto(MultipartFile file) {
+        // to do implement ;
+        return null;
     }
     // function to create custom private session and generate link to send to client
 

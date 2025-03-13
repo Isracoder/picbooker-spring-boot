@@ -37,3 +37,4 @@ build/
 *.pem
 *ClientSecret.txt 
 *secret*.zip
+*firebase-config*

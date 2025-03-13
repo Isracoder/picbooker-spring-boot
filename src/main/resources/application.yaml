@@ -1,5 +1,6 @@
 app: 
   max-msgs-per-day : 20
+  portfolio-limit: 16
   # jwt-secret: ${PB_JWT_SECRET:mILTn8ajTaDN64ck1INHI8Me2gAiVzWMlxnGtfyf/m4=}
   jwt-secret: mILTn8ajTaDN64ck1INHI8Me2gAiVzWMlxnGtfyf/m4=
   code-expiry-minutes: 10
@@ -7,11 +8,14 @@ app:
   web-redirect: ${PB_WEB_REDIRECT}
   web-home-redirect: ${PB_WEB_HOME_REDIRECT}
   jwt-cookie-name: jwt
+  path-to-firebase: "src/main/resources/firebase-config.json"
 
 stripe:
   api: 
     key: ${STRIPE_API_KEY}
-    
+firebase:
+  bucket-name: ${FIREBASE_BUCKET_NAME}
+
 server : 
   port: ${PB_PORT:8080}
   error:

@@ -19,7 +19,6 @@ public class UserMapper {
                 .password(userReq.getPassword())
                 .gender(userReq.getGender())
                 .city(userReq.getCity())
-                .photoUrl(userReq.getPhotoURL())
                 .country(userReq.getCountry())
                 .build();
         return user;

@@ -4,7 +4,7 @@ import lombok.Getter;
 
 @Getter
 public enum SessionStatus {
-    BOOKED, CANCELED, DEPOSIT_PENDING, AWAITING_APPROVAL, RESCHEDULED
+    BOOKED, CANCELED, APPROVAL_PENDING, RESCHEDULED, REFUSED
 }
 // 1st requested
 // 2nd deposit pending if it needs

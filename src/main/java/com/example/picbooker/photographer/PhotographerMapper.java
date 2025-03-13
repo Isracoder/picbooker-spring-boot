@@ -51,7 +51,7 @@ public class PhotographerMapper {
                                 .bufferTimeMinutes(photographer.getBufferTimeMinutes())
                                 .bio(photographer.getBio())
                                 .personalName(photographer.getPersonalName())
-                                .workhours(photographer.getWorkhours().stream()
+                                .workhours(photographer.getWorkHours().stream()
                                                 .map(workhour -> new WorkHourDTO(workhour.getStartTime(),
                                                                 workhour.getEndTime(), workhour.getDay()))
                                                 .collect(Collectors.toList()))

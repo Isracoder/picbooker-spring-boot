@@ -57,7 +57,7 @@ public class PhotographerController {
                                 .build();
         }
 
-        // seting yourself as client
+        // setting yourself as client
         @PostMapping("/")
         public ApiResponse<PhotographerResponse> openPhotographerAccount(
                         @Valid @RequestBody PhotographerRequest photographerRequest,
@@ -196,9 +196,9 @@ public class PhotographerController {
 
         @GetMapping("/{photographerId}/work-hours")
         public ApiResponse<List<WorkHourDTO>> getWorkHours(@PathVariable("photographerId") Long photographerId) {
-                List<WorkHourDTO> workhours = photographerService.getWorkHours(photographerId);
+                List<WorkHourDTO> workHours = photographerService.getWorkHours(photographerId);
                 return ApiResponse.<List<WorkHourDTO>>builder()
-                                .content(workhours)
+                                .content(workHours)
                                 .status(HttpStatus.OK)
                                 .build();
         }
@@ -209,28 +209,6 @@ public class PhotographerController {
                 return ApiResponse.<List<SocialLink>>builder()
                                 .content(socials)
                                 .status(HttpStatus.OK)
-                                .build();
-        }
-
-        @GetMapping("/{photographerId}/portfolio")
-        public ApiResponse<String> getPortfolio(@PathVariable("photographerId") Long photographerId) {
-                // to do implement
-                photographerService.getPortfolio(photographerId);
-                // should I split for videos and photos ?
-                return ApiResponse.<String>builder()
-                                .content("Not implemented")
-                                .status(HttpStatus.NOT_IMPLEMENTED)
-                                .build();
-        }
-
-        @PostMapping("/{photographerId}/portfolio")
-        public ApiResponse<String> addToPortfolio(@PathVariable("photographerId") Long photographerId) {
-                // to do implement
-                photographerService.updatePortfolio(photographerId);
-                // should I split for videos and photos ?
-                return ApiResponse.<String>builder()
-                                .content("Not implemented")
-                                .status(HttpStatus.NOT_IMPLEMENTED)
                                 .build();
         }
 
@@ -250,7 +228,7 @@ public class PhotographerController {
                         @PathVariable("photographerId") Long photographerId) {
                 ProfileCompletionDTO profileCompletionDTO = photographerService.getProfileCompletion(photographerId);
                 // object with percentage : 70% , booleans representing (profile pic set ,
-                // location , bio, workhours, social media, sessiontypes, portfolio)
+                // location , bio, workHours, social media, session types, portfolio)
                 return ApiResponse.<ProfileCompletionDTO>builder()
                                 .content(profileCompletionDTO)
                                 .status(HttpStatus.OK)
@@ -309,13 +287,13 @@ public class PhotographerController {
         // to test
         @PatchMapping("/work-hours")
         public ApiResponse<List<WorkHourDTO>> setWorkHours(
-                        @Valid @RequestBody List<WorkHourDTO> workhours) {
+                        @Valid @RequestBody List<WorkHourDTO> workHours) {
                 // send data in format : [ {day: "MONDAY" , startHour: 8 , endHour: 15 } , {day:
                 // "TUESDAY" , startHour : 8 , endHour: 15}]
 
                 List<WorkHourDTO> updatedWorkHours = photographerService.setWorkHours(
                                 photographerService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()),
-                                workhours);
+                                workHours);
                 return ApiResponse.<List<WorkHourDTO>>builder()
                                 .content(updatedWorkHours)
                                 .status(HttpStatus.OK)

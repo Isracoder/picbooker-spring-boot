@@ -228,7 +228,7 @@ public class SessionService {
             Session session = createAndSave(sessionDTO.getDate(), sessionDTO.getStartTime(), sessionDTO.getEndTime(),
                     sessionDTO.getLocation(), sessionDTO.getPrivateComment(), price,
                     photographerSessionType.getCurrency(),
-                    SessionStatus.AWAITING_APPROVAL, client, photographer, null, photographerSessionType,
+                    SessionStatus.APPROVAL_PENDING, client, photographer, null, photographerSessionType,
                     photographerAddOns);
             Deposit deposit = null;
             if (photographerSessionType.getRequiresDeposit()) {
@@ -386,6 +386,37 @@ public class SessionService {
         } catch (Exception e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
+    }
+
+    @Transactional
+    public void payCashDeposit(Long sessionId, Long photographerId) {
+        Session session = findByIdThrow(sessionId);
+        if (session.getPhotographer().getId() != photographerId) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
+        }
+        if (session.getDeposit().getStatus() == DepositStatus.PAID) {
+            return;
+        }
+        session.getDeposit().setStatus(DepositStatus.PAID);
+        session.getDeposit().setPaidAt(LocalDateTime.now());
+        session.getDeposit().setMethod(PaymentMethod.CASH);
+        save(session);
+    }
+
+    @Transactional
+    public void changeSessionStatus(Long sessionId, Long photographerId, SessionStatus newSessionStatus) {
+        Session session = findByIdThrow(sessionId);
+        if (session.getPhotographer().getId() != photographerId) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
+        }
+        if (newSessionStatus == SessionStatus.BOOKED && session.getStatus() == SessionStatus.APPROVAL_PENDING) {
+            session.setStatus(newSessionStatus);
+        } else if (newSessionStatus == SessionStatus.REFUSED && session.getStatus() == SessionStatus.APPROVAL_PENDING) {
+            session.setStatus(newSessionStatus);
+            // to do check that refusing the session doesn't interfere with search,
+            // should I cancel instead ?
+        }
+        save(session);
     }
 
 }

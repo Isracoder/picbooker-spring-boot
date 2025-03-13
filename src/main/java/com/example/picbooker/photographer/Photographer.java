@@ -6,14 +6,13 @@ import java.util.List;
 import java.util.Set;
 
 import com.example.picbooker.client.Client;
-import com.example.picbooker.photo.Photo;
+import com.example.picbooker.media.Media;
 import com.example.picbooker.photographer_additionalService.PhotographerAddOn;
 import com.example.picbooker.photographer_sessionType.PhotographerSessionType;
 import com.example.picbooker.review.Review;
 import com.example.picbooker.session.Session;
 import com.example.picbooker.socialLinks.SocialLink;
 import com.example.picbooker.user.User;
-import com.example.picbooker.video.Video;
 import com.example.picbooker.workhours.WorkHour;
 
 import jakarta.persistence.CascadeType;
@@ -52,6 +51,13 @@ public class Photographer {
     @JoinColumn(name = "user_id", referencedColumnName = "id", unique = true)
     private User user;
 
+    // @OneToOne(optional = true)
+    // @JoinColumn(name = "profilePic_id", referencedColumnName = "id", unique =
+    // true)
+    // private Media profilePhoto;
+    @Column(nullable = true)
+    private String profilePhotoUrl;
+
     @Column
     private String personalName;
 
@@ -62,11 +68,11 @@ public class Photographer {
     private String bio; // optional
 
     @Column
-    private Integer bufferTimeMinutes; // buffer time between each sesion and the next
+    private Integer bufferTimeMinutes; // buffer time between each session and the next
 
     @Column
     private Integer minimumNoticeBeforeSessionMinutes;
-    // minimum notice time before booking a sesson in minutes ;
+    // minimum notice time before booking a session in minutes ;
 
     // reviews clients wrote about me
     @Default
@@ -97,19 +103,14 @@ public class Photographer {
     @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     List<PhotographerSessionType> sessionTypes = new ArrayList<>();
 
-    // my workhours
+    // my workHours
     @Default
     @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
-    List<WorkHour> workhours = new ArrayList<>();
+    List<WorkHour> workHours = new ArrayList<>();
 
     // my photos
     @Default
     @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    List<Photo> photos = new ArrayList<>();
-
-    // my videos
-    @Default
-    @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    List<Video> videos = new ArrayList<>();
+    List<Media> mediaUploads = new ArrayList<>();
 
 }

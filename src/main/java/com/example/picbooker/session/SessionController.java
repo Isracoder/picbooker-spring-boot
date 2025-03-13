@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.picbooker.ApiResponse;
 import com.example.picbooker.client.ClientService;
+import com.example.picbooker.photographer.Photographer;
 import com.example.picbooker.sessionType.SessionTypeName;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserService;
@@ -56,13 +57,13 @@ public class SessionController {
                 sessionService.cancelReservation(bookingId);
                 return ApiResponse.<String>builder()
                                 .content("not implemented")
-                                .status(HttpStatus.OK)
+                                .status(HttpStatus.NOT_IMPLEMENTED)
                                 .build();
 
         }
 
-        @PutMapping("/{id}/additional-services")
-        public ApiResponse<String> addAddOnsToSession(@PathVariable("id") long sessionId) {
+        @PutMapping("/{sessionId}/additional-services")
+        public ApiResponse<String> addAddOnsToSession(@PathVariable("sessionId") long sessionId) {
                 // add additional services in reqbody
                 // to do implement
                 // sessionService.addAddOnsToSessions(sessionId);
@@ -73,12 +74,27 @@ public class SessionController {
 
         }
 
-        @PutMapping("/{id}/deposit")
-        public ApiResponse<String> addDeposit(@PathVariable("id") long sessionId) {
-                // add deposit info in req body : amount, currency, paidAt, method,
-                // is this only for cash deposit ?
+        @PutMapping("/{sessionId}/cash-deposit")
+        public ApiResponse<String> addDeposit(@PathVariable("sessionId") long sessionId) {
+                Photographer photographer = UserService
+                                .getPhotographerFromUserThrow(UserService.getLoggedInUserThrow());
+
+                sessionService.payCashDeposit(sessionId, photographer.getId());
                 return ApiResponse.<String>builder()
-                                .content("not implemented")
+                                .content("Success")
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @PatchMapping("/{sessionId}/status")
+        public ApiResponse<String> modifyBooking(@PathVariable("sessionId") long sessionId,
+                        @RequestBody SessionStatus sessionStatus) {
+                Photographer photographer = UserService
+                                .getPhotographerFromUserThrow(UserService.getLoggedInUserThrow());
+
+                sessionService.changeSessionStatus(sessionId, photographer.getId(), sessionStatus);
+                return ApiResponse.<String>builder()
+                                .content("Success. New status: " + sessionStatus)
                                 .status(HttpStatus.OK)
                                 .build();
         }
@@ -97,17 +113,16 @@ public class SessionController {
                                 .build();
         }
 
-        @PatchMapping("/booking/{bookingId}")
-        public ApiResponse<String> modifyBooking(@PathVariable("bookingId") long bookingId) {
-                // should I split for photographer and client ? maybe this for client
-                // client adds services, comment/request
-                // photographer adds deposit ?
-                // sessionService.
-                return ApiResponse.<String>builder()
-                                .content("not implemented")
-                                .status(HttpStatus.OK)
-                                .build();
-        }
+        // @PatchMapping("/booking/{bookingId}")
+        // public ApiResponse<String> modifyBooking(@PathVariable("bookingId") long
+        // bookingId) {
+        // // should I split for photographer and client ? maybe this for client
+        // // client adds services later on, comment/request
+        // return ApiResponse.<String>builder()
+        // .content("not implemented")
+        // .status(HttpStatus.OK)
+        // .build();
+        // }
 
         // maybe add /:status to get past, upcoming, pending , etc (prob for bookings
         // not sessions)
