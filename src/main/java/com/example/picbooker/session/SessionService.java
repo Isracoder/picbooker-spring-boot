@@ -26,6 +26,7 @@ import com.example.picbooker.deposit.Deposit;
 import com.example.picbooker.deposit.DepositService;
 import com.example.picbooker.deposit.DepositStatus;
 import com.example.picbooker.deposit.PaymentMethod;
+import com.example.picbooker.payments.StripeConnectService;
 import com.example.picbooker.photographer.Photographer;
 import com.example.picbooker.photographer.PhotographerMapper;
 import com.example.picbooker.photographer.PhotographerService;
@@ -54,6 +55,9 @@ public class SessionService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private StripeConnectService stripeConnectService;
 
     @Autowired
     private PhotographerSessionTypeService photographerSessionTypeService;
@@ -235,7 +239,7 @@ public class SessionService {
 
                 deposit = depositService.createAndSave(session, photographerSessionType.getDepositAmount(),
                         photographerSessionType.getCurrency(), null, DepositStatus.UNPAID,
-                        (sessionDTO.getPaymentMethod()));
+                        (sessionDTO.getPaymentMethod()), null);
                 session.setDeposit(deposit);
             }
 
@@ -333,17 +337,24 @@ public class SessionService {
         // generate it as link ?
     }
 
-    public void approveSessionRequest(Long sessionId) {
+    public void approveSessionRequest(Long sessionId, Long photographerId) {
         try {
             Session session = sessionRepository.findById(sessionId)
                     .orElseThrow(() -> new RuntimeException("Session not found"));
+            if (session.getPhotographer().getId() != photographerId) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
+            }
             session.setStatus(SessionStatus.BOOKED);
             sessionRepository.save(session);
 
             if (!isNull(session.getDeposit()) && session.getDeposit().getMethod() != PaymentMethod.CASH) {
 
                 // Send payment link to client
-                String paymentLink = "http://your-frontend-url.com/payment/" + sessionId;
+                // (Long sessionId, Long photographerId, Long amountInCents, String currency)
+                String paymentLink = stripeConnectService.getClientCheckoutLink(sessionId, photographerId,
+                        StripeConnectService.getSmallestAmountForCurrency(session.getDeposit().getAmount(),
+                                session.getCurrency()),
+                        session.getDeposit().getCurrency().getCurrencyCode().toLowerCase());
                 emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Session Approved",
                         "Your Session Request was approved by the photographer.\nPlease pay your deposit here: "
                                 + paymentLink

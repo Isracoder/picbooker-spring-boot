@@ -50,6 +50,9 @@ public class Deposit {
     private LocalDateTime paidAt;
 
     @Column
+    private String stripePaymentIntentId;
+
+    @Column
     private DepositStatus status;
 
     @Column

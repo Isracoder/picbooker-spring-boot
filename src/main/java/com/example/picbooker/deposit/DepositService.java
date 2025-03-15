@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.example.picbooker.ApiException;
+import com.example.picbooker.payments.StripeConnectService;
 import com.example.picbooker.session.Session;
 import com.example.picbooker.system_message.EmailService;
 import com.stripe.Stripe;
@@ -40,15 +41,15 @@ public class DepositService {
 
     public Deposit create(Session session, Double amount, Currency currency, LocalDateTime paidAt,
             DepositStatus depositStatus,
-            PaymentMethod method) {
+            PaymentMethod method, String stripePaymentIntentId) {
 
-        return new Deposit(null, session, amount, currency, paidAt, depositStatus, method);
+        return new Deposit(null, session, amount, currency, paidAt, stripePaymentIntentId, depositStatus, method);
     }
 
     public Deposit createAndSave(Session session, Double amount, Currency currency, LocalDateTime paidAt,
             DepositStatus depositStatus,
-            PaymentMethod method) {
-        return save(create(session, amount, currency, paidAt, depositStatus, method));
+            PaymentMethod method, String stripePaymentIntentId) {
+        return save(create(session, amount, currency, paidAt, depositStatus, method, stripePaymentIntentId));
     }
 
     public Deposit save(Deposit deposit) {
@@ -63,25 +64,31 @@ public class DepositService {
         return depositRepository.findById(id).orElseThrow();
     }
 
-    public String createPaymentIntent(Session session, long amount) throws StripeException {
+    public PaymentIntent createPaymentIntent(Session session, long amount) throws StripeException {
         Deposit deposit = session.getDeposit();
         if (isNull(deposit) || deposit.getMethod() == PaymentMethod.CASH) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Deposit not required or not requested in this method");
         }
+        if (isNull(session.getPhotographer().getStripeAccountId())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Photographer hasn't enabled online payment");
+        }
+
         PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-                // .setAmount(deposit.getAmount() * deposit.getCurrency()) // Amount in smallest
-                // currency value
-                .setCurrency(deposit.getCurrency().getCurrencyCode())
+                // to do set amount
+                .setAmount(
+                        StripeConnectService.getSmallestAmountForCurrency(deposit.getAmount(), deposit.getCurrency()))
+                .setCurrency(deposit.getCurrency().getCurrencyCode().toLowerCase()) // expects lowercase
                 .putMetadata("booking_id", session.getId().toString())
-                .setTransferData(
-                        PaymentIntentCreateParams.TransferData.builder()
-                                .setDestination(session.getPhotographer().getId().toString())
-                                .build())
+                .setTransferData(PaymentIntentCreateParams.TransferData.builder()
+                        .setDestination(session.getPhotographer().getStripeAccountId())
+                        .build())
                 .setDescription("Deposit for booking ID: " + session.getId() + ", with deposit id: " + deposit.getId())
                 .build();
 
         PaymentIntent paymentIntent = PaymentIntent.create(params);
-        return paymentIntent.getClientSecret();
+        deposit.setStripePaymentIntentId(paymentIntent.getId()); // to think of encrypting
+        // return paymentIntent.getClientSecret();
+        return paymentIntent;
     }
 
 }
