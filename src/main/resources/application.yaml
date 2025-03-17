@@ -23,6 +23,10 @@ server :
   error:
     include-message: always
 spring:
+  servlet:
+    multipart:
+      max-file-size: 35MB
+      max-request-size: 35MB
   application:
     name: paranoia-zone
   datasource:

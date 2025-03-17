@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 
 import java.io.IOException;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -30,11 +31,16 @@ import com.example.picbooker.user.UserService;
 @RequestMapping("/api/media")
 public class MediaController {
     private final MediaService mediaService;
-    private final MediaRepository mediaRepository;
 
-    public MediaController(MediaService mediaService, MediaRepository mediaRepository) {
+    @Value("${spring.servlet.multipart.max-file-size}")
+    private String maxFileSize; // 35MB
+
+    @Value("${spring.servlet.multipart.max-request-size}")
+    private String maxRequestSize; // 35MG
+
+    public MediaController(MediaService mediaService) {
         this.mediaService = mediaService;
-        this.mediaRepository = mediaRepository;
+
     }
 
     @PostMapping(value = "/gallery", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -44,8 +50,23 @@ public class MediaController {
             @RequestPart("mediaType") String mediaType) {
         Photographer photographer = UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow());
 
-        if (isNull(file))
+        if (isNull(file)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Null upload not permitted");
+        }
+
+        // Validate file size (e.g., 50MB limit)
+        long maxFileSizeBytes = Integer.valueOf(maxFileSize.substring(0, 2)) * 1024 * 1024; // 305B in bytes
+        if (file.getSize() > maxFileSizeBytes) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "File size exceeds the maximum allowed limit of " + maxFileSize);
+        }
+
+        // Validate media type (optional)
+        if (!mediaType.equals("PHOTO") && !mediaType.equals("VIDEO")) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid media type. Allowed types: PHOTO, VIDEO");
+        }
+
+        // Upload the media
         Media media = mediaService.uploadMediaForPhotographerGallery(photographer, file,
                 com.example.picbooker.media.MediaType.valueOf(mediaType), description);
 
@@ -53,7 +74,6 @@ public class MediaController {
                 .content(media)
                 .status(HttpStatus.OK)
                 .build();
-
     }
 
     @PostMapping("/profile")
@@ -97,9 +117,10 @@ public class MediaController {
 
     }
 
-    @DeleteMapping("/{id}")
-    public ApiResponse<String> deleteMedia(@PathVariable Long id) {
-        mediaService.delete(id, UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()).getId());
+    @DeleteMapping("/{mediaId}")
+    public ApiResponse<String> deleteMedia(@PathVariable("mediaId") Long mediaId) {
+        mediaService.delete(mediaId,
+                UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()).getId());
         return ApiResponse.<String>builder()
                 .content("Successful deletion")
                 .status(HttpStatus.OK)

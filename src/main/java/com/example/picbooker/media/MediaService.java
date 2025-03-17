@@ -1,5 +1,7 @@
 package com.example.picbooker.media;
 
+import static java.util.Objects.isNull;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.UUID;
@@ -19,7 +21,9 @@ import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
+import com.google.cloud.storage.StorageException;
 
+import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 
 @Service
@@ -27,6 +31,9 @@ public class MediaService { // to think rename to media service
 
     @Autowired
     private MediaRepository mediaRepository;
+
+    @Autowired
+    private EntityManager entityManager;
 
     private final Storage storage;
 
@@ -55,10 +62,25 @@ public class MediaService { // to think rename to media service
 
     }
 
+    @Transactional
     private void deleteFile(String fileUrl) {
-        String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
-        BlobId blobId = BlobId.of(bucketName, fileName);
-        storage.delete(blobId);
+        try {
+            String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+            fileName = fileName.split("\\?")[0]; // Remove query parameters
+            System.out.println("Extracted file name: " + fileName); // Debugging
+
+            BlobId blobId = BlobId.of(bucketName, fileName);
+            boolean deleted = storage.delete(blobId);
+
+            if (deleted) {
+                System.out.println("File deleted successfully: " + fileName);
+            } else {
+                System.out.println("File not found or could not be deleted: " + fileName);
+            }
+        } catch (StorageException e) {
+            System.err.println("Error deleting file from Firebase Storage: " + e.getMessage());
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete file from Firebase Storage");
+        }
     }
 
     public Media findByIdThrow(Long mediaId) {
@@ -93,12 +115,19 @@ public class MediaService { // to think rename to media service
 
     @Transactional
     public void delete(long id, Long photographerId) {
-        Media media = findByIdThrow(id);
-        if (media.getPhotographer().getId() != photographerId) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
+        try {
+            Media media = findByIdThrow(id);
+            Photographer photographer = media.getPhotographer();
+            if (photographer.getId() != photographerId) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
+            }
+            deleteFile(media.getMediaUrl());
+            photographer.getMediaUploads().remove(media);
+            mediaRepository.deleteById(id);
+        } catch (Exception e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong during deletion");
         }
-        deleteFile(media.getMediaUrl());
-        mediaRepository.deleteById(id);
+
     }
 
     public Media uploadMediaForPhotographerGallery(Photographer photographer, MultipartFile file,
@@ -115,7 +144,14 @@ public class MediaService { // to think rename to media service
     @Transactional
     public Media uploadProfilePicture(Photographer photographer, MultipartFile file) {
         try {
+            Media previousPhoto = getProfilePicturePhotographer(photographer.getId());
             String url = uploadFile(file, MediaType.PROFILE_PICTURE);
+            if (!isNull(previousPhoto)) {
+                deleteFile(previousPhoto.getMediaUrl()); // to delete from firebase
+                previousPhoto.setMediaUrl(url);
+                return mediaRepository.save(previousPhoto); // Save the updated entity
+            }
+
             return createAndSave(photographer, url, "Profile Picture", MediaType.PROFILE_PICTURE);
         } catch (IOException e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to convert or upload file");
