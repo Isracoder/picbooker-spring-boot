@@ -149,7 +149,7 @@ public class GlobalExceptionHandler {
         System.err.println("Missing token: " + ex.getMessage());
 
         return ApiResponse.<String>builder()
-                .content("Token is missing.")
+                .content("Request Parameter is missing.")
                 .status(HttpStatus.BAD_REQUEST)
                 .build();
 

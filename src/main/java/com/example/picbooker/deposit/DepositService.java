@@ -7,34 +7,40 @@ import java.util.Currency;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.example.picbooker.ApiException;
 import com.example.picbooker.payments.StripeConnectService;
 import com.example.picbooker.session.Session;
-import com.example.picbooker.system_message.EmailService;
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import com.stripe.param.PaymentIntentCreateParams;
 
+import io.github.cdimascio.dotenv.Dotenv;
 import jakarta.annotation.PostConstruct;
 
 @Service
 public class DepositService {
 
-    @Value("${stripe.api.key}")
-    private String stripeApiKey;
+    // @Value("${stripe.api.key}")
+    // private String stripeApiKey;
 
-    @Autowired
-    private EmailService emailService;
+    private final String stripeApiKey;
+
+    public DepositService() {
+        Dotenv dotenv = Dotenv.load();
+        this.stripeApiKey = dotenv.get("STRIPE_API_KEY");
+    }
 
     @PostConstruct
     public void init() {
         Stripe.apiKey = stripeApiKey;
     }
+
+    // @Autowired
+    // private EmailService emailService;
 
     @Autowired
     private DepositRepository depositRepository;

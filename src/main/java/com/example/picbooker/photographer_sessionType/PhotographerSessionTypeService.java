@@ -47,7 +47,8 @@ public class PhotographerSessionTypeService {
     }
 
     public PhotographerSessionType findByIdThrow(Long id) {
-        return photographerSessionTypeRepository.findById(id).orElseThrow();
+        return photographerSessionTypeRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Photographer session type not found"));
     }
 
     public PhotographerSessionType save(PhotographerSessionType photographerSessionType) {
@@ -75,7 +76,7 @@ public class PhotographerSessionTypeService {
     // to think paginate these 2
     public List<PhotographerSessionType> findByPhotographerCityAndType(String city,
             SessionTypeName type) {
-        return photographerSessionTypeRepository.findByPhotographer_CityIgnoreCaseAndType(city, type);
+        return photographerSessionTypeRepository.findByTypeAndPhotographer_User_CityIgnoreCase(type, city.trim());
     }
 
     public List<PhotographerSessionType> findByType(SessionTypeName type) {

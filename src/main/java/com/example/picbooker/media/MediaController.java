@@ -1,5 +1,7 @@
 package com.example.picbooker.media;
 
+import static java.util.Objects.isNull;
+
 import java.io.IOException;
 
 import org.springframework.data.domain.Page;
@@ -7,21 +9,25 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.example.picbooker.ApiException;
 import com.example.picbooker.ApiResponse;
 import com.example.picbooker.photographer.Photographer;
 import com.example.picbooker.user.UserService;
 
 @RestController
-@RequestMapping("/media")
+@RequestMapping("/api/media")
 public class MediaController {
     private final MediaService mediaService;
     private final MediaRepository mediaRepository;
@@ -31,14 +37,17 @@ public class MediaController {
         this.mediaRepository = mediaRepository;
     }
 
-    @PostMapping("/gallery")
-    public ApiResponse<Media> uploadMedia(
-            @RequestParam("file") MultipartFile file,
-            @RequestParam("type") MediaType mediaType,
-            @RequestParam("description") String description) throws IOException {
+    @PostMapping(value = "/gallery", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ApiResponse<Media> uploadPhotoToGallery(
+            @RequestPart("file") MultipartFile file,
+            @RequestPart("description") String description,
+            @RequestPart("mediaType") String mediaType) {
         Photographer photographer = UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow());
 
-        Media media = mediaService.uploadMediaForPhotographerGallery(photographer, file, mediaType, description);
+        if (isNull(file))
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Null upload not permitted");
+        Media media = mediaService.uploadMediaForPhotographerGallery(photographer, file,
+                com.example.picbooker.media.MediaType.valueOf(mediaType), description);
 
         return ApiResponse.<Media>builder()
                 .content(media)
@@ -49,9 +58,11 @@ public class MediaController {
 
     @PostMapping("/profile")
     public ApiResponse<Media> uploadProfilePicture(
-            @RequestParam("file") MultipartFile file) throws IOException {
+            @RequestBody MultipartFile file) throws IOException {
         Photographer photographer = UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow());
 
+        if (isNull(file))
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Null photo upload not permitted");
         Media media = mediaService.uploadProfilePicture(photographer, file);
 
         return ApiResponse.<Media>builder()

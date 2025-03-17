@@ -20,8 +20,7 @@ public interface PhotographerSessionTypeRepository extends JpaRepository<Photogr
         List<PhotographerSessionType> findByPhotographerInAndType(List<Photographer> photographers,
                         SessionTypeName type);
 
-        List<PhotographerSessionType> findByPhotographer_CityIgnoreCaseAndType(String city,
-                        SessionTypeName type);
+        List<PhotographerSessionType> findByTypeAndPhotographer_User_CityIgnoreCase(SessionTypeName type, String city);
 
         List<PhotographerSessionType> findByType(
                         SessionTypeName type);

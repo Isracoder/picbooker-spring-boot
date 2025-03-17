@@ -14,7 +14,10 @@ public class DotenvConfig {
                 .filename(".env") // Specify the .env file name if not in the default location
                 .load();
 
-        dotenv.entries().forEach(entry -> System.setProperty(entry.getKey(), entry.getValue()));
+        dotenv.entries().forEach(entry -> {
+            // System.out.println(entry.getKey());
+            System.setProperty(entry.getKey(), entry.getValue());
+        });
 
     }
 }

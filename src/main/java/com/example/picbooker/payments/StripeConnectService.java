@@ -33,11 +33,13 @@ public class StripeConnectService {
         @Value("${stripe.api.key}")
         private String stripeApiKey;
 
-        @Value("${frontend.successUrl}") // e.g., https://yourapp.com/payment-success?sessionId={CHECKOUT_SESSION_ID}
-        private String successUrl;
+        // to do change to variable for prod
+        // @Value("${frontend.successUrl}") // e.g.,
+        // https://yourapp.com/payment-success?sessionId={CHECKOUT_SESSION_ID}
+        private String successUrl = "http://localhost:8080/api/auth/hi?value=success";
 
-        @Value("${frontend.cancelUrl}") // e.g., https://yourapp.com/payment-cancel
-        private String cancelUrl;
+        // @Value("${frontend.cancelUrl}") // e.g., https://yourapp.com/payment-cancel
+        private String cancelUrl = "http://localhost:8080/api/auth/hi?value=cancel";
 
         @Autowired
         private PhotographerService photographerService;

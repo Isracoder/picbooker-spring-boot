@@ -309,7 +309,7 @@ public class PhotographerService {
     }
 
     public List<Photographer> findByCity(String city) {
-        return photographerRepository.findByCityIgnoreCase(city);
+        return photographerRepository.findByUser_CityIgnoreCase(city);
     }
 
     public String uploadProfilePhoto(MultipartFile file) {

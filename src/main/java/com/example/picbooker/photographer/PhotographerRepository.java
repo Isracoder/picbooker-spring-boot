@@ -14,5 +14,5 @@ public interface PhotographerRepository extends JpaRepository<Photographer, Long
 
     Optional<Photographer> findByUser(User user);
 
-    List<Photographer> findByCityIgnoreCase(String city);
+    List<Photographer> findByUser_CityIgnoreCase(String city);
 }

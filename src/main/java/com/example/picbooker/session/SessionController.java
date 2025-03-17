@@ -126,12 +126,13 @@ public class SessionController {
 
         // maybe add /:status to get past, upcoming, pending , etc (prob for bookings
         // not sessions)
-        @GetMapping("/slots/{sessionTypeId}/") // GET /api/sessions/slots/123?date=2024-12-31
+        @GetMapping("/appointments/{sessionTypeId}") // GET /api/sessions/slots/123?date=2024-12-31
         public ApiResponse<List<AppointmentDTO>> getAvailableAppointments(
-                        @PathVariable Long sessionTypeId,
+                        @PathVariable("sessionTypeId") Long sessionTypeId,
                         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 
                 // currently null ,
+                System.out.println("In slots function");
                 List<AppointmentDTO> appointments = sessionService.getAvailableAppointments(sessionTypeId, date);
 
                 return ApiResponse.<List<AppointmentDTO>>builder()
@@ -154,9 +155,10 @@ public class SessionController {
         }
 
         @GetMapping("/possibles") // maybe get photographers ?
-        public ApiResponse<List<SessionSearchDTO>> getPossiblesForSearch(@RequestParam("city") String city,
+        public ApiResponse<List<SessionSearchDTO>> getPossiblesForSearch(
+                        @RequestParam(name = "city", required = false) String city,
                         @RequestParam("type") String sessionType,
-                        @RequestParam("date") LocalDate date,
+                        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                         @RequestParam(name = "minPrice", required = false) Double minPrice,
                         @RequestParam(name = "maxPrice", required = false) Double maxPrice,
                         @RequestParam(name = "recommended", defaultValue = "false") Boolean recommended) {

@@ -8,6 +8,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -45,6 +47,7 @@ public class PhotographerSessionType {
     private Photographer photographer;
 
     @Column
+    @Enumerated(EnumType.STRING)
     private SessionTypeName type;
 
     @Column

@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -121,7 +122,7 @@ public class ChatService {
 
     @Transactional
     public void markChatAsRead(Long userId, Long chatRoomId) {
-        ChatParticipant participant = chatParticipantRepository.findByUserAndChat(userId, chatRoomId);
+        ChatParticipant participant = chatParticipantRepository.findByUser_IdAndChatRoom_Id(userId, chatRoomId);
         if (isNull(participant)) {
             throw new ApiException(HttpStatus.NOT_FOUND, "User or Room not found.");
         }
@@ -198,7 +199,8 @@ public class ChatService {
     }
 
     public List<ChatMessageDTO> getLastMessages(Long chatRoomId, Integer limit) {
-        return chatMessageRepository.findLastMessagesByChatRoom(chatRoomId, limit).stream()
+        return chatMessageRepository.findMessagesByChatRoom_IdOrderBySentAtDesc(chatRoomId, Pageable.ofSize(limit))
+                .stream()
                 .map(this::toChatMessageResponse).toList();
     }
 

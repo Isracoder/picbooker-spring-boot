@@ -1,6 +1,7 @@
 package com.example.picbooker.media;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.picbooker.ApiException;
 import com.example.picbooker.photographer.Photographer;
+import com.google.cloud.storage.Acl;
+import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
@@ -42,9 +45,14 @@ public class MediaService { // to think rename to media service
         BlobId blobId = BlobId.of(bucketName, fileName);
         BlobInfo blobInfo = BlobInfo.newBuilder(blobId).setContentType(file.getContentType()).build();
 
-        storage.create(blobInfo, file.getBytes());
+        Blob blob = storage.create(blobInfo, file.getBytes());
+        // to make files public
+        blob.toBuilder().setAcl(Collections.singletonList(Acl.of(Acl.User.ofAllUsers(), Acl.Role.READER))).build()
+                .update();
 
-        return "https://storage.googleapis.com/" + bucketName + "/" + fileName;
+        // return "https://storage.googleapis.com/" + bucketName + "/" + fileName;
+        return blob.getMediaLink(); // Returns a publicly accessible URL
+
     }
 
     private void deleteFile(String fileUrl) {
