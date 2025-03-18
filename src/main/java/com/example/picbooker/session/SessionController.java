@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -22,8 +23,6 @@ import com.example.picbooker.photographer.Photographer;
 import com.example.picbooker.sessionType.SessionTypeName;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserService;
-
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 
 // to think naming , sessions become appointments and use term bookings for booked ? 
 // maybe use reservation 
@@ -105,24 +104,13 @@ public class SessionController {
                 // is this only for cash deposit ?
                 User user = UserService.getLoggedInUserThrow();
 
-                sessionService.createBooking(sessionRequest, user.getClient());
+                sessionService.createBooking(sessionRequest, UserService.getClientFromUserThrow(user));
                 // to do return booking info maybe
                 return ApiResponse.<String>builder()
                                 .content("Success")
                                 .status(HttpStatus.OK)
                                 .build();
         }
-
-        // @PatchMapping("/booking/{bookingId}")
-        // public ApiResponse<String> modifyBooking(@PathVariable("bookingId") long
-        // bookingId) {
-        // // should I split for photographer and client ? maybe this for client
-        // // client adds services later on, comment/request
-        // return ApiResponse.<String>builder()
-        // .content("not implemented")
-        // .status(HttpStatus.OK)
-        // .build();
-        // }
 
         // maybe add /:status to get past, upcoming, pending , etc (prob for bookings
         // not sessions)
@@ -137,18 +125,6 @@ public class SessionController {
 
                 return ApiResponse.<List<AppointmentDTO>>builder()
                                 .content(appointments)
-                                .status(HttpStatus.OK)
-                                .build();
-
-        }
-
-        @GetMapping("/{photographerId}")
-        public ApiResponse<?> getAvailableBetween(@PathVariable("photographerId") long id) {
-
-                // get sessions for photographer
-                // send between dates
-                return ApiResponse.<String>builder()
-                                .content("Not implemented")
                                 .status(HttpStatus.OK)
                                 .build();
 

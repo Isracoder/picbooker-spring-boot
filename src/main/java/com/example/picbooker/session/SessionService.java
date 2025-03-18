@@ -221,6 +221,8 @@ public class SessionService {
 
             if (isNull(client))
                 throw new ApiException(HttpStatus.BAD_REQUEST, "Client must not be null");
+            System.out.println(sessionDTO.getPhotographerId() + " , " + sessionDTO.getPhotographerSessionTypeId()
+                    + " , " + sessionDTO.getPhotographerAddOnIds());
             // get necessary info: email, name, phone number
             // photographer, session type(length, cost, deposit)
             // what if he changed default client info ?
@@ -257,6 +259,7 @@ public class SessionService {
             session = save(session);
             return toSessionResponse(session.getId(), sessionDTO, session.getStatus(), deposit, price);
         } catch (Exception e) {
+
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Something went wrong: " + e.getLocalizedMessage());
         }

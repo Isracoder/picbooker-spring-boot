@@ -2,6 +2,7 @@ package com.example.picbooker;
 
 import java.util.NoSuchElementException;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
@@ -59,6 +60,19 @@ public class GlobalExceptionHandler {
 
         HttpStatus stat = HttpStatus.BAD_REQUEST;
         String content = "Method Argument Type Mismatch Exception";
+
+        return ApiResponse.<String>builder()
+                .content(content)
+                .status(stat)
+                .build();
+
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ApiResponse<String> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+
+        HttpStatus stat = HttpStatus.INTERNAL_SERVER_ERROR;
+        String content = "Data integrity database violation";
 
         return ApiResponse.<String>builder()
                 .content(content)
