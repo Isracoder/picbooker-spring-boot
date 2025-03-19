@@ -1,7 +1,5 @@
 package com.example.picbooker.payments;
 
-import static java.util.Objects.isNull;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -15,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.picbooker.ApiException;
 import com.example.picbooker.ApiResponse;
+import com.example.picbooker.photographer.Photographer;
 import com.example.picbooker.session.SessionService;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserService;
@@ -130,12 +129,19 @@ public class StripeController {
     @PostMapping("/onboard") // for setting up photographer details
     public ApiResponse<String> onboardPhotographer(@RequestParam String email) throws Exception {
         User user = UserService.getLoggedInUserThrow();
-        if (user.getEmail() != email || !user.getIsEmailVerified() || !isNull(user.getPhotographer())) {
+
+        System.out.println(user.getEmail() + ", " + email);
+        if (!user.getEmail().equals(email)) {
+            throw new ApiException(HttpStatus.FORBIDDEN,
+                    "Not your resource");
+        }
+        if (!user.getIsEmailVerified()) {
             throw new ApiException(HttpStatus.BAD_REQUEST,
                     "Account not suitable for payment details to be added to it.");
         }
+        Photographer photographer = UserService.getPhotographerFromUserThrow(user);
         // String accountId = stripeConnectService.createConnectedAccount(email);
-        String accountId = stripeConnectService.createStripeAccount(user.getPhotographer());
+        String accountId = stripeConnectService.createStripeAccount(photographer);
         String accountLinkUrl = stripeConnectService.getOnboardingLink(accountId);
         return ApiResponse.<String>builder()
                 .content(accountLinkUrl)

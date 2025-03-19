@@ -1,9 +1,7 @@
 package com.example.picbooker.session;
 
-import lombok.Getter;
-
-@Getter
 public enum SessionStatus {
+    // to think of changing booked to approved
     BOOKED, CANCELED, APPROVAL_PENDING, RESCHEDULED, REFUSED
 }
 // 1st requested

@@ -16,11 +16,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.picbooker.ApiException;
+import com.example.picbooker.PageDTO;
 import com.example.picbooker.client.Client;
 import com.example.picbooker.deposit.Deposit;
 import com.example.picbooker.deposit.DepositService;
@@ -97,6 +100,15 @@ public class SessionService {
 
     public Session findByIdThrow(Long id) {
         return sessionRepository.findById(id).orElseThrow();
+    }
+
+    // to page
+    public PageDTO<SessionResponse> findByPhotographerAndStatus(Long photographerId, SessionStatus status,
+            Pageable pageable) {
+        Page<Session> page = sessionRepository.findByPhotographer_IdAndStatus(photographerId, status, pageable);
+        List<SessionResponse> responses = (page.getContent().stream()
+                .map(this::toSessionResponse).toList());
+        return new PageDTO<SessionResponse>(responses, page.getTotalPages(), page.getTotalElements(), page.getNumber());
     }
 
     public Boolean hasAtLeastOneSlotOnDayOfLength(Long photographerId, LocalDate date, Integer slotLengthMinutes) {
@@ -253,6 +265,7 @@ public class SessionService {
                 session.setDeposit(deposit);
             }
 
+            // to change object not sent as I'd like check email
             emailService.sendGeneralEmail(client.getUser().getEmail(),
                     "Booking Request Sent to Photographer Confirmation",
                     sessionDTO.toString());
@@ -272,6 +285,18 @@ public class SessionService {
         return new SessionResponse(sessionId, sessionDTO, sessionStatus, deposit.getStatus(), deposit.getId(),
                 deposit.getMethod(),
                 totalPrice, deposit.getAmount());
+    }
+
+    public SessionDTO toSessionDTO(Session session) {
+        return new SessionDTO(session.getPhotographer().getId(), session.getSessionType().getId(), session.getDate(),
+                session.getStartTime(), session.getEndTime(), session.getLocation(), session.getPrivateComment(),
+                session.getDeposit().getMethod(),
+                (session.getSessionAddOns()).stream().map(addon -> addon.getId()).toList());
+    }
+
+    public SessionResponse toSessionResponse(Session session) {
+        return toSessionResponse(session.getId(), toSessionDTO(session), session.getStatus(), session.getDeposit(),
+                session.getTotalPrice());
     }
 
     // gets in one-hours slots
@@ -351,6 +376,7 @@ public class SessionService {
         // generate it as link ?
     }
 
+    @Transactional
     public void approveSessionRequest(Long sessionId, Long photographerId) {
         try {
             Session session = sessionRepository.findById(sessionId)
@@ -435,7 +461,7 @@ public class SessionService {
             throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
         }
         if (newSessionStatus == SessionStatus.BOOKED && session.getStatus() == SessionStatus.APPROVAL_PENDING) {
-            session.setStatus(newSessionStatus);
+            approveSessionRequest(sessionId, photographerId);
         } else if (newSessionStatus == SessionStatus.REFUSED && session.getStatus() == SessionStatus.APPROVAL_PENDING) {
             session.setStatus(newSessionStatus);
             // to do check that refusing the session doesn't interfere with search,

@@ -23,4 +23,9 @@ public class ProfileCompletionDTO {
     private Boolean locationSet;
     private Boolean emailVerified;
     private Boolean bioSet;
+
+    public static int getNumberOfFields() {
+        return ProfileCompletionDTO.class.getDeclaredFields().length;
+    }
+
 }

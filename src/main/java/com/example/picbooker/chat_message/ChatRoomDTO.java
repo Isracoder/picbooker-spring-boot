@@ -18,5 +18,6 @@ public class ChatRoomDTO {
     private List<Long> userIds;
     private List<ChatMessageDTO> lastMessages;
     private Integer unreadMessageCount;
+    // private List<ChatParticipantDTO> chatParticipants;
 
 }

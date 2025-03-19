@@ -3,6 +3,7 @@ package com.example.picbooker.chat_message;
 import static java.util.Objects.isNull;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,6 +116,13 @@ public class ChatService {
         return chatMessageRepository.findById(id);
     }
 
+    public ChatParticipant findChatParticipantByChatAndUserThrow(Long chatId, Long userId) {
+        ChatParticipant chatParticipant = chatParticipantRepository.findByUser_IdAndChatRoom_Id(userId, chatId);
+        if (isNull(chatParticipant))
+            throw new ApiException(HttpStatus.NOT_FOUND, "Chat participant not found");
+        return chatParticipant;
+    }
+
     public ChatMessage findChatMessageByIdThrow(Long id) {
         return chatMessageRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Message not found by Id"));
@@ -132,18 +140,31 @@ public class ChatService {
     }
 
     @Transactional
-    public void sendMessageToRoom(ChatMessageRequest messageRequest, User sender) {
+    void increaseUnreadMessageCount(Long userId, Long chatRoomId) {
+        ChatParticipant participant = chatParticipantRepository.findByUser_IdAndChatRoom_Id(userId, chatRoomId);
+        if (isNull(participant)) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "User or Room not found.");
+        }
+        participant.setUnreadMessageCount(
+                (isNull(participant.getUnreadMessageCount()) ? 0 : participant.getUnreadMessageCount()) + 1);
+        chatParticipantRepository.save(participant);
+    }
+
+    @Transactional
+    public ChatMessageDTO sendMessageToRoom(ChatMessageRequest messageRequest, User sender) {
         // how to send and mark as unread / vs read ?
         // first mark unread then if displayed call from web and mark read?
         ChatRoom chatRoom = getOrCreateChatRoom(sender.getId(), messageRequest.getRecipientId());
         ChatMessage message = toChatMessageEntity(messageRequest, sender, chatRoom);
-        saveChatMessage(message);
+        message = saveChatMessage(message);
+        increaseUnreadMessageCount(messageRequest.getRecipientId(), chatRoom.getId());
 
         Map<String, Object> data = new HashMap<>();
         data.put("userId", message.getSender().getId());
         data.put("message", message.getContent());
         socketNotificationService
                 .notifyChat(new SocketNotification<Map<String, Object>>(chatRoom.getId().toString(), data));
+        return toChatMessageResponse(message);
     }
 
     public void getChatHistoryBetweenUsers(Long user1Id, Long user2Id) {
@@ -157,6 +178,7 @@ public class ChatService {
 
     @Transactional
     public void deleteMyMessage(Long senderId, Long messageId) {
+        // to do add deletion event web socket
         if (!isMyMessage(senderId, messageId)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Not your message");
         }
@@ -194,21 +216,30 @@ public class ChatService {
         List<ChatRoom> chatRooms = chatRoomRepository.findByUserIdSortedByLastMessage(userId);
 
         return chatRooms.stream()
-                .map(chatRoom -> toChatRoomResponse(chatRoom, userId))
+                .map(chatRoom -> toChatRoomResponse(chatRoom, userId, 1))
                 .toList();
     }
 
-    public List<ChatMessageDTO> getLastMessages(Long chatRoomId, Integer limit) {
-        return chatMessageRepository.findMessagesByChatRoom_IdOrderBySentAtDesc(chatRoomId, Pageable.ofSize(limit))
+    // to continue last day 19-3
+    public List<ChatMessageDTO> getUnreadMessagesForRoomAndUser(Long chatRoomId, Long userId) {
+        ChatParticipant chatParticipant = findChatParticipantByChatAndUserThrow(chatRoomId, userId);
+        System.out.println("Unread messages: " + chatParticipant.getUnreadMessageCount());
+        if (chatParticipant.getUnreadMessageCount() == null || chatParticipant.getUnreadMessageCount() == 0)
+            return new ArrayList<>();
+        return getLastMessages(chatRoomId, Pageable.ofSize(chatParticipant.getUnreadMessageCount()));
+    }
+
+    public List<ChatMessageDTO> getLastMessages(Long chatRoomId, Pageable pageable) {
+        return chatMessageRepository.findMessagesByChatRoom_IdOrderBySentAtDesc(chatRoomId, pageable)
                 .stream()
                 .map(this::toChatMessageResponse).toList();
     }
 
-    public List<ChatMessageDTO> getLastMessagesForMyRoom(Long chatRoomId, Long userId, Integer limit) {
+    public List<ChatMessageDTO> getLastMessagesForMyRoom(Long chatRoomId, Long userId, Pageable pageable) {
         if (!inChatRoom(userId, chatRoomId)) {
             throw new ApiException(HttpStatus.FORBIDDEN, "Not your chat room.");
         }
-        return getLastMessages(chatRoomId, limit);
+        return getLastMessages(chatRoomId, pageable);
     }
 
     public ChatRoomDTO getChatRoomInfo(Long chatRoomId) {
@@ -217,7 +248,7 @@ public class ChatService {
                 .chatRoomId(chatRoomId)
                 .userIds(chatRoom.getParticipants().stream().map(participant -> participant.getId())
                         .collect(Collectors.toList()))
-                .lastMessages(getLastMessages(chatRoomId, defaultLastMessages))
+                .lastMessages(getLastMessages(chatRoomId, Pageable.ofSize(defaultLastMessages)))
                 .build();
 
     }
@@ -225,12 +256,16 @@ public class ChatService {
     public ChatRoomDTO getChatRoomInfoForPair(Long user1Id, Long user2Id) {
         ChatRoom chatRoom = findChatRoomByIdThrow(getChatRoomIdForPair(user1Id, user2Id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No Chat room found for users")));
-        return ChatRoomDTO.builder()
-                .chatRoomId(chatRoom.getId())
-                .userIds(chatRoom.getParticipants().stream().map(participant -> participant.getId())
-                        .collect(Collectors.toList()))
-                .lastMessages(getLastMessages(chatRoom.getId(), defaultLastMessages))
-                .build();
+        // return ChatRoomDTO.builder()
+        // .chatRoomId(chatRoom.getId())
+        // .userIds(chatRoom.getParticipants().stream().map(participant ->
+        // participant.getUser().getId())
+        // .collect(Collectors.toList()))
+        // .lastMessages(getLastMessages(chatRoom.getId(),
+        // Pageable.ofSize(defaultLastMessages)))
+        // // .unreadMessageCount(defaultLastMessages)
+        // .build();
+        return toChatRoomResponse(chatRoom, user1Id, defaultLastMessages);
 
     }
 
@@ -252,15 +287,24 @@ public class ChatService {
                 .build();
     }
 
-    public ChatRoomDTO toChatRoomResponse(ChatRoom chatRoom, Long userId) {
+    public ChatRoomDTO toChatRoomResponse(ChatRoom chatRoom, Long userId, Integer lastMessages) {
         return ChatRoomDTO.builder()
                 .chatRoomId(chatRoom.getId())
                 .userIds(chatRoom.getParticipants().stream()
                         .map(participant -> participant.getUser().getId()).toList())
-                .unreadMessageCount(chatRoom.getParticipants().stream().findAny()
+
+                .unreadMessageCount(chatRoom.getParticipants().stream()
+                        .filter(chatParticipant -> chatParticipant.getUser().getId() == userId).findAny()
                         .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found in chat room"))
                         .getUnreadMessageCount()) // gets unread messages for specific user
-                .lastMessages(getLastMessages(chatRoom.getId(), 1)) // think of keeping 1 or 10 ?
+                .lastMessages(
+                        getLastMessages(chatRoom.getId(), Pageable.ofSize(isNull(lastMessages) ? 1 : lastMessages))) // think
+                                                                                                                     // of
+                                                                                                                     // keeping
+                                                                                                                     // 1
+                                                                                                                     // or
+                                                                                                                     // 10
+                                                                                                                     // ?
                 .build();
     }
 

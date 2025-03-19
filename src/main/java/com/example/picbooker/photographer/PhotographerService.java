@@ -291,20 +291,22 @@ public class PhotographerService {
         Boolean profilePictureSet = photographer.getProfilePhotoUrl() != null;
         Boolean locationSet = user.getCountry() != null && user.getCity() != null;
         // to do check if has valid workHours , and if has non-private session types
-        Boolean workHoursSet = false;
-        Boolean sessionTypesSet = false;
-        Boolean portfolioSet = (photographer.getMediaUploads() != null); // check if has
-                                                                         // photo or video
+        Boolean workHoursSet = !isNull(photographer.getWorkHours()) && photographer.getWorkHours().size() > 0;
+        Boolean sessionTypesSet = !isNull(photographer.getSessionTypes()) && photographer.getSessionTypes().size() > 0;
+        // should check if not just profile
+        Boolean portfolioSet = (photographer.getMediaUploads() != null && photographer.getMediaUploads().size() > 1);
 
         Boolean socialMediaSet = photographer.getSocialLinks() != null;
         Boolean emailVerified = user.getIsEmailVerified();
         Boolean bioSet = photographer.getBio() != null;
 
-        int listOfThings = ProfileCompletionDTO.class.getClass().getDeclaredFields().length - 1;
+        int listOfThings = ProfileCompletionDTO.getNumberOfFields() - 1;
         int complete = (profilePictureSet ? 1 : 0) + (sessionTypesSet ? 1 : 0) + (workHoursSet ? 1 : 0)
                 + (socialMediaSet ? 1 : 0) + (portfolioSet ? 1 : 0) + (locationSet ? 1 : 0) + (emailVerified ? 1 : 0)
                 + (bioSet ? 1 : 0);
-        return new ProfileCompletionDTO(complete * 1.0 / listOfThings, profilePictureSet, workHoursSet, sessionTypesSet,
+        System.out.println(complete + "/" + listOfThings);
+        return new ProfileCompletionDTO((complete * 1.0) / listOfThings, profilePictureSet, workHoursSet,
+                sessionTypesSet,
                 socialMediaSet, portfolioSet, locationSet, emailVerified, bioSet);
     }
 

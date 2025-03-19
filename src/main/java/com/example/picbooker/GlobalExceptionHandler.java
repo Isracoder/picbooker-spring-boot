@@ -73,6 +73,22 @@ public class GlobalExceptionHandler {
 
         HttpStatus stat = HttpStatus.INTERNAL_SERVER_ERROR;
         String content = "Data integrity database violation";
+        System.out.println(ex.getLocalizedMessage());
+
+        return ApiResponse.<String>builder()
+                .content(content)
+                .status(stat)
+                .build();
+
+    }
+
+    // java.lang.IllegalArgumentException
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ApiResponse<String> handleIllegalArgumentException(IllegalArgumentException ex) {
+
+        HttpStatus stat = HttpStatus.BAD_REQUEST;
+        String content = "Illegal argument";
+        System.out.println(ex.getLocalizedMessage());
 
         return ApiResponse.<String>builder()
                 .content(content)

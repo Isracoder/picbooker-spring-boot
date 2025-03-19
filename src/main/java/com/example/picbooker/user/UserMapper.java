@@ -79,4 +79,12 @@ public class UserMapper {
 
     }
 
+    // public static <T> PageDTO<T> toGeneralResponsePage(Page<T> games) {
+    // List<T> gameResponses = games.getContent().stream()
+    // .collect(Collectors.toList());
+    // return new PageDTO<>(gameResponses, games.getTotalPages(),
+    // games.getTotalElements(), games.getNumber());
+
+    // }
+
 }

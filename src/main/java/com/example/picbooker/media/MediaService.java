@@ -151,7 +151,7 @@ public class MediaService { // to think rename to media service
                 previousPhoto.setMediaUrl(url);
                 return mediaRepository.save(previousPhoto); // Save the updated entity
             }
-
+            photographer.setProfilePhotoUrl(url);
             return createAndSave(photographer, url, "Profile Picture", MediaType.PROFILE_PICTURE);
         } catch (IOException e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to convert or upload file");
