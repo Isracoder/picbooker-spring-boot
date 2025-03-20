@@ -220,7 +220,6 @@ public class ChatService {
                 .toList();
     }
 
-    // to continue last day 19-3
     public List<ChatMessageDTO> getUnreadMessagesForRoomAndUser(Long chatRoomId, Long userId) {
         ChatParticipant chatParticipant = findChatParticipantByChatAndUserThrow(chatRoomId, userId);
         System.out.println("Unread messages: " + chatParticipant.getUnreadMessageCount());

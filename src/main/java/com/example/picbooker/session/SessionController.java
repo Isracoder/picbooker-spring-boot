@@ -103,15 +103,40 @@ public class SessionController {
         }
 
         @PostMapping("/booking")
-        public ApiResponse<String> addBookingRequest(@RequestBody SessionDTO sessionRequest) {
+        public ApiResponse<SessionResponse> addBookingRequest(@RequestBody SessionDTO sessionRequest) {
                 // add deposit info in req body : amount, currency, paidAt, method,
                 // is this only for cash deposit ?
                 User user = UserService.getLoggedInUserThrow();
 
-                sessionService.createBooking(sessionRequest, UserService.getClientFromUserThrow(user));
+                SessionResponse sessionResponse = sessionService.createBooking(sessionRequest,
+                                UserService.getClientFromUserThrow(user));
                 // to do return booking info maybe
-                return ApiResponse.<String>builder()
-                                .content("Success")
+                return ApiResponse.<SessionResponse>builder()
+                                .content(sessionResponse)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @PutMapping("/{bookingId}/reschedule/client")
+        public ApiResponse<SessionResponse> clientReschedule(
+                        @PathVariable Long bookingId,
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newDate) {
+                // to think of rescheduling logic based on time or date
+                SessionResponse sessionResponse = sessionService.clientReschedule(bookingId, newDate);
+                return ApiResponse.<SessionResponse>builder()
+                                .content(sessionResponse)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @PutMapping("/{bookingId}/reschedule/photographer")
+        public ApiResponse<SessionResponse> photographerReschedule(
+                        @PathVariable Long bookingId,
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newDate) {
+
+                SessionResponse sessionResponse = sessionService.photographerReschedule(bookingId, newDate);
+                return ApiResponse.<SessionResponse>builder()
+                                .content(sessionResponse)
                                 .status(HttpStatus.OK)
                                 .build();
         }

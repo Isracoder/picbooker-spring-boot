@@ -42,6 +42,8 @@ import com.example.picbooker.system_message.EmailService;
 import com.example.picbooker.workhours.WorkHour;
 import com.example.picbooker.workhours.WorkHourService;
 
+import jakarta.mail.MessagingException;
+
 @Service
 public class SessionService {
 
@@ -277,6 +279,84 @@ public class SessionService {
                     "Something went wrong: " + e.getLocalizedMessage());
         }
 
+    }
+
+    // to think of rescheduling logic based on time or date
+    public SessionResponse clientReschedule(Long sessionId, LocalDate newDate) {
+        Session session = findByIdThrow(sessionId);
+        Photographer photographer = session.getPhotographer();
+
+        // is the request within the photographer's rescheduling notice period
+        LocalDate lastAllowedRescheduleDate = session.getDate()
+                .minusDays(photographer.getMinimumNoticeBeforeSessionMinutes() / 1440); // 1440 minutes is one day
+
+        if (LocalDate.now().isAfter(lastAllowedRescheduleDate)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Rescheduling period has expired. A new session is required.");
+        }
+
+        // Update the session with the new date
+        session.setDate(newDate);
+        session.setStatus(SessionStatus.APPROVAL_PENDING);
+        sessionRepository.save(session);
+
+        // to do add notifications
+        // notificationService.notifyPhotographer(photographer, "Client has rescheduled
+        // the session to " + newDate);
+        // notificationService.notifyClient(session.getClient(), "Your session has been
+        // rescheduled successfully.");
+
+        return toSessionResponse(session);
+    }
+
+    @Transactional
+    public SessionResponse photographerReschedule(Long sessionId, LocalDate newDate) {
+        try {
+            Session session = findByIdThrow(sessionId);
+            Client client = session.getClient();
+            Photographer photographer = session.getPhotographer();
+
+            // Notify client to accept or decline the reschedule request
+
+            // boolean clientAccepted =
+            // notificationService.requestClientRescheduleApproval(client, newDate);
+            emailService.sendGeneralEmail(client.getUser().getEmail(), "Session Rescheduling Request",
+                    "Your session request has been suggested for a new appointment.\nPlease enter the app or site and process the rescheduling attempt in \"My Bookings\".");
+
+            return toSessionResponse(session);
+        } catch (MessagingException e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Error when notifying client. Try again later.");
+        }
+    }
+
+    @Transactional
+    public SessionResponse processClientReschedulingAnswer(Boolean clientAccepted, LocalDate newDate, Session session) {
+        try {
+            if (clientAccepted) {
+                session.setDate(newDate);
+                sessionRepository.save(session);
+                // notificationService.notifyClient(client, "Your session has been
+                // rescheduled.");
+                emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Rescheduling confirmed.",
+                        "Your appointment has been rescheduled successfully.");
+                emailService.sendGeneralEmail(session.getPhotographer().getUser().getEmail(), "Rescheduling confirmed.",
+                        "Session rescheduling has been approved.");
+                return toSessionResponse(session);
+            } else {
+                // to do refund deposit to client
+                // paymentService.refundDeposit(session.getDeposit());
+                emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Rescheduling rejected.",
+                        "Your appointment has been cancelled based on refused rescheduling.\nIf the deposit was paid in cash then the photographer is responsible for returning it.");
+                emailService.sendGeneralEmail(session.getPhotographer().getUser().getEmail(), "Rescheduling rejected.",
+                        "Session rescheduling has been rejected, session cancelled.\n In the case of a card deposit it will be refunded.\n You hold the responsibility of returning any cash deposits based on the terms and conditions of the site.");
+                sessionRepository.delete(session); // to think should this session be deleted or just set as cancelled ?
+                // notificationService.notifyPhotographer(photographer, "Client declined
+                // rescheduling. Deposit refunded.");
+                return null;
+            }
+        } catch (MessagingException e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Error when notifying user. Try again later.");
+        }
     }
 
     public SessionResponse toSessionResponse(Long sessionId, SessionDTO sessionDTO, SessionStatus sessionStatus,

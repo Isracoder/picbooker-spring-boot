@@ -10,7 +10,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class SocketNotification<T> {
-    private String roomId;
+    private String pathId;
     private T data;
 
 }

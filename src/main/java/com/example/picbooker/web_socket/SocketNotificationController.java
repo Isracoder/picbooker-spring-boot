@@ -19,7 +19,7 @@ public class SocketNotificationController {
     public SocketNotification<Object> notifyPlayers(@DestinationVariable String roomId,
             SocketNotification<Object> notification) {
         System.out.println("IN socket notification notify players , room id : " + roomId.toString());
-        notification.setRoomId(roomId);
+        notification.setPathId(roomId);
         System.out.println(notification.getData());
         System.out.println("Sending to destination: " + "/topic/room/" + roomId);
 
