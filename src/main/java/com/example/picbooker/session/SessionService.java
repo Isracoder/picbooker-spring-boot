@@ -37,6 +37,8 @@ import com.example.picbooker.photographer_additionalService.PhotographerAddOn;
 import com.example.picbooker.photographer_additionalService.PhotographerAddOnService;
 import com.example.picbooker.photographer_sessionType.PhotographerSessionType;
 import com.example.picbooker.photographer_sessionType.PhotographerSessionTypeService;
+import com.example.picbooker.session.reschedule.RescheduleDTO;
+import com.example.picbooker.session.reschedule.RescheduleService;
 import com.example.picbooker.sessionType.SessionTypeName;
 import com.example.picbooker.system_message.EmailService;
 import com.example.picbooker.workhours.WorkHour;
@@ -57,6 +59,9 @@ public class SessionService {
 
     @Autowired
     private PhotographerService photographerService;
+
+    @Autowired
+    private RescheduleService rescheduleService;
 
     @Autowired
     private EmailService emailService;
@@ -146,7 +151,7 @@ public class SessionService {
 
         if (photographerHasSessionBetween(photographerId, date, startTime, endTime))
             return false;
-        // to do check for blocks, buffer time
+        // to do check for blocks, buffer time, minimum
         return true;
 
     }
@@ -281,32 +286,34 @@ public class SessionService {
 
     }
 
-    // to think of rescheduling logic based on time or date
-    public SessionResponse clientReschedule(Long sessionId, LocalDate newDate) {
-        Session session = findByIdThrow(sessionId);
+    @Transactional
+    public void clientReschedule(Client client, RescheduleDTO rescheduleDTO) {
+        Session session = findByIdThrow(rescheduleDTO.getSessionId());
         Photographer photographer = session.getPhotographer();
 
-        // is the request within the photographer's rescheduling notice period
-        LocalDate lastAllowedRescheduleDate = session.getDate()
-                .minusDays(photographer.getMinimumNoticeBeforeSessionMinutes() / 1440); // 1440 minutes is one day
+        if (session.getStatus() == SessionStatus.CANCELED || session.getDate().isAfter(LocalDate.now())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Cannot reschedule a completed or canceled session.");
+        }
 
-        if (LocalDate.now().isAfter(lastAllowedRescheduleDate)) {
+        // Ensure request is before the photographer’s minimum notice time
+        int minNoticeMinutes = photographer.getMinimumNoticeBeforeSessionMinutes();
+        LocalDateTime newSessionStartTime = rescheduleDTO.getDate().atTime(rescheduleDTO.getStartTime());
+        LocalDateTime latestAllowedRescheduleTime = newSessionStartTime.minusMinutes(minNoticeMinutes);
+
+        if (LocalDateTime.now().isAfter(latestAllowedRescheduleTime)) {
             throw new ApiException(HttpStatus.BAD_REQUEST,
                     "Rescheduling period has expired. A new session is required.");
         }
+        // Check availability before proceeding
+        if (canPhotographerHaveSessionOnDayBetween(photographer.getId(), rescheduleDTO.getDate(),
+                rescheduleDTO.getStartTime(), rescheduleDTO.getEndTime())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Photographer is unavailable at the requested time.");
+        }
 
-        // Update the session with the new date
-        session.setDate(newDate);
-        session.setStatus(SessionStatus.APPROVAL_PENDING);
-        sessionRepository.save(session);
+        rescheduleService.requestReschedule(session, rescheduleDTO.getDate(), rescheduleDTO.getStartTime(),
+                rescheduleDTO.getEndTime());
 
-        // to do add notifications
-        // notificationService.notifyPhotographer(photographer, "Client has rescheduled
-        // the session to " + newDate);
-        // notificationService.notifyClient(session.getClient(), "Your session has been
-        // rescheduled successfully.");
-
-        return toSessionResponse(session);
+        // return toSessionResponse(session);
     }
 
     @Transactional
@@ -326,6 +333,64 @@ public class SessionService {
             return toSessionResponse(session);
         } catch (MessagingException e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Error when notifying client. Try again later.");
+        }
+    }
+
+    @Transactional
+    public void photographerCancel(Long sessionId, Photographer photographer) {
+        try {
+            Session session = findByIdThrow(sessionId);
+            if (LocalDate.now().isAfter(session.getDate())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Can't cancel a past booking");
+            }
+            if (session.getPhotographer().getId() != photographer.getId()) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
+            }
+
+            // to do add online Refund deposit to client
+            // stripeConnectService.refundDeposit(session.getDepositId());
+
+            // Mark session as canceled
+            session.setStatus(SessionStatus.CANCELED);
+            sessionRepository.save(session);
+
+            // Track photographer cancellations
+            // photographerPenaltyService.recordCancellation(photographerId);
+            // photographer.setCancellations(photographer.getCancellation);
+
+            // Notify client
+            // notificationService.notifyClient(session.getClient().getId(),
+            // "Your photographer has canceled your session.");
+            emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Session CANCELLATION",
+                    "Your session has been canceled by the photographer. If your deposit was paid online it has been refunded, if you paid in cash request it from the photographer.\nWe apologize for the inconvenience and will take steps to reduce this happening in the future.");
+        } catch (MessagingException e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong while sending a message");
+        }
+    }
+
+    @Transactional
+    public void clientCancel(Long sessionId, Client client) {
+        try {
+            Session session = findByIdThrow(sessionId);
+            if (LocalDate.now().isAfter(session.getDate())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Can't cancel a past booking");
+            }
+            if (session.getClient().getId() != client.getId()) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
+            }
+
+            // Mark session as canceled (deposit is forfeited)
+            session.setStatus(SessionStatus.CANCELED);
+            sessionRepository.save(session);
+
+            // Notify photographer
+            // notificationService.notifyPhotographer(session.getPhotographer().getId(),
+            // "Your client has canceled their session.");
+
+            emailService.sendGeneralEmail(session.getPhotographer().getUser().getEmail(), "Session Cancellation notice",
+                    "A client has canceled their session.");
+        } catch (MessagingException e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong while sending a message");
         }
     }
 

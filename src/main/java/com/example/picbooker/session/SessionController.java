@@ -22,8 +22,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.picbooker.ApiResponse;
 import com.example.picbooker.PageDTO;
+import com.example.picbooker.client.Client;
 import com.example.picbooker.client.ClientService;
 import com.example.picbooker.photographer.Photographer;
+import com.example.picbooker.session.reschedule.RescheduleDTO;
 import com.example.picbooker.sessionType.SessionTypeName;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserService;
@@ -118,13 +120,13 @@ public class SessionController {
         }
 
         @PutMapping("/{bookingId}/reschedule/client")
-        public ApiResponse<SessionResponse> clientReschedule(
-                        @PathVariable Long bookingId,
-                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newDate) {
-                // to think of rescheduling logic based on time or date
-                SessionResponse sessionResponse = sessionService.clientReschedule(bookingId, newDate);
-                return ApiResponse.<SessionResponse>builder()
-                                .content(sessionResponse)
+        public ApiResponse<String> clientReschedule(
+                        @RequestBody RescheduleDTO rescheduleDTO) {
+
+                Client client = UserService.getClientFromUserThrow(UserService.getLoggedInUserThrow());
+                sessionService.clientReschedule(client, rescheduleDTO);
+                return ApiResponse.<String>builder()
+                                .content("Success")
                                 .status(HttpStatus.OK)
                                 .build();
         }
@@ -137,6 +139,32 @@ public class SessionController {
                 SessionResponse sessionResponse = sessionService.photographerReschedule(bookingId, newDate);
                 return ApiResponse.<SessionResponse>builder()
                                 .content(sessionResponse)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @PutMapping("/{sessionId}/cancel/photographer")
+        public ApiResponse<String> photographerCancel(
+                        @PathVariable Long sessionId) {
+
+                Photographer photographer = UserService
+                                .getPhotographerFromUserThrow(UserService.getLoggedInUserThrow());
+                sessionService.photographerCancel(sessionId, photographer);
+                return ApiResponse.<String>builder()
+                                .content("Success")
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @PutMapping("/{sessionId}/cancel/client")
+        public ApiResponse<String> clientCancel(
+                        @PathVariable Long sessionId) {
+
+                Client client = UserService
+                                .getClientFromUserThrow(UserService.getLoggedInUserThrow());
+                sessionService.clientCancel(sessionId, client);
+                return ApiResponse.<String>builder()
+                                .content("Success")
                                 .status(HttpStatus.OK)
                                 .build();
         }

@@ -3,6 +3,7 @@ package com.example.picbooker.session;
 public enum SessionStatus {
     // to think of changing booked to approved
     BOOKED, CANCELED, APPROVAL_PENDING, RESCHEDULED, REFUSED
+    // to think of adding completed ?
 }
 // 1st requested
 // 2nd deposit pending if it needs
