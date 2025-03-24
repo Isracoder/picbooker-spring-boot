@@ -1,10 +1,11 @@
 package com.example.picbooker.review;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,13 +24,13 @@ public class ReviewService {
     }
 
     @Transactional
-    public Review create(Photographer photographer, Client client, Integer rating, String description) {
+    public Review create(Photographer photographer, Client client, Double rating, String description) {
         return new Review(null, photographer, client, rating, description, LocalDateTime.now());
 
     }
 
     @Transactional
-    public Review createAndSave(Photographer photographer, Client client, Integer rating, String description) {
+    public Review createAndSave(Photographer photographer, Client client, Double rating, String description) {
         return save(create(photographer, client, rating, description));
     }
 
@@ -43,17 +44,27 @@ public class ReviewService {
     }
 
     @Transactional(readOnly = true)
-    public List<Review> findForPhotographer(Long photographerId) {
-        return reviewRepository.findAllByPhotographer_Id(photographerId);
+    public Page<Review> findForPhotographer(Long photographerId, Pageable pageable) {
+        return reviewRepository.findAllByPhotographer_Id(photographerId, pageable);
     }
 
     @Transactional(readOnly = true)
-    public List<Review> findForClient(Long clientId) {
-        return reviewRepository.findAllByClient_Id(clientId);
+    public Page<Review> findForClient(Long clientId, Pageable pageable) {
+        return reviewRepository.findAllByClient_Id(clientId, pageable);
     }
 
-    public Review writeReview(Client client, Photographer photographer, ReviewDTO reviewDTO) {
+    @Transactional
+    public Review writeOrUpdateReview(Client client, Photographer photographer, ReviewDTO reviewDTO) {
+        Optional<Review> previousReview = reviewRepository.findAllByClient_IdAndPhotographer_Id(client.getId(),
+                photographer.getId());
+        if (previousReview.isPresent()) {
+            Review review = previousReview.get();
+            review.setRating(reviewDTO.getRating());
+            review.setComment(reviewDTO.getComment());
+            review.setLeftAt(LocalDateTime.now());
+            return save(review);
 
+        }
         return createAndSave(photographer, client, reviewDTO.getRating(), reviewDTO.getComment());
     }
 

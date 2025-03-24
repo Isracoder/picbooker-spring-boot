@@ -30,7 +30,7 @@ public class NotificationService {
     }
 
     public List<Notification> getUnreadNotifications(Long userId) {
-        return notificationRepository.findByUserIdAndReadFalseOrderByCreatedAtDesc(userId);
+        return notificationRepository.findByRecipient_IdAndReadFalseOrderByCreatedAtDesc(userId);
     }
 
     @Transactional

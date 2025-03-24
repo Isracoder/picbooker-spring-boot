@@ -8,6 +8,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -204,20 +206,9 @@ public class PhotographerService {
         // photos / videos ?
     }
 
-    public void getBookings(Long photographerId) {
-        // to do implement ;
-        // maybe not here ? or call booking service ;
-    }
+    public Page<Review> getReviews(Long photographerId, Pageable pageable) {
+        return reviewService.findForPhotographer(photographerId, pageable);
 
-    public List<Review> getReviews(Long photographerId) {
-        // to do paginate
-        return reviewService.findForPhotographer(photographerId);
-
-    }
-
-    public List<Review> getReviews(Photographer photographer) {
-        // to do map them , paginate
-        return photographer.getReviews();
     }
 
     @Transactional

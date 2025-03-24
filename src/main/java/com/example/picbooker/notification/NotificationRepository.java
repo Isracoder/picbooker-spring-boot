@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
-    List<Notification> findByUserIdAndReadFalseOrderByCreatedAtDesc(Long userId);
+    List<Notification> findByRecipient_IdAndReadFalseOrderByCreatedAtDesc(Long userId);
 }

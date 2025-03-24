@@ -34,6 +34,9 @@ public class RescheduleRequest {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column
+    private Long initiatedById;
+
     @ManyToOne
     @JoinColumn(name = "session_id", nullable = false)
     private Session session;

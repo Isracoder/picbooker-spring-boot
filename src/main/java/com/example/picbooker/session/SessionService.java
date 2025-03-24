@@ -29,7 +29,7 @@ import com.example.picbooker.deposit.Deposit;
 import com.example.picbooker.deposit.DepositService;
 import com.example.picbooker.deposit.DepositStatus;
 import com.example.picbooker.deposit.PaymentMethod;
-import com.example.picbooker.payments.StripeConnectService;
+import com.example.picbooker.notification.NotificationService;
 import com.example.picbooker.photographer.Photographer;
 import com.example.picbooker.photographer.PhotographerMapper;
 import com.example.picbooker.photographer.PhotographerService;
@@ -37,10 +37,13 @@ import com.example.picbooker.photographer_additionalService.PhotographerAddOn;
 import com.example.picbooker.photographer_additionalService.PhotographerAddOnService;
 import com.example.picbooker.photographer_sessionType.PhotographerSessionType;
 import com.example.picbooker.photographer_sessionType.PhotographerSessionTypeService;
+import com.example.picbooker.session.reschedule.RescheduleAnswer;
 import com.example.picbooker.session.reschedule.RescheduleDTO;
 import com.example.picbooker.session.reschedule.RescheduleService;
+import com.example.picbooker.session.reschedule.RescheduleStatus;
 import com.example.picbooker.sessionType.SessionTypeName;
 import com.example.picbooker.system_message.EmailService;
+import com.example.picbooker.user.User;
 import com.example.picbooker.workhours.WorkHour;
 import com.example.picbooker.workhours.WorkHourService;
 
@@ -64,10 +67,13 @@ public class SessionService {
     private RescheduleService rescheduleService;
 
     @Autowired
-    private EmailService emailService;
+    private NotificationService notificationService;
 
     @Autowired
-    private StripeConnectService stripeConnectService;
+    private EmailService emailService;
+
+    // @Autowired
+    // private StripeConnectService stripeConnectService;
 
     @Autowired
     private PhotographerSessionTypeService photographerSessionTypeService;
@@ -291,8 +297,32 @@ public class SessionService {
         Session session = findByIdThrow(rescheduleDTO.getSessionId());
         Photographer photographer = session.getPhotographer();
 
+        if (session.getClient().getId() != client.getId()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource.");
+        }
+
+        if (!canRescheduleWithInfo(photographer, session, rescheduleDTO)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Reschedule Request unable to be fulfilled.Only one at a time and valid requests permitted.");
+        }
+
+        rescheduleService.requestRescheduleAsClient(session, rescheduleDTO.getDate(), rescheduleDTO.getStartTime(),
+                rescheduleDTO.getEndTime());
+
+        // return toSessionResponse(session);
+    }
+
+    private Boolean canRescheduleWithInfo(Photographer photographer, Session session, RescheduleDTO rescheduleDTO) {
         if (session.getStatus() == SessionStatus.CANCELED || session.getDate().isAfter(LocalDate.now())) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Cannot reschedule a completed or canceled session.");
+            // throw new ApiException(HttpStatus.BAD_REQUEST, "Cannot reschedule a completed
+            // or canceled session.");
+            return false;
+        }
+
+        if (rescheduleService.existsBySessionIdAndStatus(session.getId(), RescheduleStatus.PENDING)) {
+            // throw new ApiException(HttpStatus.BAD_REQUEST, "One rescheduling request at a
+            // time");
+            return false;
         }
 
         // Ensure request is before the photographer’s minimum notice time
@@ -301,39 +331,40 @@ public class SessionService {
         LocalDateTime latestAllowedRescheduleTime = newSessionStartTime.minusMinutes(minNoticeMinutes);
 
         if (LocalDateTime.now().isAfter(latestAllowedRescheduleTime)) {
-            throw new ApiException(HttpStatus.BAD_REQUEST,
-                    "Rescheduling period has expired. A new session is required.");
+            // throw new ApiException(HttpStatus.BAD_REQUEST,
+            // "Rescheduling period has expired. A new session is required.");
+            return false;
         }
         // Check availability before proceeding
         if (canPhotographerHaveSessionOnDayBetween(photographer.getId(), rescheduleDTO.getDate(),
                 rescheduleDTO.getStartTime(), rescheduleDTO.getEndTime())) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Photographer is unavailable at the requested time.");
+            // throw new ApiException(HttpStatus.BAD_REQUEST, "Photographer is unavailable
+            // at the requested time.");
+            return false;
         }
-
-        rescheduleService.requestReschedule(session, rescheduleDTO.getDate(), rescheduleDTO.getStartTime(),
-                rescheduleDTO.getEndTime());
-
-        // return toSessionResponse(session);
+        return true;
     }
 
     @Transactional
-    public SessionResponse photographerReschedule(Long sessionId, LocalDate newDate) {
-        try {
-            Session session = findByIdThrow(sessionId);
-            Client client = session.getClient();
-            Photographer photographer = session.getPhotographer();
+    public SessionResponse photographerReschedule(Photographer photographer,
+            RescheduleDTO rescheduleDTO) {
 
-            // Notify client to accept or decline the reschedule request
+        Session session = findByIdThrow(rescheduleDTO.getSessionId());
 
-            // boolean clientAccepted =
-            // notificationService.requestClientRescheduleApproval(client, newDate);
-            emailService.sendGeneralEmail(client.getUser().getEmail(), "Session Rescheduling Request",
-                    "Your session request has been suggested for a new appointment.\nPlease enter the app or site and process the rescheduling attempt in \"My Bookings\".");
-
-            return toSessionResponse(session);
-        } catch (MessagingException e) {
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Error when notifying client. Try again later.");
+        if (session.getPhotographer().getId() != photographer.getId()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource.");
         }
+
+        if (!canRescheduleWithInfo(photographer, session, rescheduleDTO)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Reschedule Request unable to be fulfilled.Only one at a time and valid requests permitted.");
+        }
+
+        rescheduleService.requestRescheduleAsClient(session, rescheduleDTO.getDate(), rescheduleDTO.getStartTime(),
+                rescheduleDTO.getEndTime());
+
+        return toSessionResponse(session);
+
     }
 
     @Transactional
@@ -356,13 +387,15 @@ public class SessionService {
 
             // Track photographer cancellations
             // photographerPenaltyService.recordCancellation(photographerId);
-            // photographer.setCancellations(photographer.getCancellation);
+            photographer.setCancellationStrikes(
+                    isNull(photographer.getCancellationStrikes()) ? 0 : 1 + photographer.getCancellationStrikes());
 
             // Notify client
-            // notificationService.notifyClient(session.getClient().getId(),
-            // "Your photographer has canceled your session.");
+            String message = "Your session has been canceled by the photographer. If your deposit was paid online it has been refunded, if you paid in cash request it from the photographer.\nWe apologize for the inconvenience and will take steps to reduce this happening in the future.";
+            notificationService.sendNotification(session.getClient().getUser(),
+                    "Your session has been canceled by the photographer");
             emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Session CANCELLATION",
-                    "Your session has been canceled by the photographer. If your deposit was paid online it has been refunded, if you paid in cash request it from the photographer.\nWe apologize for the inconvenience and will take steps to reduce this happening in the future.");
+                    message);
         } catch (MessagingException e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong while sending a message");
         }
@@ -384,8 +417,8 @@ public class SessionService {
             sessionRepository.save(session);
 
             // Notify photographer
-            // notificationService.notifyPhotographer(session.getPhotographer().getId(),
-            // "Your client has canceled their session.");
+            notificationService.sendNotification(session.getPhotographer().getUser(),
+                    "A Client has canceled their session.");
 
             emailService.sendGeneralEmail(session.getPhotographer().getUser().getEmail(), "Session Cancellation notice",
                     "A client has canceled their session.");
@@ -395,33 +428,14 @@ public class SessionService {
     }
 
     @Transactional
-    public SessionResponse processClientReschedulingAnswer(Boolean clientAccepted, LocalDate newDate, Session session) {
-        try {
-            if (clientAccepted) {
-                session.setDate(newDate);
-                sessionRepository.save(session);
-                // notificationService.notifyClient(client, "Your session has been
-                // rescheduled.");
-                emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Rescheduling confirmed.",
-                        "Your appointment has been rescheduled successfully.");
-                emailService.sendGeneralEmail(session.getPhotographer().getUser().getEmail(), "Rescheduling confirmed.",
-                        "Session rescheduling has been approved.");
-                return toSessionResponse(session);
-            } else {
-                // to do refund deposit to client
-                // paymentService.refundDeposit(session.getDeposit());
-                emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Rescheduling rejected.",
-                        "Your appointment has been cancelled based on refused rescheduling.\nIf the deposit was paid in cash then the photographer is responsible for returning it.");
-                emailService.sendGeneralEmail(session.getPhotographer().getUser().getEmail(), "Rescheduling rejected.",
-                        "Session rescheduling has been rejected, session cancelled.\n In the case of a card deposit it will be refunded.\n You hold the responsibility of returning any cash deposits based on the terms and conditions of the site.");
-                sessionRepository.delete(session); // to think should this session be deleted or just set as cancelled ?
-                // notificationService.notifyPhotographer(photographer, "Client declined
-                // rescheduling. Deposit refunded.");
-                return null;
-            }
-        } catch (MessagingException e) {
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Error when notifying user. Try again later.");
+    public void processReschedulingAnswer(RescheduleAnswer rescheduleAnswer, User user) {
+
+        if (rescheduleAnswer.getStatus() == RescheduleStatus.APPROVED) {
+            rescheduleService.approveReschedule(findByIdThrow(rescheduleAnswer.getSessionId()), user);
+        } else if (rescheduleAnswer.getStatus() == RescheduleStatus.APPROVED) {
+            rescheduleService.rejectReschedule(findByIdThrow(rescheduleAnswer.getSessionId()), user);
         }
+
     }
 
     public SessionResponse toSessionResponse(Long sessionId, SessionDTO sessionDTO, SessionStatus sessionStatus,
@@ -534,16 +548,21 @@ public class SessionService {
 
             if (!isNull(session.getDeposit()) && session.getDeposit().getMethod() != PaymentMethod.CASH) {
 
+                System.out.println("Send card payment link");
                 // Send payment link to client
                 // (Long sessionId, Long photographerId, Long amountInCents, String currency)
-                String paymentLink = stripeConnectService.getClientCheckoutLink(sessionId, photographerId,
-                        StripeConnectService.getSmallestAmountForCurrency(session.getDeposit().getAmount(),
-                                session.getCurrency()),
-                        session.getDeposit().getCurrency().getCurrencyCode().toLowerCase());
-                emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Session Approved",
-                        "Your Session Request was approved by the photographer.\nPlease pay your deposit here: "
-                                + paymentLink
-                                + "\n\nIf 2 days or less is left until your session and you haven't yet paid the deposit your session will be cancelled according to policy.");
+                // String paymentLink = stripeConnectService.getClientCheckoutLink(sessionId,
+                // photographerId,
+                // StripeConnectService.getSmallestAmountForCurrency(session.getDeposit().getAmount(),
+                // session.getCurrency()),
+                // session.getDeposit().getCurrency().getCurrencyCode().toLowerCase());
+                // emailService.sendGeneralEmail(session.getClient().getUser().getEmail(),
+                // "Session Approved",
+                // "Your Session Request was approved by the photographer.\nPlease pay your
+                // deposit here: "
+                // + paymentLink
+                // + "\n\nIf 2 days or less is left until your session and you haven't yet paid
+                // the deposit your session will be cancelled according to policy.");
             }
         } catch (Exception e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
@@ -613,6 +632,74 @@ public class SessionService {
             // should I cancel instead ?
         }
         save(session);
+    }
+
+    public PageDTO<SessionResponse> getUpcomingSessionsForClientWhereStatusAndAfter(Long clientId,
+            SessionStatus status, LocalDate date, Pageable pageable) {
+        date = Optional.ofNullable(date).orElse(LocalDate.now());
+        if (!isNull(status)) {
+            Page<Session> results = sessionRepository.findByClient_IdAndStatusAndDateAfter(clientId, status, date,
+                    pageable);
+
+            List<SessionResponse> responses = results.getContent().stream()
+                    .map(session -> toSessionResponse(session))
+                    .collect(Collectors.toList());
+            return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
+                    results.getNumber());
+        } else {
+            Page<Session> results = sessionRepository.findByClient_IdAndDateAfter(clientId, date, pageable);
+
+            List<SessionResponse> responses = results.getContent().stream()
+                    .map(session -> toSessionResponse(session))
+                    .collect(Collectors.toList());
+            return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
+                    results.getNumber());
+        }
+    }
+
+    public PageDTO<SessionResponse> getPastForClient(Long clientId, Pageable pageable) {
+        Page<Session> results = sessionRepository.findByClient_IdAndStatusAndDateBefore(clientId,
+                SessionStatus.BOOKED, LocalDate.now(), pageable);
+
+        List<SessionResponse> responses = results.getContent().stream()
+                .map(session -> toSessionResponse(session))
+                .collect(Collectors.toList());
+        return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
+                results.getNumber());
+    }
+
+    public PageDTO<SessionResponse> getUpcomingSessionsForPhotographerWhereStatusAndAfter(Long photographerId,
+            SessionStatus status, LocalDate date, Pageable pageable) {
+        date = Optional.ofNullable(date).orElse(LocalDate.now());
+        if (!isNull(status)) {
+            Page<Session> results = sessionRepository.findByClient_IdAndStatusAndDateAfter(photographerId, status, date,
+                    pageable);
+
+            List<SessionResponse> responses = results.getContent().stream()
+                    .map(session -> toSessionResponse(session))
+                    .collect(Collectors.toList());
+            return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
+                    results.getNumber());
+        } else {
+            Page<Session> results = sessionRepository.findByClient_IdAndDateAfter(photographerId, date, pageable);
+
+            List<SessionResponse> responses = results.getContent().stream()
+                    .map(session -> toSessionResponse(session))
+                    .collect(Collectors.toList());
+            return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
+                    results.getNumber());
+        }
+    }
+
+    public PageDTO<SessionResponse> getPastForPhotographer(Long photographerId, Pageable pageable) {
+        Page<Session> results = sessionRepository.findByPhotographer_IdAndStatusAndDateBefore(photographerId,
+                SessionStatus.BOOKED, LocalDate.now(), pageable);
+
+        List<SessionResponse> responses = results.getContent().stream()
+                .map(session -> toSessionResponse(session))
+                .collect(Collectors.toList());
+        return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
+                results.getNumber());
     }
 
 }

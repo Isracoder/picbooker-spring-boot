@@ -1,10 +1,13 @@
 package com.example.picbooker.client;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -16,7 +19,8 @@ import com.example.picbooker.photographer.PhotographerService;
 import com.example.picbooker.review.Review;
 import com.example.picbooker.review.ReviewDTO;
 import com.example.picbooker.review.ReviewService;
-import com.example.picbooker.session.Session;
+import com.example.picbooker.session.SessionRepository;
+import com.example.picbooker.session.SessionStatus;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserService;
 
@@ -36,6 +40,9 @@ public class ClientService {
 
     @Autowired
     private PhotographerService photographerService;
+
+    @Autowired
+    private SessionRepository sessionRepository;
 
     public Client create(User user) {
         return new Client(null, user, 0, null, null, null);
@@ -98,22 +105,23 @@ public class ClientService {
         client.getFavoritePhotographers().remove(photographer);
     }
 
-    public List<Session> getBookings(Long clientId) {
-        return null;
-        // to do implement ;
-    }
-
     public List<Review> getReviews(Client client) {
+
         return client.getReviews();
     }
 
-    public List<Review> getReviews(Long clientId) {
-        return reviewService.findForClient(clientId);
+    public Page<Review> getReviews(Long clientId, Pageable pageable) {
+        return reviewService.findForClient(clientId, pageable);
     }
 
-    public Review writeReview(Client client, ReviewDTO reviewDTO) {
+    public Review writeOrUpdateReview(Client client, ReviewDTO reviewDTO) {
         Photographer photographer = photographerService.findByIdThrow(reviewDTO.getPhotographerId());
-        // to do check if he has a completed session with that photographer ;
-        return reviewService.writeReview(client, photographer, reviewDTO);
+        if (!sessionRepository.existsByStatusAndClient_IdAndPhotographer_IdAndDateBefore(SessionStatus.BOOKED,
+                client.getId(), photographer.getId(), LocalDate.now())) {
+
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Can't write a review for a photographer that you haven't had a session with");
+        }
+        return reviewService.writeOrUpdateReview(client, photographer, reviewDTO);
     }
 }

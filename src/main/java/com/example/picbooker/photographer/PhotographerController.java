@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,10 +18,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.picbooker.ApiException;
 import com.example.picbooker.ApiResponse;
+import com.example.picbooker.PageDTO;
 import com.example.picbooker.photographer_additionalService.PhotographerAddOn;
 import com.example.picbooker.photographer_additionalService.PhotographerAddOnDTO;
 import com.example.picbooker.photographer_sessionType.PhotographerSessionType;
@@ -26,6 +31,9 @@ import com.example.picbooker.photographer_sessionType.PhotographerSessionTypeDTO
 import com.example.picbooker.photographer_sessionType.PhotographerSessionTypeService;
 import com.example.picbooker.review.Review;
 import com.example.picbooker.security.JwtUtil;
+import com.example.picbooker.session.SessionResponse;
+import com.example.picbooker.session.SessionService;
+import com.example.picbooker.session.SessionStatus;
 import com.example.picbooker.socialLinks.SocialLink;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserService;
@@ -39,6 +47,9 @@ public class PhotographerController {
 
         @Autowired
         private PhotographerService photographerService;
+
+        @Autowired
+        private SessionService sessionService;
 
         @Autowired
         private PhotographerSessionTypeService photographerSessionTypeService;
@@ -87,13 +98,6 @@ public class PhotographerController {
                                 .status(HttpStatus.OK)
                                 .build();
         }
-
-        // GET /photographers/{id}/session-types → Get all session types for a
-        // photographer
-        // POST /photographers/{id}/session-types → Add a session type to a photographer
-        // DELETE /photographers/{id}/session-types/{sessionTypeId} → Remove a session
-        // type
-        // PUT /photographers/{id}/session-types/{sessionTypeId}
 
         @PostMapping("/session-types")
         public ApiResponse<PhotographerSessionType> setSessionTypes(
@@ -212,14 +216,26 @@ public class PhotographerController {
                                 .build();
         }
 
-        @GetMapping("/{photographerId}/bookings")
-        public ApiResponse<String> getBookings(@PathVariable("photographerId") Long photographerId) {
-                photographerService.getBookings(photographerId);
-                // to do get with from/to query params or status
-                // pending/cancelled/booked/open/etc
-                return ApiResponse.<String>builder()
-                                .content("Not implemented")
-                                .status(HttpStatus.NOT_IMPLEMENTED)
+        @GetMapping("/sessions")
+        public ApiResponse<PageDTO<SessionResponse>> getBookings(
+                        @PageableDefault Pageable pageable,
+                        @RequestParam(name = "past", defaultValue = "false") Boolean past,
+                        @RequestParam(name = "status", required = false) SessionStatus status) {
+                PageDTO<SessionResponse> responses;
+                Photographer photographer = UserService
+                                .getPhotographerFromUserThrow(UserService.getLoggedInUserThrow());
+                if (past) {
+
+                        responses = sessionService.getPastForPhotographer(photographer.getId(), pageable);
+                } else {
+                        responses = sessionService.getUpcomingSessionsForPhotographerWhereStatusAndAfter(
+                                        photographer.getId(),
+                                        status,
+                                        null, pageable);
+                }
+                return ApiResponse.<PageDTO<SessionResponse>>builder()
+                                .content(responses)
+                                .status(HttpStatus.OK)
                                 .build();
         }
 
@@ -236,10 +252,11 @@ public class PhotographerController {
         }
 
         @GetMapping("/{photographerId}/reviews")
-        public ApiResponse<List<Review>> getReviews(@PathVariable("photographerId") Long photographerId) {
+        public ApiResponse<Page<Review>> getReviews(@PathVariable("photographerId") Long photographerId,
+                        @PageableDefault Pageable pageable) {
                 // to do implement
-                List<Review> reviews = photographerService.getReviews(photographerId);
-                return ApiResponse.<List<Review>>builder()
+                Page<Review> reviews = photographerService.getReviews(photographerId, pageable);
+                return ApiResponse.<Page<Review>>builder()
                                 .content(reviews)
                                 .status(HttpStatus.OK)
                                 .build();

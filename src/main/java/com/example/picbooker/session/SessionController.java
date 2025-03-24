@@ -23,8 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.picbooker.ApiResponse;
 import com.example.picbooker.PageDTO;
 import com.example.picbooker.client.Client;
-import com.example.picbooker.client.ClientService;
 import com.example.picbooker.photographer.Photographer;
+import com.example.picbooker.session.reschedule.RescheduleAnswer;
 import com.example.picbooker.session.reschedule.RescheduleDTO;
 import com.example.picbooker.sessionType.SessionTypeName;
 import com.example.picbooker.user.User;
@@ -38,9 +38,6 @@ public class SessionController {
 
         @Autowired
         private SessionService sessionService;
-
-        @Autowired
-        private ClientService clientService;
 
         @GetMapping("/{id}")
         public ApiResponse<?> findById(@PathVariable("id") long bookingId) {
@@ -119,7 +116,7 @@ public class SessionController {
                                 .build();
         }
 
-        @PutMapping("/{bookingId}/reschedule/client")
+        @PutMapping("/reschedule/client")
         public ApiResponse<String> clientReschedule(
                         @RequestBody RescheduleDTO rescheduleDTO) {
 
@@ -131,14 +128,27 @@ public class SessionController {
                                 .build();
         }
 
-        @PutMapping("/{bookingId}/reschedule/photographer")
+        @PutMapping("/reschedule/photographer")
         public ApiResponse<SessionResponse> photographerReschedule(
-                        @PathVariable Long bookingId,
-                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate newDate) {
 
-                SessionResponse sessionResponse = sessionService.photographerReschedule(bookingId, newDate);
+                        @RequestBody RescheduleDTO rescheduleDTO) {
+                Photographer photographer = UserService
+                                .getPhotographerFromUserThrow(UserService.getLoggedInUserThrow());
+                SessionResponse sessionResponse = sessionService.photographerReschedule(photographer,
+                                rescheduleDTO);
                 return ApiResponse.<SessionResponse>builder()
                                 .content(sessionResponse)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @PutMapping("/reschedule/answer")
+        public ApiResponse<String> processReschedulingResponse(
+                        @RequestBody RescheduleAnswer response) {
+
+                sessionService.processReschedulingAnswer(response, UserService.getLoggedInUserThrow());
+                return ApiResponse.<String>builder()
+                                .content("Success")
                                 .status(HttpStatus.OK)
                                 .build();
         }
@@ -209,7 +219,7 @@ public class SessionController {
         }
 
         @GetMapping("/photographers")
-        public ApiResponse<PageDTO<SessionResponse>> getPossiblesForSearch(
+        public ApiResponse<PageDTO<SessionResponse>> getPhotographerSessions(
                         @RequestParam(name = "status", defaultValue = "APPROVAL_PENDING") String status,
                         @PageableDefault(size = 10, direction = Direction.ASC, sort = "date") Pageable pageable) {
 

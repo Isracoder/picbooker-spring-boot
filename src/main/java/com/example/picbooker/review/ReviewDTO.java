@@ -11,7 +11,7 @@ public class ReviewDTO {
 
     private Long photographerId;
     private Long bookingId;
-    private Integer rating;
+    private Double rating;
     private String comment;
     private LocalDateTime commentTime; // maybe no need to send ;
 

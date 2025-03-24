@@ -26,7 +26,7 @@ public class PhotographerMapper {
         public static Photographer toEntityFromRequest(PhotographerRequest photographerRequest, User user) {
                 Photographer photographer = Photographer.builder()
                                 .user(user)
-                                .bufferTimeMinutes(photographerRequest.getBufferTimeMinutes())
+                                .bufferTimeMinutes((photographerRequest.getBufferTimeMinutes()))
                                 .minimumNoticeBeforeSessionMinutes(
                                                 photographerRequest.getMinimumNoticeBeforeSessionMinutes())
                                 .studio(photographerRequest.getStudio())

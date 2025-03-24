@@ -69,12 +69,18 @@ public class Photographer {
     @Column
     private String bio; // optional
 
+    @Default
     @Column
-    private Integer bufferTimeMinutes; // buffer time between each session and the next
+    private Integer bufferTimeMinutes = 15; // buffer time between each session and the next
 
     @Column
-    private Integer minimumNoticeBeforeSessionMinutes;
+    @Default
+    private Integer minimumNoticeBeforeSessionMinutes = 1440 * 2; // 2 days minimum
     // minimum notice time before booking a session in minutes ;
+
+    @Column
+    @Default
+    private Integer cancellationStrikes = 0; // optional
 
     // reviews clients wrote about me
     @Default
