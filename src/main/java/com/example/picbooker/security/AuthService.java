@@ -197,6 +197,7 @@ public class AuthService {
         }
     }
 
+    @Transactional
     public UserResponse initiateRegister(UserRequest userRequest) {
         try {
 
@@ -204,9 +205,12 @@ public class AuthService {
             user.setIsEmailVerified(false); // Not enabled until 2FA is verified
             user.setPassword(SecurityConfig.passwordEncoder().encode(user.getPassword()));
             UserResponse response = userService.save(user);
+            System.out.println("User saved successfully");
             changeAndResendCode(user.getEmail(), user);
             return response;
         } catch (Exception e) {
+
+            e.printStackTrace();
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }

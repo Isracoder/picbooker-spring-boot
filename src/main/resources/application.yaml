@@ -23,6 +23,9 @@ server :
   error:
     include-message: always
 spring:
+  config: 
+  # optional:file:.env[.properties]
+    import: file:.env[.properties]
   servlet:
     multipart:
       max-file-size: 35MB

@@ -66,6 +66,7 @@ public class EmailService implements MessageSenderService {
         helper.setSubject(subject);
         helper.setText(textContent);
         emailSender.send(message);
+        System.out.println("After sending email");
     }
 
 }
