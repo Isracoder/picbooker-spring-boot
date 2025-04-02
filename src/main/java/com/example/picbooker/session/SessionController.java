@@ -105,6 +105,7 @@ public class SessionController {
         public ApiResponse<SessionResponse> addBookingRequest(@RequestBody SessionDTO sessionRequest) {
                 // add deposit info in req body : amount, currency, paidAt, method,
                 // is this only for cash deposit ?
+                System.out.println("In booking request");
                 User user = UserService.getLoggedInUserThrow();
 
                 SessionResponse sessionResponse = sessionService.createBooking(sessionRequest,

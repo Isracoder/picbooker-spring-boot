@@ -85,6 +85,9 @@ public class User implements UserDetails {
     @CreationTimestamp
     private LocalDateTime registerDate;
 
+    // @Column(nullable = true)
+    // private String profilePhotoUrl;
+
     @Column
     private Date DOB;
 

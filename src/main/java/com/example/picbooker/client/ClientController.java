@@ -109,7 +109,7 @@ public class ClientController {
                 Client client = clientService.getClientFromUserThrow(UserService.getLoggedInUserThrow());
                 clientService.addToClientFavoritePhotographers(client, photographerId);
                 return ApiResponse.<String>builder()
-                                .content("Succesfully added photographer " + photographerId + " as a favorite")
+                                .content("Successfully added photographer " + photographerId + " as a favorite")
                                 .status(HttpStatus.OK)
                                 .build();
         }
@@ -120,7 +120,7 @@ public class ClientController {
                 Client client = clientService.getClientFromUserThrow(UserService.getLoggedInUserThrow());
                 clientService.removeFromClientFavoritePhotographers(client, photographerId);
                 return ApiResponse.<String>builder()
-                                .content("Succesfully removed photographer " + photographerId + " from favorites")
+                                .content("Successfully removed photographer " + photographerId + " from favorites")
                                 .status(HttpStatus.OK)
                                 .build();
         }

@@ -45,7 +45,7 @@ public class ClientService {
     private SessionRepository sessionRepository;
 
     public Client create(User user) {
-        return new Client(null, user, 0, null, null, null);
+        return new Client(null, user, 0, null, null, null, null);
     }
 
     public Client getClientFromUserThrow(User user) {

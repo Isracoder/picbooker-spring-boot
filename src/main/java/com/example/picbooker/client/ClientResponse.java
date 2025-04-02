@@ -17,5 +17,6 @@ public class ClientResponse {
     private Long id;
     private UserResponse userResponse;
     private int pointsBalance;
+    private String personalName;
 
 }

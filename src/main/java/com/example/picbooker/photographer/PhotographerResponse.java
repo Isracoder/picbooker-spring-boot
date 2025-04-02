@@ -25,8 +25,9 @@ public class PhotographerResponse {
     private String studio;
     private String bio;
     private String personalName;
+    private String photoUrl;
 
-    private Integer bufferTimeMinutes; // buffer time between each sesion and the next
+    private Integer bufferTimeMinutes; // buffer time between each session and the next
 
     private Integer minimumNoticeBeforeSessionMinutes;
 

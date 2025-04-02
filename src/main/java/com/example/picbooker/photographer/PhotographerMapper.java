@@ -46,6 +46,7 @@ public class PhotographerMapper {
                 PhotographerResponse photographerResponse = PhotographerResponse.builder()
                                 .id(photographer.getId())
                                 .userResponse(UserMapper.toResponse(photographer.getUser()))
+                                .photoUrl(photographer.getProfilePhotoUrl())
                                 .studio(photographer.getStudio())
                                 .minimumNoticeBeforeSessionMinutes(photographer.getMinimumNoticeBeforeSessionMinutes())
                                 .bufferTimeMinutes(photographer.getBufferTimeMinutes())

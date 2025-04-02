@@ -20,6 +20,7 @@ public class SessionSearchDTO {
     private Integer durationMinutes;
     private Double depositAmount;
     private String typeOrCustomType;
+    private Long sessionTypeId;
     // , date , session.getPricePerDuration() , session.getCurrency() ,
     // session.getDurationMinutes()
     // , session.getType() ? session.getType().toString() :

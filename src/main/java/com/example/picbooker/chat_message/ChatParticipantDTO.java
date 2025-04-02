@@ -14,4 +14,7 @@ public class ChatParticipantDTO {
     private Long chatRoomId;
     private Long userId;
     private Integer unreadMessages;
+    private String username;
+    private String photoUrl;
+    private String bio;
 }

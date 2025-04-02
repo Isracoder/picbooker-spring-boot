@@ -10,6 +10,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Currency;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -212,7 +213,9 @@ public class SessionService {
                     session.getPricePerDuration(), session.getCurrency(), session.getDurationMinutes(),
                     session.getDepositAmount(),
                     session.getType() != SessionTypeName.OTHER ? session.getType().toString()
-                            : session.getCustomSessionType()));
+                            : session.getCustomSessionType(),
+                    session.getId()));
+
         }
 
         return results;
@@ -254,8 +257,10 @@ public class SessionService {
             Photographer photographer = photographerService.findByIdThrow(sessionDTO.getPhotographerId());
             PhotographerSessionType photographerSessionType = photographerSessionTypeService
                     .findByIdThrow(sessionDTO.getPhotographerSessionTypeId());
-            Set<PhotographerAddOn> photographerAddOns = photographerAddOnService
-                    .findSetByIds(sessionDTO.getPhotographerAddOnIds());
+            Set<PhotographerAddOn> photographerAddOns = sessionDTO.getPhotographerAddOnIds() != null
+                    ? photographerAddOnService
+                            .findSetByIds(sessionDTO.getPhotographerAddOnIds())
+                    : new HashSet<>();
             // to do check that addons and session type are of same currency ;
             // maybe have currency fixed in p settings.
             Double addOnPrice = 0d;

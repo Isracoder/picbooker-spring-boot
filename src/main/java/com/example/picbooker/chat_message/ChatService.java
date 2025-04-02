@@ -8,7 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -17,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.picbooker.ApiException;
+import com.example.picbooker.photographer.Photographer;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserService;
 import com.example.picbooker.web_socket.SocketNotification;
@@ -245,11 +245,19 @@ public class ChatService {
         ChatRoom chatRoom = findChatRoomByIdThrow(chatRoomId);
         return ChatRoomDTO.builder()
                 .chatRoomId(chatRoomId)
-                .userIds(chatRoom.getParticipants().stream().map(participant -> participant.getId())
-                        .collect(Collectors.toList()))
+                .participants(chatRoom.getParticipants().stream().map(this::toChatParticipantDTO).toList())
                 .lastMessages(getLastMessages(chatRoomId, Pageable.ofSize(defaultLastMessages)))
                 .build();
 
+    }
+
+    public ChatParticipantDTO toChatParticipantDTO(ChatParticipant participant) {
+        Photographer photographer = participant.getUser().getPhotographer();
+        String bio = photographer != null ? photographer.getBio() : null;
+        String photoUrl = photographer != null ? photographer.getProfilePhotoUrl() : null;
+        return new ChatParticipantDTO(participant.getId(), participant.getChatRoom().getId(),
+                participant.getUser().getId(), participant.getUnreadMessageCount(), participant.getUser().getUsername(),
+                photoUrl, bio);
     }
 
     public ChatRoomDTO getChatRoomInfoForPair(Long user1Id, Long user2Id) {
@@ -289,8 +297,8 @@ public class ChatService {
     public ChatRoomDTO toChatRoomResponse(ChatRoom chatRoom, Long userId, Integer lastMessages) {
         return ChatRoomDTO.builder()
                 .chatRoomId(chatRoom.getId())
-                .userIds(chatRoom.getParticipants().stream()
-                        .map(participant -> participant.getUser().getId()).toList())
+                .participants(chatRoom.getParticipants().stream()
+                        .map(this::toChatParticipantDTO).toList())
 
                 .unreadMessageCount(chatRoom.getParticipants().stream()
                         .filter(chatParticipant -> chatParticipant.getUser().getId() == userId).findAny()

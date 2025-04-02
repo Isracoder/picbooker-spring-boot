@@ -15,7 +15,7 @@ import lombok.Setter;
 @Builder
 public class ChatRoomDTO {
     private Long chatRoomId;
-    private List<Long> userIds;
+    private List<ChatParticipantDTO> participants;
     private List<ChatMessageDTO> lastMessages;
     private Integer unreadMessageCount;
     // private List<ChatParticipantDTO> chatParticipants;
