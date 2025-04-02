@@ -26,6 +26,10 @@ public class PhotographerResponse {
     private String bio;
     private String personalName;
     private String photoUrl;
+    @Default
+    private Double rating = 0.0;
+    @Default
+    private Integer reviews = 0;
 
     private Integer bufferTimeMinutes; // buffer time between each session and the next
 

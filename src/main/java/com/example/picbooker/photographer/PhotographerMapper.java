@@ -3,6 +3,7 @@ package com.example.picbooker.photographer;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.example.picbooker.review.Review;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserMapper;
 import com.example.picbooker.workhours.WorkHourDTO;
@@ -52,6 +53,16 @@ public class PhotographerMapper {
                                 .bufferTimeMinutes(photographer.getBufferTimeMinutes())
                                 .bio(photographer.getBio())
                                 .personalName(photographer.getPersonalName())
+                                .reviews(photographer.getReviews() == null || photographer.getReviews().isEmpty()
+                                                ? 0
+                                                : photographer.getReviews().size())
+                                .rating(
+                                                photographer.getReviews() == null || photographer.getReviews().isEmpty()
+                                                                ? 0.0
+                                                                : photographer.getReviews().stream()
+                                                                                .mapToDouble(Review::getRating)
+                                                                                .average()
+                                                                                .orElse(0.0))
                                 .workhours(photographer.getWorkHours().stream()
                                                 .map(workhour -> new WorkHourDTO(workhour.getStartTime(),
                                                                 workhour.getEndTime(), workhour.getDay()))
