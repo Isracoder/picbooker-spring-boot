@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.picbooker.ApiException;
@@ -24,7 +25,6 @@ import com.google.cloud.storage.Storage;
 import com.google.cloud.storage.StorageException;
 
 import jakarta.persistence.EntityManager;
-import jakarta.transaction.Transactional;
 
 @Service
 public class MediaService { // to think rename to media service

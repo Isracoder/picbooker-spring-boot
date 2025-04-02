@@ -9,18 +9,21 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.picbooker.ApiException;
 import com.example.picbooker.photographer.Photographer;
+import com.example.picbooker.photographer.PhotographerRepository;
 import com.example.picbooker.sessionType.SessionTypeName;
-
-import jakarta.transaction.Transactional;
 
 @Service
 public class PhotographerSessionTypeService {
 
     @Autowired
     private PhotographerSessionTypeRepository photographerSessionTypeRepository;
+
+    @Autowired
+    private PhotographerRepository photographerRepository;
 
     public PhotographerSessionType create(Photographer photographer, SessionTypeName sessionType, Double perHour,
             Currency currency, Integer duration, String description, String location, Boolean keepPrivate,
@@ -114,10 +117,10 @@ public class PhotographerSessionTypeService {
         PhotographerSessionType sessionType = findByIdThrow(sessionTypeid);
         if (sessionType.getPhotographer().getId() != photographer.getId())
             throw new ApiException(HttpStatus.BAD_REQUEST, "Not yours, No deletion authority");
+        // System.out.println(photographer.getSessionTypes().size());
         photographer.getSessionTypes().remove(sessionType);
-        // sessionType.setPhotographer(null);
-        // photographerSessionTypeRepository.delete(sessionType);
-        // photographerSessionTypeRepository.flush();
+        // System.out.println(photographer.getSessionTypes().size());
+        photographerRepository.save(photographer);
     }
 
     @Transactional

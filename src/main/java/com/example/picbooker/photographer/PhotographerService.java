@@ -12,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.example.picbooker.ApiException;
@@ -31,8 +32,6 @@ import com.example.picbooker.user.UserService;
 import com.example.picbooker.workhours.WorkHour;
 import com.example.picbooker.workhours.WorkHourDTO;
 import com.example.picbooker.workhours.WorkHourService;
-
-import jakarta.transaction.Transactional;
 
 @Service
 public class PhotographerService {
@@ -264,9 +263,10 @@ public class PhotographerService {
         PhotographerAddOn addOn = photographerAddOnService.findByIdThrow(addOnId);
         if (photographer.getId() != addOn.getPhotographer().getId())
             throw new ApiException(HttpStatus.BAD_REQUEST, "Unauthorized delete");
-        System.out.println(addOnId);
+        System.out.println(photographer.getAdditionalServices().size());
         photographer.getAdditionalServices().remove(addOn);
-        photographerAddOnService.deleteById(addOnId);
+
+        photographerRepository.save(photographer);
     }
 
     public PhotographerAddOn getAddOnByIdThrow(Long addOnId) {

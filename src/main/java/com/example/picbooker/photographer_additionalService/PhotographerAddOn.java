@@ -2,6 +2,7 @@ package com.example.picbooker.photographer_additionalService;
 
 import java.util.Currency;
 import java.util.Date;
+import java.util.Objects;
 
 import com.example.picbooker.additionalService.AddOnType;
 import com.example.picbooker.photographer.Photographer;
@@ -70,5 +71,20 @@ public class PhotographerAddOn {
     @Default
     @Column
     private Currency currency = Currency.getInstance("USD");
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        PhotographerAddOn that = (PhotographerAddOn) o;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 
 }

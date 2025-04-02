@@ -1,6 +1,7 @@
 package com.example.picbooker.photographer_sessionType;
 
 import java.util.Currency;
+import java.util.Objects;
 
 import com.example.picbooker.photographer.Photographer;
 import com.example.picbooker.sessionType.SessionTypeName;
@@ -99,6 +100,19 @@ public class PhotographerSessionType {
             this.currency = Currency.getInstance("USD");
     }
 
-    // may have photos that I can add
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
+        PhotographerSessionType that = (PhotographerSessionType) o;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 
 }

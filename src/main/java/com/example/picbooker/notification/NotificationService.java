@@ -4,12 +4,11 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.picbooker.user.User;
 import com.example.picbooker.web_socket.SocketNotification;
 import com.example.picbooker.web_socket.SocketNotificationService;
-
-import jakarta.transaction.Transactional;
 
 @Service
 public class NotificationService {
