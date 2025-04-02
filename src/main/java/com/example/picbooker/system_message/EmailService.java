@@ -1,4 +1,4 @@
-package com.example.picbooker.message;
+package com.example.picbooker.system_message;
 
 import java.time.LocalDateTime;
 
@@ -52,8 +52,21 @@ public class EmailService implements MessageSenderService {
         System.out.println("Email username : " + emailUsername);
         System.out.println("To: " + to);
         helper.setTo(to);
+
         helper.setSubject("Picbooker OTP Code");
         helper.setText("Your OTP code is: " + code);
         emailSender.send(message);
     }
+
+    public void sendGeneralEmail(String to, String subject, String textContent) throws MessagingException {
+        MimeMessage message = emailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true);
+
+        helper.setTo(to);
+        helper.setSubject(subject);
+        helper.setText(textContent);
+        emailSender.send(message);
+        System.out.println("After sending email");
+    }
+
 }

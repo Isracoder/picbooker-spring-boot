@@ -85,14 +85,14 @@ public class User implements UserDetails {
     @CreationTimestamp
     private LocalDateTime registerDate;
 
+    // @Column(nullable = true)
+    // private String profilePhotoUrl;
+
     @Column
     private Date DOB;
 
     @Column
     private Gender gender;
-
-    @Column
-    private String photoUrl;
 
     @Column
     private String country;
@@ -149,7 +149,7 @@ public class User implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // currently no authoritites/roles
+        // currently no authorities/roles
         return new ArrayList<>();
 
     }

@@ -26,11 +26,11 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import com.example.picbooker.ApiException;
-import com.example.picbooker.message.EmailService;
 import com.example.picbooker.security.OauthToken.OauthProviderType;
 import com.example.picbooker.security.passwordReset.PasswordResetDTO;
 import com.example.picbooker.security.passwordReset.PasswordResetService;
 import com.example.picbooker.security.passwordReset.PasswordResetToken;
+import com.example.picbooker.system_message.EmailService;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserMapper;
 import com.example.picbooker.user.UserOTP;
@@ -197,6 +197,7 @@ public class AuthService {
         }
     }
 
+    @Transactional
     public UserResponse initiateRegister(UserRequest userRequest) {
         try {
 
@@ -204,9 +205,12 @@ public class AuthService {
             user.setIsEmailVerified(false); // Not enabled until 2FA is verified
             user.setPassword(SecurityConfig.passwordEncoder().encode(user.getPassword()));
             UserResponse response = userService.save(user);
+            System.out.println("User saved successfully");
             changeAndResendCode(user.getEmail(), user);
             return response;
         } catch (Exception e) {
+
+            e.printStackTrace();
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
     }

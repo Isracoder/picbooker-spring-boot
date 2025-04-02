@@ -27,10 +27,10 @@ public class PhotographerRequest {
     private String personalName;
 
     @Default
-    private Integer bufferTimeMinutes = 15; // buffer time between each sesion and the next
+    private Integer bufferTimeMinutes = 15; // buffer time between each session and the next
 
     @Default
-    private Integer minimumNoticeBeforeSessionMinutes = 24 * 60; // set as one day ?
-    // minimum notice time before booking a sesson in minutes ;
+    private Integer minimumNoticeBeforeSessionMinutes = 1440 * 2; // set as two day ?
+    // minimum notice time before booking a session in minutes ;
 
 }

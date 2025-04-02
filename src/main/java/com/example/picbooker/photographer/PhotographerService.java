@@ -8,8 +8,11 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.example.picbooker.ApiException;
 import com.example.picbooker.additionalService.AddOnType;
@@ -55,10 +58,6 @@ public class PhotographerService {
     @Autowired
     private ReviewService reviewService;
 
-    public void create() {
-        // to do implement ;
-    }
-
     public Optional<Photographer> findById(Long id) {
         return photographerRepository.findById(id);
     }
@@ -87,11 +86,11 @@ public class PhotographerService {
 
     public List<WorkHourDTO> getWorkHours(Long id) {
         Photographer photographer = findByIdThrow(id);
-        if (isNull(photographer.getWorkhours()))
+        if (isNull(photographer.getWorkHours()))
             return new ArrayList<WorkHourDTO>();
 
-        return photographer.getWorkhours().stream()
-                .map(workhour -> new WorkHourDTO(workhour.getStartTime(), workhour.getEndTime(), workhour.getDay()))
+        return photographer.getWorkHours().stream()
+                .map(workHour -> new WorkHourDTO(workHour.getStartTime(), workHour.getEndTime(), workHour.getDay()))
                 .collect(Collectors.toList());
 
     }
@@ -150,13 +149,13 @@ public class PhotographerService {
     @Transactional
     public List<WorkHourDTO> setWorkHours(Photographer photographer, List<WorkHourDTO> workHours) {
         workHours.stream().forEach(newWorkHour -> {
-            // find previous workhour settings for that day,
+            // find previous workHour settings for that day,
             // if there are none create one with no hours
-            WorkHour previousWorkHour = photographer.getWorkhours().stream()
+            WorkHour previousWorkHour = photographer.getWorkHours().stream()
                     .filter(wh -> wh.getDay() == newWorkHour.getDay()).findFirst().orElse(null);
             if (isNull(previousWorkHour)) {
                 previousWorkHour = (new WorkHour(null, photographer, null, null, newWorkHour.getDay()));
-                photographer.getWorkhours().add(previousWorkHour);
+                photographer.getWorkHours().add(previousWorkHour);
             }
             if (!isNull(newWorkHour) && (!isNull(newWorkHour.getStartTime()) && !isNull(newWorkHour.getEndTime()))
                     && newWorkHour.getEndTime().isAfter(newWorkHour.getStartTime())) {
@@ -168,14 +167,14 @@ public class PhotographerService {
 
             // when clearing the day delete work hour
             if (!isNull(newWorkHour) && (isNull(newWorkHour.getStartTime()) && isNull(newWorkHour.getEndTime()))) {
-                photographer.getWorkhours().remove(previousWorkHour);
+                photographer.getWorkHours().remove(previousWorkHour);
                 // previousWorkHour.setPhotographer(null);
             }
 
         });
-        return photographer.getWorkhours().isEmpty() ? new ArrayList<WorkHourDTO>()
-                : photographer.getWorkhours().stream().map(
-                        workhour -> new WorkHourDTO(workhour.getStartTime(), workhour.getEndTime(), workhour.getDay()))
+        return photographer.getWorkHours().isEmpty() ? new ArrayList<WorkHourDTO>()
+                : photographer.getWorkHours().stream().map(
+                        workHour -> new WorkHourDTO(workHour.getStartTime(), workHour.getEndTime(), workHour.getDay()))
                         .toList();
     }
 
@@ -207,20 +206,9 @@ public class PhotographerService {
         // photos / videos ?
     }
 
-    public void getBookings(Long photographerId) {
-        // to do implement ;
-        // maybe not here ? or call booking service ;
-    }
+    public Page<Review> getReviews(Long photographerId, Pageable pageable) {
+        return reviewService.findForPhotographer(photographerId, pageable);
 
-    public List<Review> getReviews(Long photographerId) {
-        // to do paginate
-        return reviewService.findForPhotographer(photographerId);
-
-    }
-
-    public List<Review> getReviews(Photographer photographer) {
-        // to do map them , paginate
-        return photographer.getReviews();
     }
 
     @Transactional
@@ -289,6 +277,39 @@ public class PhotographerService {
         return photographerAddOnService.findForPhotographerAndAddOn(photographerId, type);
     }
 
+    public ProfileCompletionDTO getProfileCompletion(Long photographerId) {
+        Photographer photographer = findByIdThrow(photographerId);
+        User user = photographer.getUser();
+        Boolean profilePictureSet = photographer.getProfilePhotoUrl() != null;
+        Boolean locationSet = user.getCountry() != null && user.getCity() != null;
+        // to do check if has valid workHours , and if has non-private session types
+        Boolean workHoursSet = !isNull(photographer.getWorkHours()) && photographer.getWorkHours().size() > 0;
+        Boolean sessionTypesSet = !isNull(photographer.getSessionTypes()) && photographer.getSessionTypes().size() > 0;
+        // should check if not just profile
+        Boolean portfolioSet = (photographer.getMediaUploads() != null && photographer.getMediaUploads().size() > 1);
+
+        Boolean socialMediaSet = photographer.getSocialLinks() != null;
+        Boolean emailVerified = user.getIsEmailVerified();
+        Boolean bioSet = photographer.getBio() != null;
+
+        int listOfThings = ProfileCompletionDTO.getNumberOfFields() - 1;
+        int complete = (profilePictureSet ? 1 : 0) + (sessionTypesSet ? 1 : 0) + (workHoursSet ? 1 : 0)
+                + (socialMediaSet ? 1 : 0) + (portfolioSet ? 1 : 0) + (locationSet ? 1 : 0) + (emailVerified ? 1 : 0)
+                + (bioSet ? 1 : 0);
+        System.out.println(complete + "/" + listOfThings);
+        return new ProfileCompletionDTO((complete * 1.0) / listOfThings, profilePictureSet, workHoursSet,
+                sessionTypesSet,
+                socialMediaSet, portfolioSet, locationSet, emailVerified, bioSet);
+    }
+
+    public List<Photographer> findByCity(String city) {
+        return photographerRepository.findByUser_CityIgnoreCase(city);
+    }
+
+    public String uploadProfilePhoto(MultipartFile file) {
+        // to do implement ;
+        return null;
+    }
     // function to create custom private session and generate link to send to client
 
     // get photos from instagram integration

@@ -19,7 +19,6 @@ public class UserMapper {
                 .password(userReq.getPassword())
                 .gender(userReq.getGender())
                 .city(userReq.getCity())
-                .photoUrl(userReq.getPhotoURL())
                 .country(userReq.getCountry())
                 .build();
         return user;
@@ -79,5 +78,13 @@ public class UserMapper {
         return new PageImpl<>(userResponses, users.getPageable(), users.getTotalElements());
 
     }
+
+    // public static <T> PageDTO<T> toGeneralResponsePage(Page<T> games) {
+    // List<T> gameResponses = games.getContent().stream()
+    // .collect(Collectors.toList());
+    // return new PageDTO<>(gameResponses, games.getTotalPages(),
+    // games.getTotalElements(), games.getNumber());
+
+    // }
 
 }

@@ -1,9 +1,12 @@
-package com.example.picbooker.video;
+package com.example.picbooker.media;
 
 import com.example.picbooker.photographer.Photographer;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -17,25 +20,28 @@ import lombok.Setter;
 
 @Getter
 @Setter
+@Table // to think of unique constraint on photographer + profile pic
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table
-public class Video {
+public class Media {
     @Id
-    @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    // photographer id
+    @JsonIgnore
     @ManyToOne
-    @JoinColumn(name = "photographer", nullable = false)
+    @JoinColumn(name = "photographer_id", nullable = false)
     private Photographer photographer;
 
-    @Column
-    private String videoUrl;
+    @Column(nullable = false)
+    private String mediaUrl; // Stores Firebase URL
 
     @Column
     private String description;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private MediaType mediaType; // PHOTO or VIDEO
 
 }

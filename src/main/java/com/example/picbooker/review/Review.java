@@ -14,6 +14,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
@@ -27,7 +28,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = { "client", "photographer" }))
 @Builder
 public class Review {
     @Id
@@ -35,22 +36,20 @@ public class Review {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    // to think add booking info
-
     @JsonIgnore
     @ManyToOne
-    @JoinColumn(name = "photographer", nullable = false, insertable = false, updatable = false)
+    @JoinColumn(name = "photographer", nullable = false)
     private Photographer photographer;
 
     @JsonIgnore
     @ManyToOne
-    @JoinColumn(name = "client", nullable = false, insertable = false, updatable = false)
+    @JoinColumn(name = "client", nullable = false)
     private Client client;
 
     @Column
     @Min(1)
     @Max(5)
-    private Integer rating;
+    private Double rating;
 
     @Column
     private String comment;

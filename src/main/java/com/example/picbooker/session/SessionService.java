@@ -4,18 +4,51 @@ import static java.util.Objects.isNull;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Currency;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.example.picbooker.ApiException;
+import com.example.picbooker.PageDTO;
+import com.example.picbooker.client.Client;
+import com.example.picbooker.deposit.Deposit;
+import com.example.picbooker.deposit.DepositService;
+import com.example.picbooker.deposit.DepositStatus;
+import com.example.picbooker.deposit.PaymentMethod;
+import com.example.picbooker.notification.NotificationService;
+import com.example.picbooker.photographer.Photographer;
+import com.example.picbooker.photographer.PhotographerMapper;
+import com.example.picbooker.photographer.PhotographerService;
+import com.example.picbooker.photographer_additionalService.PhotographerAddOn;
+import com.example.picbooker.photographer_additionalService.PhotographerAddOnService;
+import com.example.picbooker.photographer_sessionType.PhotographerSessionType;
+import com.example.picbooker.photographer_sessionType.PhotographerSessionTypeService;
+import com.example.picbooker.session.reschedule.RescheduleAnswer;
+import com.example.picbooker.session.reschedule.RescheduleDTO;
+import com.example.picbooker.session.reschedule.RescheduleService;
+import com.example.picbooker.session.reschedule.RescheduleStatus;
+import com.example.picbooker.sessionType.SessionTypeName;
+import com.example.picbooker.system_message.EmailService;
+import com.example.picbooker.user.User;
 import com.example.picbooker.workhours.WorkHour;
 import com.example.picbooker.workhours.WorkHourService;
+
+import jakarta.mail.MessagingException;
 
 @Service
 public class SessionService {
@@ -25,10 +58,54 @@ public class SessionService {
     @Autowired
     private WorkHourService workHourService;
 
-    private Integer sessionLengthHours;
+    @Autowired
+    private DepositService depositService;
 
-    public void create() {
-        // to do implement ;
+    @Autowired
+    private PhotographerService photographerService;
+
+    @Autowired
+    private RescheduleService rescheduleService;
+
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private EmailService emailService;
+
+    // @Autowired
+    // private StripeConnectService stripeConnectService;
+
+    @Autowired
+    private PhotographerSessionTypeService photographerSessionTypeService;
+
+    @Autowired
+    private PhotographerAddOnService photographerAddOnService;
+
+    private Integer defaultSlotLengthHours = 1;
+
+    public Session create(LocalDate date, LocalTime startTime, LocalTime endTime, String location,
+            String privateComment, Double totalPrice,
+            Currency currency, SessionStatus status, Client client, Photographer photographer, Deposit deposit,
+            PhotographerSessionType photographerSessionType, Set<PhotographerAddOn> photographerAddOns) {
+
+        return new Session(null, date, startTime, endTime, location, privateComment, totalPrice, currency, status,
+                client, photographerSessionType, photographer, deposit, photographerAddOns);
+
+    }
+
+    public Session save(Session session) {
+        return sessionRepository.save(session);
+    }
+
+    public Session createAndSave(LocalDate date, LocalTime startTime, LocalTime endTime, String location,
+            String privateComment,
+            Double totalPrice,
+            Currency currency, SessionStatus status, Client client, Photographer photographer, Deposit deposit,
+            PhotographerSessionType photographerSessionType, Set<PhotographerAddOn> photographerAddOns) {
+        return save(create(date, startTime, endTime, location, privateComment, totalPrice, currency, status, client,
+                photographer,
+                deposit, photographerSessionType, photographerAddOns));
     }
 
     public Optional<Session> findById(Long id) {
@@ -39,8 +116,122 @@ public class SessionService {
         return sessionRepository.findById(id).orElseThrow();
     }
 
-    public Session save(Session session) {
-        return sessionRepository.save(session);
+    // to page
+    public PageDTO<SessionResponse> findByPhotographerAndStatus(Long photographerId, SessionStatus status,
+            Pageable pageable) {
+        Page<Session> page = sessionRepository.findByPhotographer_IdAndStatus(photographerId, status, pageable);
+        List<SessionResponse> responses = (page.getContent().stream()
+                .map(this::toSessionResponse).toList());
+        return new PageDTO<SessionResponse>(responses, page.getTotalPages(), page.getTotalElements(), page.getNumber());
+    }
+
+    public Boolean hasAtLeastOneSlotOnDayOfLength(Long photographerId, LocalDate date, Integer slotLengthMinutes) {
+        WorkHour workHour = workHourService.findForPhotographerAndDay(photographerId, DayOfWeek.from(date));
+        // System.out.println(ChronoUnit.MINUTES.between(workHour.getStartTime(),
+        // workHour.getEndTime()));
+        if (isNull(workHour)
+                || (ChronoUnit.MINUTES.between(workHour.getStartTime(), workHour.getEndTime()) < slotLengthMinutes))
+            return false;
+        // System.out.println("work hour has slot length");
+        List<Session> sessionsOnDay = sessionRepository.findByPhotographer_IdAndDateOrderByStartTimeAsc(photographerId,
+                date);
+        LocalTime previous = workHour.getStartTime();
+        for (Session session : sessionsOnDay) {
+            if (ChronoUnit.MINUTES.between(previous, session.getStartTime()) >= slotLengthMinutes)
+                return true;
+            previous = session.getEndTime();
+            // to do add buffer time ;
+            // check request/deposit status
+        }
+        if (ChronoUnit.MINUTES.between(previous, workHour.getEndTime()) >= slotLengthMinutes)
+            return true;
+        // System.out.println("why am i false");
+        return false;
+    }
+
+    public Boolean canPhotographerHaveSessionOnDayBetween(Long photographerId, LocalDate date, LocalTime startTime,
+            LocalTime endTime) {
+        WorkHour workHour = workHourService.findForPhotographerAndDay(photographerId, DayOfWeek.from(date));
+        if (isNull(workHour)
+                || !(startTime.isAfter(workHour.getStartTime()) && endTime.isBefore(workHour.getEndTime())))
+            return false;
+
+        if (photographerHasSessionBetween(photographerId, date, startTime, endTime))
+            return false;
+        // to do check for blocks, buffer time, minimum
+        return true;
+
+    }
+
+    public List<SessionSearchDTO> getTopPhotographersForSearchBySessionType(SessionTypeName type) {
+        // to do implement paginated list of all top photographers for that type
+        // ordered by rating
+        // have other one without session type
+        return null;
+    }
+
+    public List<SessionSearchDTO> getPossibles(String city, SessionTypeName type, Double lowPrice, Double highPrice,
+            LocalDate date) {
+        List<SessionSearchDTO> results = new ArrayList<>();
+        if (isNull(type)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Provide sufficient search parameters: session type, ...");
+        }
+
+        List<PhotographerSessionType> matchingSessions = new ArrayList<>();
+        if (!isNull(city)) {
+
+            matchingSessions = photographerSessionTypeService
+                    .findByPhotographerCityAndType(city, type);
+            if (isNull(matchingSessions) || matchingSessions.size() == 0)
+                return results;
+
+        } else
+            matchingSessions = photographerSessionTypeService.findByType(type);
+
+        // Apply price filter if given , keep to front
+        // if (lowPrice != null || highPrice != null) {
+        // matchingSessions = matchingSessions.stream()
+        // .filter(session -> (lowPrice == null || session.getPrice() >= lowPrice) &&
+        // (highPrice == null || session.getPrice() <= highPrice))
+        // .collect(Collectors.toList());
+        // }
+
+        // if date is given, filter photographers who have availability
+        if (date != null) {
+            System.out.println("Before date filtering : " + matchingSessions.size());
+            matchingSessions = matchingSessions.stream()
+                    .filter(session -> hasAtLeastOneSlotOnDayOfLength(session.getPhotographer().getId(), date,
+                            session.getDurationMinutes()))
+                    .collect(Collectors.toList());
+        }
+
+        // Convert matching sessions into DTOs
+        for (PhotographerSessionType session : matchingSessions) {
+
+            results.add(new SessionSearchDTO(PhotographerMapper.toResponse(session.getPhotographer()), date,
+                    session.getPricePerDuration(), session.getCurrency(), session.getDurationMinutes(),
+                    session.getDepositAmount(),
+                    session.getType() != SessionTypeName.OTHER ? session.getType().toString()
+                            : session.getCustomSessionType(),
+                    session.getId()));
+
+        }
+
+        return results;
+    }
+
+    // to think do I let him have 2 requests at the same time ?
+    public Boolean photographerHasSessionBetween(Long photographerId, LocalDate date, LocalTime startTime,
+            LocalTime endTime) {
+        List<Session> sessions = sessionRepository.findBookedSessionsByPhotographer_IdAndDate(photographerId, date);
+        Optional<Session> conflictingSession = sessions.stream()
+                .filter(session -> (session.getStartTime().isBefore(endTime)
+                        && session.getEndTime().isAfter(startTime)))
+                // a session is conflicting if it starts before I end and ends after I
+                // start
+                .findFirst();
+        return conflictingSession.isPresent();
     }
 
     public void cancelReservation(Long id) {
@@ -51,19 +242,250 @@ public class SessionService {
         // to do implement ;
     }
 
-    public List<AppointmentDTO> getAvailableAppointments(Long photographerId, LocalDate date) {
+    // to do continue, more payment logic,
+    @Transactional
+    public SessionResponse createBooking(SessionDTO sessionDTO, Client client) {
+        try {
 
+            if (isNull(client))
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Client must not be null");
+            System.out.println(sessionDTO.getPhotographerId() + " , " + sessionDTO.getPhotographerSessionTypeId()
+                    + " , " + sessionDTO.getPhotographerAddOnIds());
+            // get necessary info: email, name, phone number
+            // photographer, session type(length, cost, deposit)
+            // what if he changed default client info ?
+            Photographer photographer = photographerService.findByIdThrow(sessionDTO.getPhotographerId());
+            PhotographerSessionType photographerSessionType = photographerSessionTypeService
+                    .findByIdThrow(sessionDTO.getPhotographerSessionTypeId());
+            Set<PhotographerAddOn> photographerAddOns = sessionDTO.getPhotographerAddOnIds() != null
+                    ? photographerAddOnService
+                            .findSetByIds(sessionDTO.getPhotographerAddOnIds())
+                    : new HashSet<>();
+            // to do check that addons and session type are of same currency ;
+            // maybe have currency fixed in p settings.
+            Double addOnPrice = 0d;
+            for (PhotographerAddOn addon : photographerAddOns) {
+                addOnPrice += addon.getFee();
+            }
+            Double price = photographerSessionType.getPricePerDuration() + addOnPrice;
+
+            Session session = createAndSave(sessionDTO.getDate(), sessionDTO.getStartTime(), sessionDTO.getEndTime(),
+                    sessionDTO.getLocation(), sessionDTO.getPrivateComment(), price,
+                    photographerSessionType.getCurrency(),
+                    SessionStatus.APPROVAL_PENDING, client, photographer, null, photographerSessionType,
+                    photographerAddOns);
+            Deposit deposit = null;
+            if (photographerSessionType.getRequiresDeposit()) {
+
+                deposit = depositService.createAndSave(session, photographerSessionType.getDepositAmount(),
+                        photographerSessionType.getCurrency(), null, DepositStatus.UNPAID,
+                        (sessionDTO.getPaymentMethod()), null);
+                session.setDeposit(deposit);
+            }
+
+            // to change object not sent as I'd like check email
+            emailService.sendGeneralEmail(client.getUser().getEmail(),
+                    "Booking Request Sent to Photographer Confirmation",
+                    sessionDTO.toString());
+            session = save(session);
+            return toSessionResponse(session.getId(), sessionDTO, session.getStatus(), deposit, price);
+        } catch (Exception e) {
+
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Something went wrong: " + e.getLocalizedMessage());
+        }
+
+    }
+
+    @Transactional
+    public void clientReschedule(Client client, RescheduleDTO rescheduleDTO) {
+        Session session = findByIdThrow(rescheduleDTO.getSessionId());
+        Photographer photographer = session.getPhotographer();
+
+        if (session.getClient().getId() != client.getId()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource.");
+        }
+
+        if (!canRescheduleWithInfo(photographer, session, rescheduleDTO)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Reschedule Request unable to be fulfilled.Only one at a time and valid requests permitted.");
+        }
+
+        rescheduleService.requestRescheduleAsClient(session, rescheduleDTO.getDate(), rescheduleDTO.getStartTime(),
+                rescheduleDTO.getEndTime());
+
+        // return toSessionResponse(session);
+    }
+
+    private Boolean canRescheduleWithInfo(Photographer photographer, Session session, RescheduleDTO rescheduleDTO) {
+        if (session.getStatus() == SessionStatus.CANCELED || session.getDate().isAfter(LocalDate.now())) {
+            // throw new ApiException(HttpStatus.BAD_REQUEST, "Cannot reschedule a completed
+            // or canceled session.");
+            return false;
+        }
+
+        if (rescheduleService.existsBySessionIdAndStatus(session.getId(), RescheduleStatus.PENDING)) {
+            // throw new ApiException(HttpStatus.BAD_REQUEST, "One rescheduling request at a
+            // time");
+            return false;
+        }
+
+        // Ensure request is before the photographer’s minimum notice time
+        int minNoticeMinutes = photographer.getMinimumNoticeBeforeSessionMinutes();
+        LocalDateTime newSessionStartTime = rescheduleDTO.getDate().atTime(rescheduleDTO.getStartTime());
+        LocalDateTime latestAllowedRescheduleTime = newSessionStartTime.minusMinutes(minNoticeMinutes);
+
+        if (LocalDateTime.now().isAfter(latestAllowedRescheduleTime)) {
+            // throw new ApiException(HttpStatus.BAD_REQUEST,
+            // "Rescheduling period has expired. A new session is required.");
+            return false;
+        }
+        // Check availability before proceeding
+        if (canPhotographerHaveSessionOnDayBetween(photographer.getId(), rescheduleDTO.getDate(),
+                rescheduleDTO.getStartTime(), rescheduleDTO.getEndTime())) {
+            // throw new ApiException(HttpStatus.BAD_REQUEST, "Photographer is unavailable
+            // at the requested time.");
+            return false;
+        }
+        return true;
+    }
+
+    @Transactional
+    public SessionResponse photographerReschedule(Photographer photographer,
+            RescheduleDTO rescheduleDTO) {
+
+        Session session = findByIdThrow(rescheduleDTO.getSessionId());
+
+        if (session.getPhotographer().getId() != photographer.getId()) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource.");
+        }
+
+        if (!canRescheduleWithInfo(photographer, session, rescheduleDTO)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                    "Reschedule Request unable to be fulfilled.Only one at a time and valid requests permitted.");
+        }
+
+        rescheduleService.requestRescheduleAsClient(session, rescheduleDTO.getDate(), rescheduleDTO.getStartTime(),
+                rescheduleDTO.getEndTime());
+
+        return toSessionResponse(session);
+
+    }
+
+    @Transactional
+    public void photographerCancel(Long sessionId, Photographer photographer) {
+        try {
+            Session session = findByIdThrow(sessionId);
+            if (LocalDate.now().isAfter(session.getDate())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Can't cancel a past booking");
+            }
+            if (session.getPhotographer().getId() != photographer.getId()) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
+            }
+
+            // to do add online Refund deposit to client
+            // stripeConnectService.refundDeposit(session.getDepositId());
+
+            // Mark session as canceled
+            session.setStatus(SessionStatus.CANCELED);
+            sessionRepository.save(session);
+
+            // Track photographer cancellations
+            // photographerPenaltyService.recordCancellation(photographerId);
+            photographer.setCancellationStrikes(
+                    isNull(photographer.getCancellationStrikes()) ? 0 : 1 + photographer.getCancellationStrikes());
+
+            // Notify client
+            String message = "Your session has been canceled by the photographer. If your deposit was paid online it has been refunded, if you paid in cash request it from the photographer.\nWe apologize for the inconvenience and will take steps to reduce this happening in the future.";
+            notificationService.sendNotification(session.getClient().getUser(),
+                    "Your session has been canceled by the photographer");
+            emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Session CANCELLATION",
+                    message);
+        } catch (MessagingException e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong while sending a message");
+        }
+    }
+
+    @Transactional
+    public void clientCancel(Long sessionId, Client client) {
+        try {
+            Session session = findByIdThrow(sessionId);
+            if (LocalDate.now().isAfter(session.getDate())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Can't cancel a past booking");
+            }
+            if (session.getClient().getId() != client.getId()) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
+            }
+
+            // Mark session as canceled (deposit is forfeited)
+            session.setStatus(SessionStatus.CANCELED);
+            sessionRepository.save(session);
+
+            // Notify photographer
+            notificationService.sendNotification(session.getPhotographer().getUser(),
+                    "A Client has canceled their session.");
+
+            emailService.sendGeneralEmail(session.getPhotographer().getUser().getEmail(), "Session Cancellation notice",
+                    "A client has canceled their session.");
+        } catch (MessagingException e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong while sending a message");
+        }
+    }
+
+    @Transactional
+    public void processReschedulingAnswer(RescheduleAnswer rescheduleAnswer, User user) {
+
+        if (rescheduleAnswer.getStatus() == RescheduleStatus.APPROVED) {
+            rescheduleService.approveReschedule(findByIdThrow(rescheduleAnswer.getSessionId()), user);
+        } else if (rescheduleAnswer.getStatus() == RescheduleStatus.APPROVED) {
+            rescheduleService.rejectReschedule(findByIdThrow(rescheduleAnswer.getSessionId()), user);
+        }
+
+    }
+
+    public SessionResponse toSessionResponse(Long sessionId, SessionDTO sessionDTO, SessionStatus sessionStatus,
+            Deposit deposit,
+            Double totalPrice) {
+        return new SessionResponse(sessionId, sessionDTO, sessionStatus, deposit.getStatus(), deposit.getId(),
+                deposit.getMethod(),
+                totalPrice, deposit.getAmount());
+    }
+
+    public SessionDTO toSessionDTO(Session session) {
+        return new SessionDTO(session.getPhotographer().getId(), session.getSessionType().getId(), session.getDate(),
+                session.getStartTime(), session.getEndTime(), session.getLocation(), session.getPrivateComment(),
+                session.getDeposit().getMethod(),
+                (session.getSessionAddOns()).stream().map(addon -> addon.getId()).toList());
+    }
+
+    public SessionResponse toSessionResponse(Session session) {
+        return toSessionResponse(session.getId(), toSessionDTO(session), session.getStatus(), session.getDeposit(),
+                session.getTotalPrice());
+    }
+
+    // gets in one-hours slots
+    // to think have one for specific session type length
+    public List<AppointmentDTO> getAvailableAppointments(Long sessionTypeID, LocalDate date) {
+        // to think what if other ? then multiple types , have default slot length to be
+        // what ?
+        System.out.println(sessionTypeID + " , " + date.toString());
+        PhotographerSessionType photographerSessionType = photographerSessionTypeService.findByIdThrow(sessionTypeID);
         DayOfWeek dayOfWeek = date.getDayOfWeek();
-        WorkHour workhours = workHourService.findForPhotographerAndDay(photographerId, dayOfWeek);
-        if (!isNull(workhours)) {
+        Integer slotLengthMinutes = photographerSessionType.getDurationMinutes();
+        System.out.println(photographerSessionType.getId() + " " + dayOfWeek);
+        WorkHour workHours = workHourService
+                .findForPhotographerAndDay(photographerSessionType.getPhotographer().getId(), dayOfWeek);
+        if (!isNull(workHours)) {
+            System.out.println("workhours not null");
             List<AppointmentDTO> availableAppointments = new ArrayList<>();
 
-            LocalTime startTime = workhours.getStartTime();
-            LocalTime endTime = workhours.getEndTime();
+            LocalTime startTime = workHours.getStartTime();
+            LocalTime endTime = workHours.getEndTime();
 
-            List<LocalTime> allTimeSlots = generateTimeSlots(startTime, endTime);
-
-            List<Session> bookedSessions = sessionRepository.findBookedSessionsByPhotographer_IdAndDate(photographerId,
+            List<LocalTime> allTimeSlots = generateTimeSlots(startTime, endTime, slotLengthMinutes);
+            System.out.println("Time slots generated with length: " + allTimeSlots.size());
+            List<Session> bookedSessions = sessionRepository.findBookedSessionsByPhotographer_IdAndDate(
+                    photographerSessionType.getPhotographer().getId(),
                     date);
 
             // Extract booked time slots
@@ -77,8 +499,12 @@ public class SessionService {
                     // appointment.set(photographerId);
                     appointment.setDate(date);
                     appointment.setStartTime(timeSlot);
-                    appointment.setEndTime(timeSlot.plusHours(sessionLengthHours));
+                    appointment.setEndTime(timeSlot.plusMinutes(slotLengthMinutes));
                     availableAppointments.add(appointment);
+                    appointment.setLocation(photographerSessionType.getLocation());
+                    appointment.setSessionType(photographerSessionType.getType() != SessionTypeName.OTHER
+                            ? photographerSessionType.getType().toString()
+                            : photographerSessionType.getCustomSessionType());
                 }
             }
 
@@ -88,18 +514,18 @@ public class SessionService {
         return Collections.emptyList();
     }
 
-    private List<LocalTime> generateTimeSlots(LocalTime startTime, LocalTime endTime) {
+    private List<LocalTime> generateTimeSlots(LocalTime startTime, LocalTime endTime, Integer slotLengthMinutes) {
         List<LocalTime> timeSlots = new ArrayList<>();
         // LocalTime currentTime = startTime;
-        while (endTime.isAfter(startTime)) {
+        // System.out.println("start time: " + startTime.getHour() + ", endtime: " +
+        // endTime.getHour());
+        int cnt = 0;
+        while (endTime.isAfter(startTime.plusMinutes(slotLengthMinutes - 1)) && cnt < 50) {
+            cnt++;
             timeSlots.add(startTime);
-            startTime.plusHours(sessionLengthHours);
+            startTime = startTime.plusMinutes(slotLengthMinutes);
         }
-
-        // while (currentTime.isBefore(endTime)) {
-        // timeSlots.add(currentTime);
-        // currentTime = currentTime.plusHours(1); // Assuming 1-hour slots
-        // }
+        // System.out.println("startTime: " + startTime + ", endTime: " + endTime);
 
         return timeSlots;
     }
@@ -114,6 +540,171 @@ public class SessionService {
         // generate it as link ?
     }
 
-    // gener
+    @Transactional
+    public void approveSessionRequest(Long sessionId, Long photographerId) {
+        try {
+            Session session = sessionRepository.findById(sessionId)
+                    .orElseThrow(() -> new RuntimeException("Session not found"));
+            if (session.getPhotographer().getId() != photographerId) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
+            }
+            session.setStatus(SessionStatus.BOOKED);
+            sessionRepository.save(session);
+
+            if (!isNull(session.getDeposit()) && session.getDeposit().getMethod() != PaymentMethod.CASH) {
+
+                System.out.println("Send card payment link");
+                // Send payment link to client
+                // (Long sessionId, Long photographerId, Long amountInCents, String currency)
+                // String paymentLink = stripeConnectService.getClientCheckoutLink(sessionId,
+                // photographerId,
+                // StripeConnectService.getSmallestAmountForCurrency(session.getDeposit().getAmount(),
+                // session.getCurrency()),
+                // session.getDeposit().getCurrency().getCurrencyCode().toLowerCase());
+                // emailService.sendGeneralEmail(session.getClient().getUser().getEmail(),
+                // "Session Approved",
+                // "Your Session Request was approved by the photographer.\nPlease pay your
+                // deposit here: "
+                // + paymentLink
+                // + "\n\nIf 2 days or less is left until your session and you haven't yet paid
+                // the deposit your session will be cancelled according to policy.");
+            }
+        } catch (Exception e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void confirmSessionDepositPayment(Long sessionId) {
+        try {
+
+            Session session = sessionRepository.findById(sessionId)
+                    .orElseThrow(() -> new RuntimeException("Session not found"));
+            session.getDeposit().setStatus(DepositStatus.PAID);
+            session.getDeposit().setPaidAt(LocalDateTime.now());
+            sessionRepository.save(session);
+
+            // Notify the client and photographer
+            emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Session Confirmed",
+                    "Your session has been confirmed!");
+        } catch (Exception e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void failSessionDepositPayment(Long sessionId) {
+        try {
+            Session session = sessionRepository.findById(sessionId)
+                    .orElseThrow(() -> new RuntimeException("Session not found"));
+            session.getDeposit().setStatus(DepositStatus.UNPAID);
+            sessionRepository.save(session);
+
+            // Notify the client
+            emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Payment Failed",
+                    "Your payment failed. Please try again.");
+        } catch (Exception e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+        }
+    }
+
+    @Transactional
+    public void payCashDeposit(Long sessionId, Long photographerId) {
+        Session session = findByIdThrow(sessionId);
+        if (session.getPhotographer().getId() != photographerId) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
+        }
+        if (session.getDeposit().getStatus() == DepositStatus.PAID) {
+            return;
+        }
+        session.getDeposit().setStatus(DepositStatus.PAID);
+        session.getDeposit().setPaidAt(LocalDateTime.now());
+        session.getDeposit().setMethod(PaymentMethod.CASH);
+        save(session);
+    }
+
+    @Transactional
+    public void changeSessionStatus(Long sessionId, Long photographerId, SessionStatus newSessionStatus) {
+        Session session = findByIdThrow(sessionId);
+        if (session.getPhotographer().getId() != photographerId) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
+        }
+        if (newSessionStatus == SessionStatus.BOOKED && session.getStatus() == SessionStatus.APPROVAL_PENDING) {
+            approveSessionRequest(sessionId, photographerId);
+        } else if (newSessionStatus == SessionStatus.REFUSED && session.getStatus() == SessionStatus.APPROVAL_PENDING) {
+            session.setStatus(newSessionStatus);
+            // to do check that refusing the session doesn't interfere with search,
+            // should I cancel instead ?
+        }
+        save(session);
+    }
+
+    public PageDTO<SessionResponse> getUpcomingSessionsForClientWhereStatusAndAfter(Long clientId,
+            SessionStatus status, LocalDate date, Pageable pageable) {
+        date = Optional.ofNullable(date).orElse(LocalDate.now());
+        if (!isNull(status)) {
+            Page<Session> results = sessionRepository.findByClient_IdAndStatusAndDateAfter(clientId, status, date,
+                    pageable);
+
+            List<SessionResponse> responses = results.getContent().stream()
+                    .map(session -> toSessionResponse(session))
+                    .collect(Collectors.toList());
+            return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
+                    results.getNumber());
+        } else {
+            Page<Session> results = sessionRepository.findByClient_IdAndDateAfter(clientId, date, pageable);
+
+            List<SessionResponse> responses = results.getContent().stream()
+                    .map(session -> toSessionResponse(session))
+                    .collect(Collectors.toList());
+            return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
+                    results.getNumber());
+        }
+    }
+
+    public PageDTO<SessionResponse> getPastForClient(Long clientId, Pageable pageable) {
+        Page<Session> results = sessionRepository.findByClient_IdAndStatusAndDateBefore(clientId,
+                SessionStatus.BOOKED, LocalDate.now(), pageable);
+
+        List<SessionResponse> responses = results.getContent().stream()
+                .map(session -> toSessionResponse(session))
+                .collect(Collectors.toList());
+        return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
+                results.getNumber());
+    }
+
+    public PageDTO<SessionResponse> getUpcomingSessionsForPhotographerWhereStatusAndAfter(Long photographerId,
+            SessionStatus status, LocalDate date, Pageable pageable) {
+        date = Optional.ofNullable(date).orElse(LocalDate.now());
+        if (!isNull(status)) {
+            Page<Session> results = sessionRepository.findByClient_IdAndStatusAndDateAfter(photographerId, status, date,
+                    pageable);
+
+            List<SessionResponse> responses = results.getContent().stream()
+                    .map(session -> toSessionResponse(session))
+                    .collect(Collectors.toList());
+            return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
+                    results.getNumber());
+        } else {
+            Page<Session> results = sessionRepository.findByClient_IdAndDateAfter(photographerId, date, pageable);
+
+            List<SessionResponse> responses = results.getContent().stream()
+                    .map(session -> toSessionResponse(session))
+                    .collect(Collectors.toList());
+            return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
+                    results.getNumber());
+        }
+    }
+
+    public PageDTO<SessionResponse> getPastForPhotographer(Long photographerId, Pageable pageable) {
+        Page<Session> results = sessionRepository.findByPhotographer_IdAndStatusAndDateBefore(photographerId,
+                SessionStatus.BOOKED, LocalDate.now(), pageable);
+
+        List<SessionResponse> responses = results.getContent().stream()
+                .map(session -> toSessionResponse(session))
+                .collect(Collectors.toList());
+        return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
+                results.getNumber());
+    }
 
 }

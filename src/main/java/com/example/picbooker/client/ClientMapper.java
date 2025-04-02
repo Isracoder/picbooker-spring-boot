@@ -8,6 +8,7 @@ public class ClientMapper {
         ClientResponse clientResponse = ClientResponse.builder()
                 .userResponse(UserMapper.toResponse(client.getUser()))
                 .pointsBalance(client.getPointsBalance())
+                .personalName(client.getPersonalName())
                 .id(client.getId())
                 .build();
         return clientResponse;

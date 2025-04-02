@@ -29,6 +29,7 @@ import lombok.Setter;
 @Table
 @Builder
 public class Deposit {
+
     @Id
     @Column(name = "id")
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -47,6 +48,12 @@ public class Deposit {
 
     @Column
     private LocalDateTime paidAt;
+
+    @Column
+    private String stripePaymentIntentId;
+
+    @Column
+    private DepositStatus status;
 
     @Column
     @Enumerated(EnumType.STRING)

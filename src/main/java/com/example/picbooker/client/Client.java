@@ -54,6 +54,9 @@ public class Client {
     @Default
     private int pointsBalance = 0;
 
+    @Column
+    private String personalName;
+
     // favorite photographers
 
     @Default

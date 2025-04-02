@@ -2,6 +2,7 @@ package com.example.picbooker;
 
 import java.util.NoSuchElementException;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InsufficientAuthenticationException;
@@ -59,6 +60,35 @@ public class GlobalExceptionHandler {
 
         HttpStatus stat = HttpStatus.BAD_REQUEST;
         String content = "Method Argument Type Mismatch Exception";
+
+        return ApiResponse.<String>builder()
+                .content(content)
+                .status(stat)
+                .build();
+
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ApiResponse<String> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+
+        HttpStatus stat = HttpStatus.INTERNAL_SERVER_ERROR;
+        String content = "Data integrity database violation";
+        System.out.println(ex.getLocalizedMessage());
+
+        return ApiResponse.<String>builder()
+                .content(content)
+                .status(stat)
+                .build();
+
+    }
+
+    // java.lang.IllegalArgumentException
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ApiResponse<String> handleIllegalArgumentException(IllegalArgumentException ex) {
+
+        HttpStatus stat = HttpStatus.BAD_REQUEST;
+        String content = "Illegal argument";
+        System.out.println(ex.getLocalizedMessage());
 
         return ApiResponse.<String>builder()
                 .content(content)
@@ -149,7 +179,7 @@ public class GlobalExceptionHandler {
         System.err.println("Missing token: " + ex.getMessage());
 
         return ApiResponse.<String>builder()
-                .content("Token is missing.")
+                .content("Request Parameter is missing.")
                 .status(HttpStatus.BAD_REQUEST)
                 .build();
 

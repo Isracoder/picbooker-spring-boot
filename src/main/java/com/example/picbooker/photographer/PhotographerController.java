@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,10 +18,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.picbooker.ApiException;
 import com.example.picbooker.ApiResponse;
+import com.example.picbooker.PageDTO;
 import com.example.picbooker.photographer_additionalService.PhotographerAddOn;
 import com.example.picbooker.photographer_additionalService.PhotographerAddOnDTO;
 import com.example.picbooker.photographer_sessionType.PhotographerSessionType;
@@ -26,6 +31,9 @@ import com.example.picbooker.photographer_sessionType.PhotographerSessionTypeDTO
 import com.example.picbooker.photographer_sessionType.PhotographerSessionTypeService;
 import com.example.picbooker.review.Review;
 import com.example.picbooker.security.JwtUtil;
+import com.example.picbooker.session.SessionResponse;
+import com.example.picbooker.session.SessionService;
+import com.example.picbooker.session.SessionStatus;
 import com.example.picbooker.socialLinks.SocialLink;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserService;
@@ -39,6 +47,9 @@ public class PhotographerController {
 
         @Autowired
         private PhotographerService photographerService;
+
+        @Autowired
+        private SessionService sessionService;
 
         @Autowired
         private PhotographerSessionTypeService photographerSessionTypeService;
@@ -57,7 +68,7 @@ public class PhotographerController {
                                 .build();
         }
 
-        // seting yourself as client
+        // setting yourself as client
         @PostMapping("/")
         public ApiResponse<PhotographerResponse> openPhotographerAccount(
                         @Valid @RequestBody PhotographerRequest photographerRequest,
@@ -87,13 +98,6 @@ public class PhotographerController {
                                 .status(HttpStatus.OK)
                                 .build();
         }
-
-        // GET /photographers/{id}/session-types → Get all session types for a
-        // photographer
-        // POST /photographers/{id}/session-types → Add a session type to a photographer
-        // DELETE /photographers/{id}/session-types/{sessionTypeId} → Remove a session
-        // type
-        // PUT /photographers/{id}/session-types/{sessionTypeId}
 
         @PostMapping("/session-types")
         public ApiResponse<PhotographerSessionType> setSessionTypes(
@@ -196,9 +200,9 @@ public class PhotographerController {
 
         @GetMapping("/{photographerId}/work-hours")
         public ApiResponse<List<WorkHourDTO>> getWorkHours(@PathVariable("photographerId") Long photographerId) {
-                List<WorkHourDTO> workhours = photographerService.getWorkHours(photographerId);
+                List<WorkHourDTO> workHours = photographerService.getWorkHours(photographerId);
                 return ApiResponse.<List<WorkHourDTO>>builder()
-                                .content(workhours)
+                                .content(workHours)
                                 .status(HttpStatus.OK)
                                 .build();
         }
@@ -212,44 +216,47 @@ public class PhotographerController {
                                 .build();
         }
 
-        @GetMapping("/{photographerId}/portfolio")
-        public ApiResponse<String> getPortfolio(@PathVariable("photographerId") Long photographerId) {
-                // to do implement
-                photographerService.getPortfolio(photographerId);
-                // should I split for videos and photos ?
-                return ApiResponse.<String>builder()
-                                .content("Not implemented")
-                                .status(HttpStatus.NOT_IMPLEMENTED)
+        @GetMapping("/sessions")
+        public ApiResponse<PageDTO<SessionResponse>> getBookings(
+                        @PageableDefault Pageable pageable,
+                        @RequestParam(name = "past", defaultValue = "false") Boolean past,
+                        @RequestParam(name = "status", required = false) SessionStatus status) {
+                PageDTO<SessionResponse> responses;
+                Photographer photographer = UserService
+                                .getPhotographerFromUserThrow(UserService.getLoggedInUserThrow());
+                if (past) {
+
+                        responses = sessionService.getPastForPhotographer(photographer.getId(), pageable);
+                } else {
+                        responses = sessionService.getUpcomingSessionsForPhotographerWhereStatusAndAfter(
+                                        photographer.getId(),
+                                        status,
+                                        null, pageable);
+                }
+                return ApiResponse.<PageDTO<SessionResponse>>builder()
+                                .content(responses)
+                                .status(HttpStatus.OK)
                                 .build();
         }
 
-        @PostMapping("/{photographerId}/portfolio")
-        public ApiResponse<String> addToPortfolio(@PathVariable("photographerId") Long photographerId) {
-                // to do implement
-                photographerService.updatePortfolio(photographerId);
-                // should I split for videos and photos ?
-                return ApiResponse.<String>builder()
-                                .content("Not implemented")
-                                .status(HttpStatus.NOT_IMPLEMENTED)
-                                .build();
-        }
-
-        @GetMapping("/{photographerId}/bookings")
-        public ApiResponse<String> getBookings(@PathVariable("photographerId") Long photographerId) {
-                photographerService.getBookings(photographerId);
-                // to do get with from/to query params or status
-                // pending/cancelled/booked/open/etc
-                return ApiResponse.<String>builder()
-                                .content("Not implemented")
-                                .status(HttpStatus.NOT_IMPLEMENTED)
+        @GetMapping("/{photographerId}/profile-completion")
+        public ApiResponse<ProfileCompletionDTO> getProfileCompletion(
+                        @PathVariable("photographerId") Long photographerId) {
+                ProfileCompletionDTO profileCompletionDTO = photographerService.getProfileCompletion(photographerId);
+                // object with percentage : 70% , booleans representing (profile pic set ,
+                // location , bio, workHours, social media, session types, portfolio)
+                return ApiResponse.<ProfileCompletionDTO>builder()
+                                .content(profileCompletionDTO)
+                                .status(HttpStatus.OK)
                                 .build();
         }
 
         @GetMapping("/{photographerId}/reviews")
-        public ApiResponse<List<Review>> getReviews(@PathVariable("photographerId") Long photographerId) {
+        public ApiResponse<Page<Review>> getReviews(@PathVariable("photographerId") Long photographerId,
+                        @PageableDefault Pageable pageable) {
                 // to do implement
-                List<Review> reviews = photographerService.getReviews(photographerId);
-                return ApiResponse.<List<Review>>builder()
+                Page<Review> reviews = photographerService.getReviews(photographerId, pageable);
+                return ApiResponse.<Page<Review>>builder()
                                 .content(reviews)
                                 .status(HttpStatus.OK)
                                 .build();
@@ -297,13 +304,13 @@ public class PhotographerController {
         // to test
         @PatchMapping("/work-hours")
         public ApiResponse<List<WorkHourDTO>> setWorkHours(
-                        @Valid @RequestBody List<WorkHourDTO> workhours) {
+                        @Valid @RequestBody List<WorkHourDTO> workHours) {
                 // send data in format : [ {day: "MONDAY" , startHour: 8 , endHour: 15 } , {day:
                 // "TUESDAY" , startHour : 8 , endHour: 15}]
 
                 List<WorkHourDTO> updatedWorkHours = photographerService.setWorkHours(
                                 photographerService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()),
-                                workhours);
+                                workHours);
                 return ApiResponse.<List<WorkHourDTO>>builder()
                                 .content(updatedWorkHours)
                                 .status(HttpStatus.OK)

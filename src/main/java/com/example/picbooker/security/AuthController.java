@@ -43,10 +43,10 @@ public class AuthController {
 
     // for testing
     @GetMapping("/hi")
-    public ApiResponse<String> sayHi() {
+    public ApiResponse<String> sayHi(@RequestParam(name = "value", defaultValue = "world") String name) {
         try {
 
-            return ApiResponse.<String>builder().content("HI")
+            return ApiResponse.<String>builder().content("HI " + name)
                     .status(HttpStatus.OK).build();
         } catch (Exception e) {
             throw e;
@@ -56,14 +56,11 @@ public class AuthController {
     // to send code in case it expired, user took too long to get it
     @GetMapping("/code")
     public ApiResponse<String> resend2FAcode(@RequestBody String email) {
-        try {
-            authService.changeAndResendCode(email, null);
-            return ApiResponse.<String>builder().content("Code has been sent to email")
-                    .status(HttpStatus.OK).build();
-        } catch (Exception e) {
-            return ApiResponse.<String>builder().content(e.getMessage()).status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
-        }
+
+        authService.changeAndResendCode(email, null);
+        return ApiResponse.<String>builder().content("Code has been sent to email")
+                .status(HttpStatus.OK).build();
+
     }
 
     // 1st register step -> send otp

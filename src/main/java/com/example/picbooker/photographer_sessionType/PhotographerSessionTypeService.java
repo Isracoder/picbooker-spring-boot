@@ -3,6 +3,7 @@ package com.example.picbooker.photographer_sessionType;
 import static java.util.Objects.isNull;
 
 import java.util.Currency;
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +47,8 @@ public class PhotographerSessionTypeService {
     }
 
     public PhotographerSessionType findByIdThrow(Long id) {
-        return photographerSessionTypeRepository.findById(id).orElseThrow();
+        return photographerSessionTypeRepository.findById(id)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Photographer session type not found"));
     }
 
     public PhotographerSessionType save(PhotographerSessionType photographerSessionType) {
@@ -66,13 +68,20 @@ public class PhotographerSessionTypeService {
         return photographerSessionTypeRepository.findFirstByTypeAndPhotographer_Id(type, photographerId);
     }
 
-    // public PhotographerSessionType findForPhotographerAndSessionTypeId(Long
-    // photographerId, SessionType type) {
+    public List<PhotographerSessionType> findByPhotographerInListAndType(List<Photographer> photographers,
+            SessionTypeName type) {
+        return photographerSessionTypeRepository.findByPhotographerInAndType(photographers, type);
+    }
 
-    // return
-    // photographerSessionTypeRepository.findFirstBySessionType_IdAndPhotographer_Id(type.getId(),
-    // photographerId);
-    // }
+    // to think paginate these 2
+    public List<PhotographerSessionType> findByPhotographerCityAndType(String city,
+            SessionTypeName type) {
+        return photographerSessionTypeRepository.findByTypeAndPhotographer_User_CityIgnoreCase(type, city.trim());
+    }
+
+    public List<PhotographerSessionType> findByType(SessionTypeName type) {
+        return photographerSessionTypeRepository.findByType(type);
+    }
 
     public PhotographerSessionType addSessionType(Photographer photographer,
             PhotographerSessionTypeDTO photographerSessionTypeDTO) {

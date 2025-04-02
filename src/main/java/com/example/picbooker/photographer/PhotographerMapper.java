@@ -3,6 +3,7 @@ package com.example.picbooker.photographer;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.example.picbooker.review.Review;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserMapper;
 import com.example.picbooker.workhours.WorkHourDTO;
@@ -26,7 +27,7 @@ public class PhotographerMapper {
         public static Photographer toEntityFromRequest(PhotographerRequest photographerRequest, User user) {
                 Photographer photographer = Photographer.builder()
                                 .user(user)
-                                .bufferTimeMinutes(photographerRequest.getBufferTimeMinutes())
+                                .bufferTimeMinutes((photographerRequest.getBufferTimeMinutes()))
                                 .minimumNoticeBeforeSessionMinutes(
                                                 photographerRequest.getMinimumNoticeBeforeSessionMinutes())
                                 .studio(photographerRequest.getStudio())
@@ -46,12 +47,23 @@ public class PhotographerMapper {
                 PhotographerResponse photographerResponse = PhotographerResponse.builder()
                                 .id(photographer.getId())
                                 .userResponse(UserMapper.toResponse(photographer.getUser()))
+                                .photoUrl(photographer.getProfilePhotoUrl())
                                 .studio(photographer.getStudio())
                                 .minimumNoticeBeforeSessionMinutes(photographer.getMinimumNoticeBeforeSessionMinutes())
                                 .bufferTimeMinutes(photographer.getBufferTimeMinutes())
                                 .bio(photographer.getBio())
                                 .personalName(photographer.getPersonalName())
-                                .workhours(photographer.getWorkhours().stream()
+                                .reviews(photographer.getReviews() == null || photographer.getReviews().isEmpty()
+                                                ? 0
+                                                : photographer.getReviews().size())
+                                .rating(
+                                                photographer.getReviews() == null || photographer.getReviews().isEmpty()
+                                                                ? 0.0
+                                                                : photographer.getReviews().stream()
+                                                                                .mapToDouble(Review::getRating)
+                                                                                .average()
+                                                                                .orElse(0.0))
+                                .workhours(photographer.getWorkHours().stream()
                                                 .map(workhour -> new WorkHourDTO(workhour.getStartTime(),
                                                                 workhour.getEndTime(), workhour.getDay()))
                                                 .collect(Collectors.toList()))
