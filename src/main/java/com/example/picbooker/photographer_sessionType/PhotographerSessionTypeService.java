@@ -106,8 +106,9 @@ public class PhotographerSessionTypeService {
         if (sessionType.getPhotographer().getId() != photographer.getId())
             throw new ApiException(HttpStatus.BAD_REQUEST, "Not yours, No deletion authority");
         photographer.getSessionTypes().remove(sessionType);
-        System.out.println("session id :" + sessionTypeid);
-        deleteById(sessionTypeid);
+        // sessionType.setPhotographer(null);
+        // photographerSessionTypeRepository.delete(sessionType);
+        // photographerSessionTypeRepository.flush();
     }
 
     @Transactional

@@ -276,6 +276,7 @@ public class PhotographerService {
         PhotographerAddOn addOn = photographerAddOnService.findByIdThrow(addOnId);
         if (photographer.getId() != addOn.getPhotographer().getId())
             throw new ApiException(HttpStatus.BAD_REQUEST, "Unauthorized delete");
+        System.out.println(addOnId);
         photographer.getAdditionalServices().remove(addOn);
         photographerAddOnService.deleteById(addOnId);
     }

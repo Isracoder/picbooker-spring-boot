@@ -89,12 +89,12 @@ public class Photographer {
 
     // additional services that I offer
     @Default
-    @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     List<PhotographerAddOn> additionalServices = new ArrayList<>();
 
     // session types that I specialize in
     @Default
-    @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     List<PhotographerSessionType> sessionTypes = new ArrayList<>();
 
     // my workhours
