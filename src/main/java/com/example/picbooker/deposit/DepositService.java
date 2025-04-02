@@ -11,7 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.example.picbooker.ApiException;
-import com.example.picbooker.payments.StripeConnectService;
+// import com.example.picbooker.payments.StripeConnectService;
 import com.example.picbooker.session.Session;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
@@ -77,8 +77,10 @@ public class DepositService {
 
         PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
                 // to do set amount
-                .setAmount(
-                        StripeConnectService.getSmallestAmountForCurrency(deposit.getAmount(), deposit.getCurrency()))
+                .setAmount(100L
+                // StripeConnectService.getSmallestAmountForCurrency(deposit.getAmount(),
+                // deposit.getCurrency())
+                )
                 .setCurrency(deposit.getCurrency().getCurrencyCode().toLowerCase()) // expects lowercase
                 .putMetadata("booking_id", session.getId().toString())
                 .setTransferData(PaymentIntentCreateParams.TransferData.builder()
