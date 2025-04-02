@@ -10,11 +10,11 @@ app:
   jwt-cookie-name: jwt
   path-to-firebase: "src/main/resources/firebase-config.json"
 
-stripe:
-  api: 
-    key: ${STRIPE_API_KEY}
-  webhook:
-    secret: ${STRIPE_WEBHOOK_SECRET}
+# stripe:
+#   api: 
+#     key: ${STRIPE_API_KEY}
+#   webhook:
+#     secret: ${STRIPE_WEBHOOK_SECRET}
 firebase:
   bucket-name: ${FIREBASE_BUCKET_NAME}
 

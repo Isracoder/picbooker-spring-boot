@@ -13,13 +13,9 @@ import org.springframework.stereotype.Service;
 import com.example.picbooker.ApiException;
 import com.example.picbooker.payments.StripeConnectService;
 import com.example.picbooker.session.Session;
-import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
 import com.stripe.model.PaymentIntent;
 import com.stripe.param.PaymentIntentCreateParams;
-
-import io.github.cdimascio.dotenv.Dotenv;
-import jakarta.annotation.PostConstruct;
 
 @Service
 public class DepositService {
@@ -27,17 +23,17 @@ public class DepositService {
     // @Value("${stripe.api.key}")
     // private String stripeApiKey;
 
-    private final String stripeApiKey;
+    // private final String stripeApiKey;
 
-    public DepositService() {
-        Dotenv dotenv = Dotenv.load();
-        this.stripeApiKey = dotenv.get("STRIPE_API_KEY");
-    }
+    // public DepositService() {
+    // Dotenv dotenv = Dotenv.load();
+    // this.stripeApiKey = dotenv.get("STRIPE_API_KEY");
+    // }
 
-    @PostConstruct
-    public void init() {
-        Stripe.apiKey = stripeApiKey;
-    }
+    // @PostConstruct
+    // public void init() {
+    // Stripe.apiKey = stripeApiKey;
+    // }
 
     // @Autowired
     // private EmailService emailService;
