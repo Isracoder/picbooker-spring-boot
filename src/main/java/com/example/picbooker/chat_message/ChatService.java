@@ -4,10 +4,13 @@ import static java.util.Objects.isNull;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -229,9 +232,14 @@ public class ChatService {
     }
 
     public List<ChatMessageDTO> getLastMessages(Long chatRoomId, Pageable pageable) {
-        return chatMessageRepository.findMessagesByChatRoom_IdOrderBySentAtDesc(chatRoomId, pageable)
+        List<ChatMessageDTO> messages = chatMessageRepository
+                .findMessagesByChatRoom_IdOrderBySentAtDesc(chatRoomId, pageable)
                 .stream()
-                .map(this::toChatMessageResponse).toList();
+                .map(this::toChatMessageResponse)
+                .collect(Collectors.toCollection(ArrayList::new));
+
+        Collections.reverse(messages);
+        return messages;
     }
 
     public List<ChatMessageDTO> getLastMessagesForMyRoom(Long chatRoomId, Long userId, Pageable pageable) {
@@ -295,10 +303,15 @@ public class ChatService {
     }
 
     public ChatRoomDTO toChatRoomResponse(ChatRoom chatRoom, Long userId, Integer lastMessages) {
+
+        Comparator<ChatParticipant> senderFirstComparator = Comparator
+                .comparing(p -> !p.getUser().getId().equals(userId));
         return ChatRoomDTO.builder()
                 .chatRoomId(chatRoom.getId())
                 .participants(chatRoom.getParticipants().stream()
-                        .map(this::toChatParticipantDTO).toList())
+                        .sorted(senderFirstComparator)
+                        .map(this::toChatParticipantDTO)
+                        .toList())
 
                 .unreadMessageCount(chatRoom.getParticipants().stream()
                         .filter(chatParticipant -> chatParticipant.getUser().getId() == userId).findAny()
