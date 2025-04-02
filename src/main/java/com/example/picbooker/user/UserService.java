@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.picbooker.ApiException;
+import com.example.picbooker.photographer.Photographer;
 import com.example.picbooker.security.SecurityConfig;
 
 @Service
@@ -130,6 +131,14 @@ public class UserService {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "User not authenticated");
         }
         return (User) authentication.getPrincipal();
+    }
+
+    public static Photographer getPhotographerFromUserThrow(User user) {
+        Photographer photographer = user.getPhotographer();
+        if (photographer == null) {
+            throw new ApiException(HttpStatus.NOT_FOUND, "Photographer not found. User not photographer.");
+        }
+        return photographer;
     }
 
     @Transactional

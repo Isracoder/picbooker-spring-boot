@@ -99,7 +99,7 @@ public class PhotographerController {
         public ApiResponse<PhotographerSessionType> setSessionTypes(
                         @RequestBody PhotographerSessionTypeDTO photographerSessionTypeDTO) {
                 PhotographerSessionType photoSessionType = photographerSessionTypeService.addSessionType(
-                                photographerService.findByIdThrow(UserService.getLoggedInUserThrow().getId()),
+                                UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()),
                                 photographerSessionTypeDTO);
                 return ApiResponse.<PhotographerSessionType>builder()
                                 .content(photoSessionType)
@@ -111,7 +111,7 @@ public class PhotographerController {
         public ApiResponse<PhotographerSessionType> updateSessionType(@PathVariable("sessionTypeId") Long sessionTypeId,
                         @RequestBody PhotographerSessionTypeDTO photographerSessionTypeDTO) {
                 PhotographerSessionType photoSessionType = photographerService.updateSessionType(
-                                photographerService.findByIdThrow(UserService.getLoggedInUserThrow().getId()),
+                                UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()),
                                 sessionTypeId,
                                 photographerSessionTypeDTO);
                 return ApiResponse.<PhotographerSessionType>builder()
@@ -133,7 +133,7 @@ public class PhotographerController {
         @DeleteMapping("/session-types/{sessionTypeId}")
         public ApiResponse<String> deleteByTypeId(@PathVariable("sessionTypeId") Long sessionTypeId) {
                 photographerSessionTypeService.deleteById(
-                                photographerService.findByIdThrow(UserService.getLoggedInUserThrow().getId()),
+                                UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()),
                                 sessionTypeId);
                 return ApiResponse.<String>builder()
                                 .content("Successfully deleted")
@@ -175,7 +175,7 @@ public class PhotographerController {
         public ApiResponse<PhotographerAddOn> createAdditionalService(
                         @RequestBody PhotographerAddOnDTO photographerAddOnDTO) {
                 PhotographerAddOn addOn = photographerService.createAddOn(
-                                photographerService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()),
+                                UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()),
                                 photographerAddOnDTO);
                 return ApiResponse.<PhotographerAddOn>builder()
                                 .content(addOn)
@@ -186,7 +186,7 @@ public class PhotographerController {
         @DeleteMapping("/add-ons/{add-onId}")
         public ApiResponse<String> deleteAdditionalServiceByName(@PathVariable("add-onId") Long addOnId) {
                 photographerService.deleteAddOnById(
-                                photographerService.findByIdThrow(UserService.getLoggedInUserThrow().getId()),
+                                UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()),
                                 addOnId);
                 return ApiResponse.<String>builder()
                                 .content("Successfully deleted")
