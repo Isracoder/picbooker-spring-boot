@@ -37,10 +37,10 @@ public class UserMapper {
                 .phoneNumber(user.getPhoneNumber())
                 .isEmailVerified(user.getIsEmailVerified())
                 .email(user.getEmail())
-                .gender(user.getGender())
+                .gender(user.getGender() != null ? user.getGender().getValue() : null)
                 .country(user.getCountry())
                 .city(user.getCity())
-                .gender(user.getGender())
+
                 .DOB(user.getDOB())
                 .id(user.getId())
                 .build();

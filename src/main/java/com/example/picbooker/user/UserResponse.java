@@ -3,8 +3,6 @@ package com.example.picbooker.user;
 import java.time.LocalDateTime;
 import java.util.Date;
 
-import com.nimbusds.openid.connect.sdk.claims.Gender;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -33,7 +31,7 @@ public class UserResponse {
 
     private Date DOB;
 
-    private Gender gender;
+    private String gender;
 
     private String country;
 

@@ -201,6 +201,7 @@ public class SessionController {
         @GetMapping("/possibles") // maybe get photographers ?
         public ApiResponse<List<SessionSearchDTO>> getPossiblesForSearch(
                         @RequestParam(name = "city", required = false) String city,
+                        @RequestParam(name = "country", required = false) String country,
                         @RequestParam("type") String sessionType,
                         @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date,
                         @RequestParam(name = "minPrice", required = false) Double minPrice,
