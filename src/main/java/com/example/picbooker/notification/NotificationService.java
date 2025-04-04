@@ -1,8 +1,8 @@
 package com.example.picbooker.notification;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +31,7 @@ public class NotificationService {
                 .map(this::toNotificationResponse)
                 .collect(Collectors.toCollection(ArrayList::new));
 
-        Collections.reverse(notifications);
+        // Collections.reverse(notifications);
         return notifications;
 
     }
@@ -40,14 +40,21 @@ public class NotificationService {
     public void sendNotification(User user, String message) {
         Notification notification = Notification.builder().recipient(user).message(message).build();
         notificationRepository.save(notification);
-        SocketNotification<String> socketNotification = new SocketNotification<String>(user.getId().toString(),
-                message);
+        SocketNotification<Map<String, String>> socketNotification = new SocketNotification<Map<String, String>>(
+                user.getId().toString(),
+                Map.of("content", message, "id", notification.getId().toString(), "sentAt",
+                        notification.getCreatedAt().toString()));
         socketNotificationService.notifyUserInSite(socketNotification);
     }
 
     public List<NotificationDTO> getUnreadNotifications(Long userId) {
-        return notificationRepository.findByRecipient_IdAndReadFalseOrderByCreatedAtDesc(userId).stream()
+
+        List<NotificationDTO> notifications = notificationRepository
+                .findByRecipient_IdAndReadFalseOrderByCreatedAtDesc(userId).stream()
                 .map(this::toNotificationResponse).toList();
+        // Collections.reverse(notifications);
+        // System.out.println(notifications);
+        return notifications;
     }
 
     @Transactional
@@ -57,6 +64,14 @@ public class NotificationService {
             notification.setRead(true);
             notificationRepository.save(notification);
         });
+    }
+
+    @Transactional
+    public void markAllAsRead(Long userId) {
+
+        List<Notification> notifications = notificationRepository.findByRecipient_IdAndRead(userId, false);
+        notifications.stream().forEach(notification -> notification.setRead(true));
+        notificationRepository.saveAll(notifications);
     }
 
     public NotificationDTO toNotificationResponse(Notification notification) {

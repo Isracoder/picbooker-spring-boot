@@ -94,6 +94,11 @@ public class AuthService {
         return tempTokens.remove(email);
     }
 
+    // to remove for testing
+    public User getUser(Long id) {
+        return userService.findByIdThrow(id);
+    }
+
     public String login(UserRequest loginDto) {
 
         try {

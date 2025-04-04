@@ -18,6 +18,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
@@ -26,6 +27,7 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @Builder
+@NoArgsConstructor
 public class Notification {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

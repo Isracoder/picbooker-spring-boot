@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.picbooker.ApiException;
 import com.example.picbooker.ApiResponse;
+import com.example.picbooker.notification.NotificationService;
 import com.example.picbooker.security.OauthToken.OauthProviderType;
 import com.example.picbooker.security.passwordReset.PasswordResetDTO;
 import com.example.picbooker.user.UserOTP;
@@ -34,6 +35,8 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+    @Autowired
+    private NotificationService notificationService;
 
     @Value("${app.web-redirect}")
     private String oauthredirectURL;
@@ -43,9 +46,12 @@ public class AuthController {
 
     // for testing
     @GetMapping("/hi")
-    public ApiResponse<String> sayHi(@RequestParam(name = "value", defaultValue = "world") String name) {
+    public ApiResponse<String> sayHi(@RequestParam(name = "value", defaultValue = "world") String name,
+            @RequestParam(name = "id", required = false) Long id) {
         try {
-
+            if (id != null) {
+                notificationService.sendNotification(authService.getUser(id), "new message!");
+            }
             return ApiResponse.<String>builder().content("HI " + name)
                     .status(HttpStatus.OK).build();
         } catch (Exception e) {
