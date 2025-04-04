@@ -87,6 +87,18 @@ public class ChatController {
 
         }
 
+        @GetMapping("/room/{chatRoomId}")
+        public ApiResponse<ChatRoomDTO> getChatRoomById(@PathVariable("chatRoomId") Long chatRoomId) {
+                // return chat room info(id, last 10 messages, ...) for those 2 users
+                // to do check that i'm one of them via login, send that as user1 to function
+                return ApiResponse.<ChatRoomDTO>builder()
+                                .content(chatService.getChatRoomByIdThrow(chatRoomId,
+                                                UserService.getLoggedInUserThrow().getId()))
+                                .status(HttpStatus.OK)
+                                .build();
+
+        }
+
         // @DeleteMapping("/room/{chatRoomId}")
         // public ApiResponse<String> deleteChatRoom(@PathVariable("chatRoomId") long
         // chatRoomId) {

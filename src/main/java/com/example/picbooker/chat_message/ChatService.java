@@ -45,6 +45,12 @@ public class ChatService {
     @Autowired
     private UserService userService;
 
+    public ChatRoomDTO getChatRoomByIdThrow(Long chatRoomId, Long userId) {
+        ChatRoom room = chatRoomRepository.findById(chatRoomId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Room Not found"));
+        return toChatRoomResponse(room, userId, 5);
+    }
+
     public ChatRoom createChatRoom() {
         return new ChatRoom();
     }
@@ -165,6 +171,7 @@ public class ChatService {
         Map<String, Object> data = new HashMap<>();
         data.put("userId", message.getSender().getId());
         data.put("message", message.getContent());
+        data.put("chatRoomId", chatRoom.getId());
         socketNotificationService
                 .notifyChat(new SocketNotification<Map<String, Object>>(chatRoom.getId().toString(), data));
         return toChatMessageResponse(message);
