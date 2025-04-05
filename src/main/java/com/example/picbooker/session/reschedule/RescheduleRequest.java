@@ -37,6 +37,9 @@ public class RescheduleRequest {
     @Column
     private Long initiatedById;
 
+    @Column
+    private String reason;
+
     @ManyToOne
     @JoinColumn(name = "session_id", nullable = false)
     private Session session;

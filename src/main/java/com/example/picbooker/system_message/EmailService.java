@@ -61,7 +61,7 @@ public class EmailService implements MessageSenderService {
     public void sendGeneralEmail(String to, String subject, String textContent) throws MessagingException {
         MimeMessage message = emailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true);
-
+        System.out.println(emailUsername + " " + emailPassword);
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(textContent);

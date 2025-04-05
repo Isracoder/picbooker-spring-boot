@@ -3,6 +3,7 @@ package com.example.picbooker.media;
 import static java.util.Objects.isNull;
 
 import java.io.IOException;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -118,11 +119,11 @@ public class MediaController {
     }
 
     @DeleteMapping("/{mediaId}")
-    public ApiResponse<String> deleteMedia(@PathVariable("mediaId") Long mediaId) {
+    public ApiResponse<Map<String, String>> deleteMedia(@PathVariable("mediaId") Long mediaId) {
         mediaService.delete(mediaId,
                 UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()).getId());
-        return ApiResponse.<String>builder()
-                .content("Successful deletion")
+        return ApiResponse.<Map<String, String>>builder()
+                .content(Map.of("status", "Success"))
                 .status(HttpStatus.OK)
                 .build();
 

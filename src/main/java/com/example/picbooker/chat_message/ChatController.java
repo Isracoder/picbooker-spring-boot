@@ -1,6 +1,7 @@
 package com.example.picbooker.chat_message;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -42,11 +43,11 @@ public class ChatController {
         }
 
         @PutMapping("/{chatRoomId}/read")
-        public ApiResponse<String> markRead(@PathVariable("chatRoomId") Long chatRoomId) {
+        public ApiResponse<Map<String, String>> markRead(@PathVariable("chatRoomId") Long chatRoomId) {
                 // send chat room id
                 chatService.markChatAsRead(UserService.getLoggedInUserThrow().getId(), chatRoomId);
-                return ApiResponse.<String>builder()
-                                .content("Success")
+                return ApiResponse.<Map<String, String>>builder()
+                                .content(Map.of("status", "Success"))
                                 .status(HttpStatus.OK)
                                 .build();
 
@@ -112,11 +113,11 @@ public class ChatController {
         // }
 
         @DeleteMapping("/message/{messageId}")
-        public ApiResponse<String> deleteById(@PathVariable("messageId") long messageId) {
+        public ApiResponse<Map<String, String>> deleteById(@PathVariable("messageId") long messageId) {
 
                 chatService.deleteMyMessage(UserService.getLoggedInUserThrow().getId(), messageId);
-                return ApiResponse.<String>builder()
-                                .content("Success")
+                return ApiResponse.<Map<String, String>>builder()
+                                .content(Map.of("status", "Success"))
                                 .status(HttpStatus.OK)
                                 .build();
 

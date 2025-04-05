@@ -18,4 +18,5 @@ public class RescheduleDTO {
     private LocalTime startTime;
     private LocalTime endTime;
     private Long sessionId;
+    private String reason;
 }

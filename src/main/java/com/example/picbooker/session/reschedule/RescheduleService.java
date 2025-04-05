@@ -3,16 +3,21 @@ package com.example.picbooker.session.reschedule;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.picbooker.ApiException;
+import com.example.picbooker.PageDTO;
 import com.example.picbooker.notification.NotificationService;
 import com.example.picbooker.photographer.Photographer;
 import com.example.picbooker.session.Session;
+import com.example.picbooker.session.SessionService;
 import com.example.picbooker.session.SessionStatus;
 import com.example.picbooker.system_message.EmailService;
 import com.example.picbooker.user.User;
@@ -33,7 +38,7 @@ public class RescheduleService {
 
     @Transactional
     public void requestRescheduleAsClient(Session session, LocalDate newDate, LocalTime newStartTime,
-            LocalTime newEndTime) {
+            LocalTime newEndTime, String reason) {
 
         try {
             Photographer photographer = session.getPhotographer();
@@ -54,7 +59,8 @@ public class RescheduleService {
             }
 
             // Save request in DB for approval
-            RescheduleRequest request = new RescheduleRequest(null, session.getClient().getUser().getId(), session,
+            RescheduleRequest request = new RescheduleRequest(null, session.getClient().getUser().getId(), reason,
+                    session,
                     newDate, newStartTime, newEndTime,
                     RescheduleStatus.PENDING, LocalDateTime.now());
 
@@ -72,13 +78,13 @@ public class RescheduleService {
 
     @Transactional
     public void requestRescheduleAsPhotographer(Session session, LocalDate newDate, LocalTime newStartTime,
-            LocalTime newEndTime) {
+            LocalTime newEndTime, String reason) {
 
         try {
 
             // Save request in DB for approval
             RescheduleRequest request = new RescheduleRequest(null, session.getPhotographer().getUser().getId(),
-                    session,
+                    reason, session,
                     newDate, newStartTime, newEndTime,
                     RescheduleStatus.PENDING, LocalDateTime.now());
 
@@ -169,6 +175,37 @@ public class RescheduleService {
 
     public boolean existsBySessionIdAndStatus(Long sessionId, RescheduleStatus status) {
         return rescheduleRequestRepository.existsBySession_IdAndStatus(sessionId, status);
+    }
+
+    public PageDTO<RescheduleRequestResponse> findByPhotographerAndStatus(Long photographerId, Long userId,
+            RescheduleStatus status,
+            Pageable pageable) {
+        Page<RescheduleRequest> page = rescheduleRequestRepository.findForPhotographerAndStatus(photographerId, userId,
+                status, pageable);
+        List<RescheduleRequestResponse> responses = (page.getContent().stream()
+                .map(this::toRescheduleRequestResponse).toList());
+        return new PageDTO<RescheduleRequestResponse>(responses, page.getTotalPages(), page.getTotalElements(),
+                page.getNumber());
+    }
+
+    public PageDTO<RescheduleRequestResponse> findByClientAndStatus(Long clientId, Long userId, RescheduleStatus status,
+            Pageable pageable) {
+        Page<RescheduleRequest> page = rescheduleRequestRepository.findForClientAndStatus(clientId, userId, status,
+                pageable);
+        List<RescheduleRequestResponse> responses = (page.getContent().stream()
+                .map(this::toRescheduleRequestResponse).toList());
+        return new PageDTO<RescheduleRequestResponse>(responses, page.getTotalPages(), page.getTotalElements(),
+                page.getNumber());
+    }
+
+    public RescheduleRequestResponse toRescheduleRequestResponse(RescheduleRequest rescheduleRequest) {
+
+        return new RescheduleRequestResponse(rescheduleRequest.getId(), rescheduleRequest.getInitiatedById(),
+                rescheduleRequest.getReason(),
+                SessionService.toSessionResponse(rescheduleRequest.getSession(),
+                        rescheduleRequest.getSession().getDeposit()),
+                rescheduleRequest.getNewDate(), rescheduleRequest.getNewStartTime(), rescheduleRequest.getNewEndTime(),
+                rescheduleRequest.getRequestTimestamp(), rescheduleRequest.getStatus());
     }
 
 }

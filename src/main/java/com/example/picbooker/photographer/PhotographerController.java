@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -135,12 +136,12 @@ public class PhotographerController {
         }
 
         @DeleteMapping("/session-types/{sessionTypeId}")
-        public ApiResponse<String> deleteByTypeId(@PathVariable("sessionTypeId") Long sessionTypeId) {
+        public ApiResponse<Map<String, String>> deleteByTypeId(@PathVariable("sessionTypeId") Long sessionTypeId) {
                 photographerSessionTypeService.deleteById(
                                 UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()),
                                 sessionTypeId);
-                return ApiResponse.<String>builder()
-                                .content("Successfully deleted")
+                return ApiResponse.<Map<String, String>>builder()
+                                .content(Map.of("status", "Success"))
                                 .status(HttpStatus.OK)
                                 .build();
         }
@@ -188,12 +189,12 @@ public class PhotographerController {
         }
 
         @DeleteMapping("/add-ons/{add-onId}")
-        public ApiResponse<String> deleteAdditionalServiceByName(@PathVariable("add-onId") Long addOnId) {
+        public ApiResponse<Map<String, String>> deleteAdditionalServiceByName(@PathVariable("add-onId") Long addOnId) {
                 photographerService.deleteAddOnById(
                                 UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()),
                                 addOnId);
-                return ApiResponse.<String>builder()
-                                .content("Successfully deleted")
+                return ApiResponse.<Map<String, String>>builder()
+                                .content(Map.of("status", "Success"))
                                 .status(HttpStatus.OK)
                                 .build();
         }

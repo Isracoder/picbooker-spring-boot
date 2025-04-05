@@ -2,6 +2,7 @@ package com.example.picbooker.client;
 
 import static java.util.Objects.isNull;
 
+import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -104,23 +105,23 @@ public class ClientController {
         }
 
         @PostMapping("/favorites")
-        public ApiResponse<String> setClientFavoritePhotographers(
+        public ApiResponse<Map<String, String>> setClientFavoritePhotographers(
                         @RequestBody Long photographerId) {
                 Client client = clientService.getClientFromUserThrow(UserService.getLoggedInUserThrow());
                 clientService.addToClientFavoritePhotographers(client, photographerId);
-                return ApiResponse.<String>builder()
-                                .content("Successfully added photographer " + photographerId + " as a favorite")
+                return ApiResponse.<Map<String, String>>builder()
+                                .content(Map.of("status", "Success"))
                                 .status(HttpStatus.OK)
                                 .build();
         }
 
         @DeleteMapping("/favorites")
-        public ApiResponse<String> removeFromClientFavoritePhotographers(
+        public ApiResponse<Map<String, String>> removeFromClientFavoritePhotographers(
                         @RequestBody Long photographerId) {
                 Client client = clientService.getClientFromUserThrow(UserService.getLoggedInUserThrow());
                 clientService.removeFromClientFavoritePhotographers(client, photographerId);
-                return ApiResponse.<String>builder()
-                                .content("Successfully removed photographer " + photographerId + " from favorites")
+                return ApiResponse.<Map<String, String>>builder()
+                                .content(Map.of("status", "Success"))
                                 .status(HttpStatus.OK)
                                 .build();
         }

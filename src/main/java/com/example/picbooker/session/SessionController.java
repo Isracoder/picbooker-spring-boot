@@ -2,6 +2,7 @@ package com.example.picbooker.session;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -26,6 +27,9 @@ import com.example.picbooker.client.Client;
 import com.example.picbooker.photographer.Photographer;
 import com.example.picbooker.session.reschedule.RescheduleAnswer;
 import com.example.picbooker.session.reschedule.RescheduleDTO;
+import com.example.picbooker.session.reschedule.RescheduleRequestResponse;
+import com.example.picbooker.session.reschedule.RescheduleService;
+import com.example.picbooker.session.reschedule.RescheduleStatus;
 import com.example.picbooker.sessionType.SessionTypeName;
 import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserService;
@@ -38,6 +42,9 @@ public class SessionController {
 
         @Autowired
         private SessionService sessionService;
+
+        @Autowired
+        private RescheduleService rescheduleService;
 
         @GetMapping("/{id}")
         public ApiResponse<?> findById(@PathVariable("id") long bookingId) {
@@ -77,26 +84,26 @@ public class SessionController {
         }
 
         @PutMapping("/{sessionId}/cash-deposit")
-        public ApiResponse<String> addDeposit(@PathVariable("sessionId") long sessionId) {
+        public ApiResponse<Map<String, String>> addDeposit(@PathVariable("sessionId") long sessionId) {
                 Photographer photographer = UserService
                                 .getPhotographerFromUserThrow(UserService.getLoggedInUserThrow());
 
                 sessionService.payCashDeposit(sessionId, photographer.getId());
-                return ApiResponse.<String>builder()
-                                .content("Success")
+                return ApiResponse.<Map<String, String>>builder()
+                                .content(Map.of("status", "Success"))
                                 .status(HttpStatus.OK)
                                 .build();
         }
 
         @PatchMapping("/{sessionId}/status")
-        public ApiResponse<String> modifyBooking(@PathVariable("sessionId") long sessionId,
+        public ApiResponse<Map<String, String>> modifyBooking(@PathVariable("sessionId") long sessionId,
                         @RequestBody SessionStatus sessionStatus) {
                 Photographer photographer = UserService
                                 .getPhotographerFromUserThrow(UserService.getLoggedInUserThrow());
 
                 sessionService.changeSessionStatus(sessionId, photographer.getId(), sessionStatus);
-                return ApiResponse.<String>builder()
-                                .content("Success. New status: " + sessionStatus)
+                return ApiResponse.<Map<String, String>>builder()
+                                .content(Map.of("newStatus", sessionStatus.toString()))
                                 .status(HttpStatus.OK)
                                 .build();
         }
@@ -118,13 +125,13 @@ public class SessionController {
         }
 
         @PutMapping("/reschedule/client")
-        public ApiResponse<String> clientReschedule(
+        public ApiResponse<Map<String, String>> clientReschedule(
                         @RequestBody RescheduleDTO rescheduleDTO) {
 
                 Client client = UserService.getClientFromUserThrow(UserService.getLoggedInUserThrow());
                 sessionService.clientReschedule(client, rescheduleDTO);
-                return ApiResponse.<String>builder()
-                                .content("Success")
+                return ApiResponse.<Map<String, String>>builder()
+                                .content(Map.of("status", "Success"))
                                 .status(HttpStatus.OK)
                                 .build();
         }
@@ -144,38 +151,38 @@ public class SessionController {
         }
 
         @PutMapping("/reschedule/answer")
-        public ApiResponse<String> processReschedulingResponse(
+        public ApiResponse<Map<String, String>> processReschedulingResponse(
                         @RequestBody RescheduleAnswer response) {
 
                 sessionService.processReschedulingAnswer(response, UserService.getLoggedInUserThrow());
-                return ApiResponse.<String>builder()
-                                .content("Success")
+                return ApiResponse.<Map<String, String>>builder()
+                                .content(Map.of("status", "Success"))
                                 .status(HttpStatus.OK)
                                 .build();
         }
 
         @PutMapping("/{sessionId}/cancel/photographer")
-        public ApiResponse<String> photographerCancel(
+        public ApiResponse<Map<String, String>> photographerCancel(
                         @PathVariable Long sessionId) {
 
                 Photographer photographer = UserService
                                 .getPhotographerFromUserThrow(UserService.getLoggedInUserThrow());
                 sessionService.photographerCancel(sessionId, photographer);
-                return ApiResponse.<String>builder()
-                                .content("Success")
+                return ApiResponse.<Map<String, String>>builder()
+                                .content(Map.of("status", "Success"))
                                 .status(HttpStatus.OK)
                                 .build();
         }
 
         @PutMapping("/{sessionId}/cancel/client")
-        public ApiResponse<String> clientCancel(
+        public ApiResponse<Map<String, String>> clientCancel(
                         @PathVariable Long sessionId) {
 
                 Client client = UserService
                                 .getClientFromUserThrow(UserService.getLoggedInUserThrow());
                 sessionService.clientCancel(sessionId, client);
-                return ApiResponse.<String>builder()
-                                .content("Success")
+                return ApiResponse.<Map<String, String>>builder()
+                                .content(Map.of("status", "Success"))
                                 .status(HttpStatus.OK)
                                 .build();
         }
@@ -231,6 +238,42 @@ public class SessionController {
                 PageDTO<SessionResponse> searchResults = sessionService.findByPhotographerAndStatus(
                                 photographer.getId(), SessionStatus.valueOf(status), pageable);
                 return ApiResponse.<PageDTO<SessionResponse>>builder()
+                                .content(searchResults)
+                                .status(HttpStatus.OK)
+                                .build();
+
+        }
+
+        @GetMapping("/reschedule/photographers")
+        public ApiResponse<PageDTO<RescheduleRequestResponse>> getPhotographerReschedulingRequests(
+                        @RequestParam(name = "status", defaultValue = "PENDING") String status,
+                        @PageableDefault(size = 10, direction = Direction.DESC, sort = "requestTimestamp") Pageable pageable) {
+
+                User user = UserService.getLoggedInUserThrow();
+                Photographer photographer = UserService
+                                .getPhotographerFromUserThrow(user);
+
+                PageDTO<RescheduleRequestResponse> searchResults = rescheduleService.findByPhotographerAndStatus(
+                                photographer.getId(), user.getId(), RescheduleStatus.valueOf(status), pageable);
+                return ApiResponse.<PageDTO<RescheduleRequestResponse>>builder()
+                                .content(searchResults)
+                                .status(HttpStatus.OK)
+                                .build();
+
+        }
+
+        @GetMapping("/reschedule/clients")
+        public ApiResponse<PageDTO<RescheduleRequestResponse>> getClientReschedulingRequests(
+                        @RequestParam(name = "status", defaultValue = "PENDING") String status,
+                        @PageableDefault(size = 10, direction = Direction.DESC, sort = "requestTimestamp") Pageable pageable) {
+
+                User user = UserService.getLoggedInUserThrow();
+                Client client = UserService
+                                .getClientFromUserThrow(user);
+
+                PageDTO<RescheduleRequestResponse> searchResults = rescheduleService.findByClientAndStatus(
+                                client.getId(), user.getId(), RescheduleStatus.valueOf(status), pageable);
+                return ApiResponse.<PageDTO<RescheduleRequestResponse>>builder()
                                 .content(searchResults)
                                 .status(HttpStatus.OK)
                                 .build();

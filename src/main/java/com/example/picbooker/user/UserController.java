@@ -82,16 +82,16 @@ public class UserController {
 
     }
 
-    @DeleteMapping("/{id}") // to do secure only for admin
-    public ApiResponse<String> deleteById(@PathVariable("id") long id) {
+    // @DeleteMapping("/{id}") // to do secure only for admin
+    // public ApiResponse<String> deleteById(@PathVariable("id") long id) {
 
-        service.delete(id);
-        return ApiResponse.<String>builder()
-                .content("Successful deletion")
-                .status(HttpStatus.OK)
-                .build();
+    // service.delete(id);
+    // return ApiResponse.<String>builder()
+    // .content("Successful deletion")
+    // .status(HttpStatus.OK)
+    // .build();
 
-    }
+    // }
 
     @PostMapping("/")
     public ApiResponse<UserResponse> createUser(@RequestBody UserRequest userRequest) {

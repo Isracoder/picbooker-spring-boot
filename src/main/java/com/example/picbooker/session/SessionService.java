@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.picbooker.ApiException;
 import com.example.picbooker.PageDTO;
 import com.example.picbooker.client.Client;
+import com.example.picbooker.client.ClientMapper;
 import com.example.picbooker.deposit.Deposit;
 import com.example.picbooker.deposit.DepositService;
 import com.example.picbooker.deposit.DepositStatus;
@@ -121,7 +122,7 @@ public class SessionService {
             Pageable pageable) {
         Page<Session> page = sessionRepository.findByPhotographer_IdAndStatus(photographerId, status, pageable);
         List<SessionResponse> responses = (page.getContent().stream()
-                .map(this::toSessionResponse).toList());
+                .map(session -> toSessionResponse(session, session.getDeposit())).toList());
         return new PageDTO<SessionResponse>(responses, page.getTotalPages(), page.getTotalElements(), page.getNumber());
     }
 
@@ -288,7 +289,7 @@ public class SessionService {
                     "Booking Request Sent to Photographer Confirmation",
                     sessionDTO.toString());
             session = save(session);
-            return toSessionResponse(session.getId(), sessionDTO, session.getStatus(), deposit, price);
+            return toSessionResponse(session, deposit);
         } catch (Exception e) {
 
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
@@ -312,21 +313,23 @@ public class SessionService {
         }
 
         rescheduleService.requestRescheduleAsClient(session, rescheduleDTO.getDate(), rescheduleDTO.getStartTime(),
-                rescheduleDTO.getEndTime());
+                rescheduleDTO.getEndTime(), rescheduleDTO.getReason());
 
         // return toSessionResponse(session);
     }
 
     private Boolean canRescheduleWithInfo(Photographer photographer, Session session, RescheduleDTO rescheduleDTO) {
-        if (session.getStatus() == SessionStatus.CANCELED || session.getDate().isAfter(LocalDate.now())) {
+        if (session.getStatus() == SessionStatus.CANCELED || session.getDate().isBefore(LocalDate.now())) {
             // throw new ApiException(HttpStatus.BAD_REQUEST, "Cannot reschedule a completed
             // or canceled session.");
+            System.out.println("can't reschedule that session");
             return false;
         }
 
         if (rescheduleService.existsBySessionIdAndStatus(session.getId(), RescheduleStatus.PENDING)) {
             // throw new ApiException(HttpStatus.BAD_REQUEST, "One rescheduling request at a
             // time");
+            System.out.println("there already is a request for that session");
             return false;
         }
 
@@ -337,14 +340,15 @@ public class SessionService {
 
         if (LocalDateTime.now().isAfter(latestAllowedRescheduleTime)) {
             // throw new ApiException(HttpStatus.BAD_REQUEST,
-            // "Rescheduling period has expired. A new session is required.");
+            System.out.println("Rescheduling period has expired. A new session is required.");
             return false;
         }
         // Check availability before proceeding
-        if (canPhotographerHaveSessionOnDayBetween(photographer.getId(), rescheduleDTO.getDate(),
+        if (!canPhotographerHaveSessionOnDayBetween(photographer.getId(), rescheduleDTO.getDate(),
                 rescheduleDTO.getStartTime(), rescheduleDTO.getEndTime())) {
             // throw new ApiException(HttpStatus.BAD_REQUEST, "Photographer is unavailable
             // at the requested time.");
+            System.out.println("photographer unavailable at that time");
             return false;
         }
         return true;
@@ -366,9 +370,9 @@ public class SessionService {
         }
 
         rescheduleService.requestRescheduleAsClient(session, rescheduleDTO.getDate(), rescheduleDTO.getStartTime(),
-                rescheduleDTO.getEndTime());
+                rescheduleDTO.getEndTime(), rescheduleDTO.getReason());
 
-        return toSessionResponse(session);
+        return toSessionResponse(session, session.getDeposit());
 
     }
 
@@ -443,12 +447,15 @@ public class SessionService {
 
     }
 
-    public SessionResponse toSessionResponse(Long sessionId, SessionDTO sessionDTO, SessionStatus sessionStatus,
-            Deposit deposit,
-            Double totalPrice) {
-        return new SessionResponse(sessionId, sessionDTO, sessionStatus, deposit.getStatus(), deposit.getId(),
-                deposit.getMethod(),
-                totalPrice, deposit.getAmount());
+    public static SessionResponse toSessionResponse(Session session, Deposit deposit) {
+        String typeOrCustomType = session.getSessionType().getType() != null
+                ? session.getSessionType().getType().toString()
+                : session.getSessionType().getCustomSessionType();
+        return new SessionResponse(session.getId(), PhotographerMapper.toResponse(session.getPhotographer()),
+                session.getStatus(), deposit.getStatus(), deposit.getId(),
+                deposit.getMethod(), session.getTotalPrice(), session.getDeposit().getAmount(),
+                session.getCurrency().getCurrencyCode(),
+                typeOrCustomType, ClientMapper.toResponse(session.getClient()));
     }
 
     public SessionDTO toSessionDTO(Session session) {
@@ -456,11 +463,6 @@ public class SessionService {
                 session.getStartTime(), session.getEndTime(), session.getLocation(), session.getPrivateComment(),
                 session.getDeposit().getMethod(),
                 (session.getSessionAddOns()).stream().map(addon -> addon.getId()).toList());
-    }
-
-    public SessionResponse toSessionResponse(Session session) {
-        return toSessionResponse(session.getId(), toSessionDTO(session), session.getStatus(), session.getDeposit(),
-                session.getTotalPrice());
     }
 
     // gets in one-hours slots
@@ -647,7 +649,7 @@ public class SessionService {
                     pageable);
 
             List<SessionResponse> responses = results.getContent().stream()
-                    .map(session -> toSessionResponse(session))
+                    .map(session -> toSessionResponse(session, session.getDeposit()))
                     .collect(Collectors.toList());
             return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
                     results.getNumber());
@@ -655,7 +657,7 @@ public class SessionService {
             Page<Session> results = sessionRepository.findByClient_IdAndDateAfter(clientId, date, pageable);
 
             List<SessionResponse> responses = results.getContent().stream()
-                    .map(session -> toSessionResponse(session))
+                    .map(session -> toSessionResponse(session, session.getDeposit()))
                     .collect(Collectors.toList());
             return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
                     results.getNumber());
@@ -667,7 +669,7 @@ public class SessionService {
                 SessionStatus.BOOKED, LocalDate.now(), pageable);
 
         List<SessionResponse> responses = results.getContent().stream()
-                .map(session -> toSessionResponse(session))
+                .map(session -> toSessionResponse(session, session.getDeposit()))
                 .collect(Collectors.toList());
         return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
                 results.getNumber());
@@ -681,7 +683,7 @@ public class SessionService {
                     pageable);
 
             List<SessionResponse> responses = results.getContent().stream()
-                    .map(session -> toSessionResponse(session))
+                    .map(session -> toSessionResponse(session, session.getDeposit()))
                     .collect(Collectors.toList());
             return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
                     results.getNumber());
@@ -689,7 +691,7 @@ public class SessionService {
             Page<Session> results = sessionRepository.findByClient_IdAndDateAfter(photographerId, date, pageable);
 
             List<SessionResponse> responses = results.getContent().stream()
-                    .map(session -> toSessionResponse(session))
+                    .map(session -> toSessionResponse(session, session.getDeposit()))
                     .collect(Collectors.toList());
             return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
                     results.getNumber());
@@ -701,7 +703,7 @@ public class SessionService {
                 SessionStatus.BOOKED, LocalDate.now(), pageable);
 
         List<SessionResponse> responses = results.getContent().stream()
-                .map(session -> toSessionResponse(session))
+                .map(session -> toSessionResponse(session, session.getDeposit()))
                 .collect(Collectors.toList());
         return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
                 results.getNumber());
