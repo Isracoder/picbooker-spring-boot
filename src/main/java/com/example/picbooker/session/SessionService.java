@@ -32,6 +32,7 @@ import com.example.picbooker.deposit.DepositService;
 import com.example.picbooker.deposit.DepositStatus;
 import com.example.picbooker.deposit.PaymentMethod;
 import com.example.picbooker.notification.NotificationService;
+import com.example.picbooker.payments.PaymentProcessingService;
 import com.example.picbooker.photographer.Photographer;
 import com.example.picbooker.photographer.PhotographerMapper;
 import com.example.picbooker.photographer.PhotographerService;
@@ -74,8 +75,8 @@ public class SessionService {
     @Autowired
     private EmailService emailService;
 
-    // @Autowired
-    // private StripeConnectService stripeConnectService;
+    @Autowired
+    private PaymentProcessingService paymentProcessingService;
 
     @Autowired
     private PhotographerSessionTypeService photographerSessionTypeService;
@@ -284,10 +285,13 @@ public class SessionService {
                 session.setDeposit(deposit);
             }
 
+            String message = "Session Information: \n-Date: " + session.getDate().toString() + "\n-Time: "
+                    + session.getStartTime() + "-" + session.getEndTime() + "\n-Type: "
+                    + session.getSessionType().getType();
             // to change object not sent as I'd like check email
             emailService.sendGeneralEmail(client.getUser().getEmail(),
                     "Booking Request Sent to Photographer Confirmation",
-                    sessionDTO.toString());
+                    message);
             session = save(session);
             return toSessionResponse(session, deposit);
         } catch (Exception e) {
@@ -556,20 +560,14 @@ public class SessionService {
             if (!isNull(session.getDeposit()) && session.getDeposit().getMethod() != PaymentMethod.CASH) {
 
                 System.out.println("Send card payment link");
-                // Send payment link to client
-                // (Long sessionId, Long photographerId, Long amountInCents, String currency)
-                // String paymentLink = stripeConnectService.getClientCheckoutLink(sessionId,
-                // photographerId,
-                // StripeConnectService.getSmallestAmountForCurrency(session.getDeposit().getAmount(),
-                // session.getCurrency()),
-                // session.getDeposit().getCurrency().getCurrencyCode().toLowerCase());
-                // emailService.sendGeneralEmail(session.getClient().getUser().getEmail(),
-                // "Session Approved",
-                // "Your Session Request was approved by the photographer.\nPlease pay your
-                // deposit here: "
-                // + paymentLink
-                // + "\n\nIf 2 days or less is left until your session and you haven't yet paid
-                // the deposit your session will be cancelled according to policy.");
+                String paymentLink = paymentProcessingService.createPaymentPageForDeposit(session.getDeposit(), session,
+                        session.getPhotographer());
+
+                emailService.sendGeneralEmail(session.getClient().getUser().getEmail(),
+                        "Session Approved",
+                        "Your Session Request was approved by the photographer.\nPlease pay your deposit here: "
+                                + paymentLink
+                                + "\n\nIf you do not pay the deposit the photographer has the right to cancel your session.");
             }
         } catch (Exception e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());

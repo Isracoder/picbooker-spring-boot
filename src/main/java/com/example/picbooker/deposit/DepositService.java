@@ -1,21 +1,14 @@
 package com.example.picbooker.deposit;
 
-import static java.util.Objects.isNull;
-
 import java.time.LocalDateTime;
 import java.util.Currency;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import com.example.picbooker.ApiException;
 // import com.example.picbooker.payments.StripeConnectService;
 import com.example.picbooker.session.Session;
-import com.stripe.exception.StripeException;
-import com.stripe.model.PaymentIntent;
-import com.stripe.param.PaymentIntentCreateParams;
 
 @Service
 public class DepositService {
@@ -64,35 +57,6 @@ public class DepositService {
 
     public Deposit findByIdThrow(Long id) {
         return depositRepository.findById(id).orElseThrow();
-    }
-
-    public PaymentIntent createPaymentIntent(Session session, long amount) throws StripeException {
-        Deposit deposit = session.getDeposit();
-        if (isNull(deposit) || deposit.getMethod() == PaymentMethod.CASH) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Deposit not required or not requested in this method");
-        }
-        if (isNull(session.getPhotographer().getStripeAccountId())) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Photographer hasn't enabled online payment");
-        }
-
-        PaymentIntentCreateParams params = PaymentIntentCreateParams.builder()
-                // to do set amount
-                .setAmount(100L
-                // StripeConnectService.getSmallestAmountForCurrency(deposit.getAmount(),
-                // deposit.getCurrency())
-                )
-                .setCurrency(deposit.getCurrency().getCurrencyCode().toLowerCase()) // expects lowercase
-                .putMetadata("booking_id", session.getId().toString())
-                .setTransferData(PaymentIntentCreateParams.TransferData.builder()
-                        .setDestination(session.getPhotographer().getStripeAccountId())
-                        .build())
-                .setDescription("Deposit for booking ID: " + session.getId() + ", with deposit id: " + deposit.getId())
-                .build();
-
-        PaymentIntent paymentIntent = PaymentIntent.create(params);
-        deposit.setStripePaymentIntentId(paymentIntent.getId()); // to think of encrypting
-        // return paymentIntent.getClientSecret();
-        return paymentIntent;
     }
 
 }

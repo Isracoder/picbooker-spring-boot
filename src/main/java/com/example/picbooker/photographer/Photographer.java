@@ -51,8 +51,9 @@ public class Photographer {
     @JoinColumn(name = "user_id", referencedColumnName = "id", unique = true)
     private User user;
 
-    @Column(unique = true)
-    private String stripeAccountId;
+    @Column
+    @Default
+    private Boolean enabledOnlinePayment = false;
     // @OneToOne(optional = true)
     // @JoinColumn(name = "profilePic_id", referencedColumnName = "id", unique =
     // true)
