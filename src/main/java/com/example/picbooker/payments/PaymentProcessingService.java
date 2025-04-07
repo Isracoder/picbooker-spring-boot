@@ -35,15 +35,16 @@ public class PaymentProcessingService {
         if (isNull(deposit) || deposit.getMethod() == PaymentMethod.CASH) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Deposit not required or not requested in this method");
         }
-        if (isNull(photographer.getEnabledOnlinePayment())
-                || photographer.getEnabledOnlinePayment() == false) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Photographer hasn't enabled online payment");
-        }
+        // if (isNull(photographer.getEnabledOnlinePayment())
+        // || photographer.getEnabledOnlinePayment() == false) {
+        // throw new ApiException(HttpStatus.BAD_REQUEST, "Photographer hasn't enabled
+        // online payment");
+        // }
 
         String smallestAmount = String
                 .valueOf(PaymentProcessingService.getSmallestAmountForCurrency(deposit.getAmount(),
                         deposit.getCurrency()));
-        String slug = "picbooker/" + UUID.randomUUID().toString().substring(0, 12);
+        String slug = UUID.randomUUID().toString().substring(0, 12);
         String description = "Deposit payment page for session on date:" + session.getDate().toString()
                 + ".\nPhotographer: " + photographer.getPersonalName();
 
