@@ -62,6 +62,7 @@ public class EmailService implements MessageSenderService {
         MimeMessage message = emailSender.createMimeMessage();
         MimeMessageHelper helper = new MimeMessageHelper(message, true);
         System.out.println(emailUsername + " " + emailPassword);
+        System.out.println(to + " " + subject + " " + textContent);
         helper.setTo(to);
         helper.setSubject(subject);
         helper.setText(textContent);

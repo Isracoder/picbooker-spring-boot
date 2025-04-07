@@ -295,7 +295,7 @@ public class SessionService {
             session = save(session);
             return toSessionResponse(session, deposit);
         } catch (Exception e) {
-
+            System.out.println();
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Something went wrong: " + e.getLocalizedMessage());
         }
@@ -455,11 +455,13 @@ public class SessionService {
         String typeOrCustomType = session.getSessionType().getType() != null
                 ? session.getSessionType().getType().toString()
                 : session.getSessionType().getCustomSessionType();
-        return new SessionResponse(session.getId(), PhotographerMapper.toResponse(session.getPhotographer()),
-                session.getStatus(), deposit.getStatus(), deposit.getId(),
-                deposit.getMethod(), session.getTotalPrice(), session.getDeposit().getAmount(),
-                session.getCurrency().getCurrencyCode(),
-                typeOrCustomType, ClientMapper.toResponse(session.getClient()));
+        return new SessionResponse(session.getId(), deposit.getId(),
+                PhotographerMapper.toResponse(session.getPhotographer()),
+                session.getStatus(), deposit.getStatus(), deposit.getMethod(), session.getTotalPrice(),
+                deposit.getAmount(), session.getCurrency().getCurrencyCode(), typeOrCustomType, session.getDate(),
+                session.getStartTime(), session.getEndTime(), session.getLocation(), session.getPrivateComment(), null,
+                ClientMapper.toResponse(session.getClient()));
+
     }
 
     public SessionDTO toSessionDTO(Session session) {

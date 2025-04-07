@@ -230,7 +230,7 @@ public class SessionController {
         @GetMapping("/photographers")
         public ApiResponse<PageDTO<SessionResponse>> getPhotographerSessions(
                         @RequestParam(name = "status", defaultValue = "APPROVAL_PENDING") String status,
-                        @PageableDefault(size = 10, direction = Direction.ASC, sort = "date") Pageable pageable) {
+                        @PageableDefault(size = 10, direction = Direction.DESC, sort = "date") Pageable pageable) {
 
                 Photographer photographer = UserService
                                 .getPhotographerFromUserThrow(UserService.getLoggedInUserThrow());
