@@ -50,8 +50,6 @@ import com.example.picbooker.user.User;
 import com.example.picbooker.workhours.WorkHour;
 import com.example.picbooker.workhours.WorkHourService;
 
-import jakarta.mail.MessagingException;
-
 @Service
 public class SessionService {
 
@@ -288,9 +286,12 @@ public class SessionService {
             String message = "Session Information: \n-Date: " + session.getDate().toString() + "\n-Time: "
                     + session.getStartTime() + "-" + session.getEndTime() + "\n-Type: "
                     + session.getSessionType().getType();
-            // to change object not sent as I'd like check email
+
+            notificationService.sendNotification(session.getClient().getUser(),
+                    "Your session request has been sent!");
+
             emailService.sendGeneralEmail(client.getUser().getEmail(),
-                    "Booking Request Sent to Photographer Confirmation",
+                    "Session Request Sent to Photographer Confirmation",
                     message);
             session = save(session);
             return toSessionResponse(session, deposit);
@@ -409,7 +410,7 @@ public class SessionService {
                     "Your session has been canceled by the photographer");
             emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Session CANCELLATION",
                     message);
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong while sending a message");
         }
     }
@@ -435,7 +436,7 @@ public class SessionService {
 
             emailService.sendGeneralEmail(session.getPhotographer().getUser().getEmail(), "Session Cancellation notice",
                     "A client has canceled their session.");
-        } catch (MessagingException e) {
+        } catch (Exception e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong while sending a message");
         }
     }
@@ -559,6 +560,9 @@ public class SessionService {
             session.setStatus(SessionStatus.BOOKED);
             sessionRepository.save(session);
 
+            notificationService.sendNotification(session.getClient().getUser(),
+                    "Your session request has been approved!");
+
             if (!isNull(session.getDeposit()) && session.getDeposit().getMethod() != PaymentMethod.CASH) {
 
                 System.out.println("Send card payment link");
@@ -569,6 +573,12 @@ public class SessionService {
                         "Session Approved",
                         "Your Session Request was approved by the photographer.\nPlease pay your deposit here: "
                                 + paymentLink
+                                + "\n\nIf you do not pay the deposit the photographer has the right to cancel your session.");
+            } else {
+
+                emailService.sendGeneralEmail(session.getClient().getUser().getEmail(),
+                        "Session Approved",
+                        "Your Session Request was approved by the photographer.\nPlease pay your deposit in accordance to what was agreed upon."
                                 + "\n\nIf you do not pay the deposit the photographer has the right to cancel your session.");
             }
         } catch (Exception e) {
@@ -587,8 +597,10 @@ public class SessionService {
             sessionRepository.save(session);
 
             // Notify the client and photographer
-            emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Session Confirmed",
-                    "Your session has been confirmed!");
+            notificationService.sendNotification(session.getClient().getUser(),
+                    "Your session deposit has been confirmed!");
+            emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Session Deposit Confirmed",
+                    "Your deposit has been confirmed!");
         } catch (Exception e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -603,6 +615,9 @@ public class SessionService {
             sessionRepository.save(session);
 
             // Notify the client
+            notificationService.sendNotification(session.getClient().getUser(),
+                    "Payment failed");
+
             emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Payment Failed",
                     "Your payment failed. Please try again.");
         } catch (Exception e) {

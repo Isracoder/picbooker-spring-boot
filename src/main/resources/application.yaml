@@ -23,6 +23,11 @@ server :
   error:
     include-message: always
 spring:
+  task: 
+    execution: 
+      pool: 
+        core-size: 5
+        max-size: 10
   config: 
   # optional:file:.env[.properties]
     import: file:.env[.properties]
