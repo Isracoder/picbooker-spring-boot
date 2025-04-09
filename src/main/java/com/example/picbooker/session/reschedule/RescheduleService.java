@@ -109,7 +109,11 @@ public class RescheduleService {
         public void approveReschedule(Session session, User user) {
                 try {
 
-                        RescheduleRequest request = getRescheduleRequestOrThrow(session.getId());
+                        RescheduleRequest request = rescheduleRequestRepository
+                                        .findBySessionIdAndStatus(session.getId(), RescheduleStatus.PENDING)
+                                        .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
+                                                        "Reschedule request not found"));
+
                         if ((user.getId() != session.getPhotographer().getId()
                                         && user.getId() != session.getClient().getId())
                                         || (user.getId() == request.getInitiatedById())) {
