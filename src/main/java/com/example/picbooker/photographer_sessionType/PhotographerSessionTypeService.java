@@ -82,6 +82,14 @@ public class PhotographerSessionTypeService {
         return photographerSessionTypeRepository.findByTypeAndPhotographer_User_CityIgnoreCase(type, city.trim());
     }
 
+    public List<PhotographerSessionType> findByPhotographerCityAndPhotographerCountryAndType(String city,
+            String country,
+            SessionTypeName type) {
+        return photographerSessionTypeRepository
+                .findByTypeAndPhotographer_User_CityAndPhotographer_User_CountryIgnoreCase(type, city.trim(),
+                        country.trim());
+    }
+
     public List<PhotographerSessionType> findByType(SessionTypeName type) {
         return photographerSessionTypeRepository.findByType(type);
     }

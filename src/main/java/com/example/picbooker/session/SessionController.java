@@ -217,7 +217,7 @@ public class SessionController {
 
                 // get possibles with params passed
                 // city, type, price range, date
-                List<SessionSearchDTO> searchResults = sessionService.getPossibles(city,
+                List<SessionSearchDTO> searchResults = sessionService.getPossibles(city, country,
                                 SessionTypeName.valueOf(sessionType),
                                 minPrice, maxPrice, date);
                 return ApiResponse.<List<SessionSearchDTO>>builder()

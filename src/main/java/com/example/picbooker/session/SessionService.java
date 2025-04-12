@@ -170,7 +170,8 @@ public class SessionService {
         return null;
     }
 
-    public List<SessionSearchDTO> getPossibles(String city, SessionTypeName type, Double lowPrice, Double highPrice,
+    public List<SessionSearchDTO> getPossibles(String city, String country, SessionTypeName type, Double lowPrice,
+            Double highPrice,
             LocalDate date) {
         List<SessionSearchDTO> results = new ArrayList<>();
         if (isNull(type)) {
@@ -179,10 +180,15 @@ public class SessionService {
         }
 
         List<PhotographerSessionType> matchingSessions = new ArrayList<>();
-        if (!isNull(city)) {
+        if (!isNull(city) && !city.isEmpty() && !city.isBlank()) {
+            if (!isNull(country) && !country.isEmpty() && !country.isBlank()) {
+                matchingSessions = photographerSessionTypeService
+                        .findByPhotographerCityAndPhotographerCountryAndType(city, country, type);
+            } else {
 
-            matchingSessions = photographerSessionTypeService
-                    .findByPhotographerCityAndType(city, type);
+                matchingSessions = photographerSessionTypeService
+                        .findByPhotographerCityAndType(city, type);
+            }
             if (isNull(matchingSessions) || matchingSessions.size() == 0)
                 return results;
 
@@ -198,7 +204,7 @@ public class SessionService {
         // }
 
         // if date is given, filter photographers who have availability
-        if (date != null) {
+        if (!isNull(date)) {
             System.out.println("Before date filtering : " + matchingSessions.size());
             matchingSessions = matchingSessions.stream()
                     .filter(session -> hasAtLeastOneSlotOnDayOfLength(session.getPhotographer().getId(), date,

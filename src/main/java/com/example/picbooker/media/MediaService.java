@@ -130,6 +130,23 @@ public class MediaService { // to think rename to media service
 
     }
 
+    @Transactional
+    public Media updateDescription(long id, Long photographerId, String description) {
+        try {
+            Media media = findByIdThrow(id);
+            Photographer photographer = media.getPhotographer();
+            if (photographer.getId() != photographerId) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
+            }
+
+            media.setDescription(description);
+            return save(media);
+        } catch (Exception e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong during deletion");
+        }
+
+    }
+
     public Media uploadMediaForPhotographerGallery(Photographer photographer, MultipartFile file,
             MediaType type, String description) {
         try {

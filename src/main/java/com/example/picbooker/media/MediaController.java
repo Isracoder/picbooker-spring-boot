@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -124,6 +125,18 @@ public class MediaController {
                 UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()).getId());
         return ApiResponse.<Map<String, String>>builder()
                 .content(Map.of("status", "Success"))
+                .status(HttpStatus.OK)
+                .build();
+
+    }
+
+    @PatchMapping("/{mediaId}/description")
+    public ApiResponse<Media> updateDescription(@PathVariable("mediaId") Long mediaId,
+            @RequestBody String description) {
+        Media media = mediaService.updateDescription(mediaId,
+                UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()).getId(), description);
+        return ApiResponse.<Media>builder()
+                .content(media)
                 .status(HttpStatus.OK)
                 .build();
 
