@@ -31,6 +31,7 @@ import com.example.picbooker.security.JwtUtil;
 import com.example.picbooker.session.SessionResponse;
 import com.example.picbooker.session.SessionService;
 import com.example.picbooker.session.SessionStatus;
+import com.example.picbooker.user.User;
 import com.example.picbooker.user.UserService;
 
 @RestController
@@ -166,12 +167,15 @@ public class ClientController {
                                 .build();
         }
 
-        @PutMapping("/{clientId}/profile")
-        public ApiResponse<String> updateProfile(@PathVariable("clientId") Long clientId) {
-                // to do implement
-                return ApiResponse.<String>builder()
-                                .content("Not implemented")
-                                .status(HttpStatus.NOT_IMPLEMENTED)
+        @PutMapping("/profile")
+        public ApiResponse<ClientResponse> updateProfile(@RequestBody ClientResponse clientRequest) {
+                User user = UserService.getLoggedInUserThrow();
+
+                ClientResponse clientResponse = clientService.updateProfile(UserService.getClientFromUserThrow(user),
+                                clientRequest);
+                return ApiResponse.<ClientResponse>builder()
+                                .content(clientResponse)
+                                .status(HttpStatus.OK)
                                 .build();
         }
 

@@ -1,5 +1,7 @@
 package com.example.picbooker.client;
 
+import static java.util.Objects.isNull;
+
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
@@ -122,5 +124,14 @@ public class ClientService {
                     "Can't write a review for a photographer that you haven't had a session with");
         }
         return reviewService.writeOrUpdateReview(client, photographer, reviewDTO);
+    }
+
+    @Transactional
+    public ClientResponse updateProfile(Client client, ClientResponse clientRequest) {
+
+        if (!isNull(clientRequest.getPersonalName()))
+            client.setPersonalName(clientRequest.getPersonalName());
+        return ClientMapper.toResponse(client);
+
     }
 }
