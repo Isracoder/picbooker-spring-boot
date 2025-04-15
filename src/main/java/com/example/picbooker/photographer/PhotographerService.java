@@ -2,6 +2,7 @@ package com.example.picbooker.photographer;
 
 import static java.util.Objects.isNull;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +18,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.picbooker.ApiException;
 import com.example.picbooker.additionalService.AddOnType;
+import com.example.picbooker.blocked_time.BlockedTime;
+import com.example.picbooker.blocked_time.BlockedTimeDTO;
+import com.example.picbooker.blocked_time.BlockedTimeRepository;
 import com.example.picbooker.photographer_additionalService.PhotographerAddOn;
 import com.example.picbooker.photographer_additionalService.PhotographerAddOnDTO;
 import com.example.picbooker.photographer_additionalService.PhotographerAddOnService;
@@ -41,6 +45,9 @@ public class PhotographerService {
 
     @Autowired
     private WorkHourService workHourService;
+
+    @Autowired
+    private BlockedTimeRepository blockedTimeRepository;
 
     @Autowired
     private SocialLinkService socialLinkService;
@@ -104,8 +111,7 @@ public class PhotographerService {
     }
 
     public Photographer getPhotographerFromUserThrow(User user) {
-        // Photographer photographer = photographerRepository.findbyUser(user);
-        // if (isNull(photographer))
+
         Optional<Photographer> photographer = photographerRepository.findByUser(user);
         if (!photographer.isPresent())
             throw new ApiException(HttpStatus.NOT_FOUND, "Photographer not found");
@@ -196,13 +202,72 @@ public class PhotographerService {
         return photographer.getSocialLinks();
     }
 
-    public void getPortfolio(Long id) {
-        // to do implement ;
+    @Transactional
+    public void updateMinimumNotice(Photographer photographer, Integer minutes) {
+        if (isNull(minutes) || minutes < 1440)
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid minutes value");
+        photographer.setMinimumNoticeBeforeSessionMinutes(minutes);
+        save(photographer);
     }
 
-    public void updatePortfolio(Long id) {
-        // to do implement ;
-        // photos / videos ?
+    @Transactional
+    public void updateBufferTime(Photographer photographer, Integer minutes) {
+        if (isNull(minutes) || minutes < 15)
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid minutes value");
+        photographer.setBufferTimeMinutes(minutes);
+        save(photographer);
+    }
+
+    public BlockedTimeDTO blockOutTime(Long photographerId, LocalDateTime blockStart, LocalDateTime blockEnd) {
+
+        // LocalDateTime blockStart = LocalDateTime.of(startDate, startTime);
+        // LocalDateTime blockEnd = LocalDateTime.of(endDate, endTime);
+        if (blockStart.isAfter(blockEnd))
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid block times");
+        Photographer photographer = findByIdThrow(photographerId);
+
+        BlockedTime block = new BlockedTime();
+        block.setPhotographer(photographer);
+        block.setStartDateTime(blockStart);
+        block.setEndDateTime(blockEnd);
+
+        return toBlockedTimeDTO(blockedTimeRepository.save(block));
+    }
+
+    @Transactional
+    public void deleteBlockedOutTime(long blockId, Long photographerId) {
+        try {
+            BlockedTime blockedTime = blockedTimeRepository.findById(blockId)
+                    .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Time block not found"));
+            Photographer photographer = blockedTime.getPhotographer();
+            if (photographer.getId() != photographerId) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
+            }
+
+            blockedTimeRepository.delete(blockedTime);
+        } catch (Exception e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong during deletion");
+        }
+
+    }
+
+    public List<BlockedTimeDTO> getUpcomingBlockedTime(Long photographerId) {
+        // Photographer photographer = findByIdThrow(photographerId);
+
+        List<BlockedTime> blockedTimeSlots = new ArrayList<>();
+        blockedTimeSlots = blockedTimeRepository.findByPhotographer_IdAndEndDateAfter(photographerId,
+                LocalDateTime.now());
+
+        return blockedTimeSlots.stream()
+                .map(this::toBlockedTimeDTO)
+                .collect(Collectors.toList());
+
+    }
+
+    public BlockedTimeDTO toBlockedTimeDTO(BlockedTime blockedTime) {
+        return new BlockedTimeDTO(blockedTime.getPhotographer().getId(),
+                blockedTime.getPhotographer().getPersonalName(), blockedTime.getStartDateTime(),
+                blockedTime.getEndDateTime());
     }
 
     public Page<Review> getReviews(Long photographerId, Pageable pageable) {
@@ -226,6 +291,11 @@ public class PhotographerService {
             photographer.setPersonalName(photographerRequest.getPersonalName());
         return PhotographerMapper.toResponse(photographer);
 
+    }
+
+    public List<BlockedTime> findByPhotographerIdAndOverlapping(Long photographerId, LocalDateTime startDateTime,
+            LocalDateTime endDateTime) {
+        return blockedTimeRepository.findByPhotographerIdAndOverlapping(photographerId, startDateTime, endDateTime);
     }
 
     public List<PhotographerSessionType> getSessionTypes(Long id) {

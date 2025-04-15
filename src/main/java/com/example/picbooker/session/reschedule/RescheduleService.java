@@ -1,5 +1,7 @@
 package com.example.picbooker.session.reschedule;
 
+import static java.util.Objects.isNull;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -41,7 +43,8 @@ public class RescheduleService {
 
                 try {
                         Photographer photographer = session.getPhotographer();
-
+                        if (isNull(session.getClient()))
+                                throw new ApiException(HttpStatus.BAD_REQUEST, "Can't request reschedule");
                         // If session is still pending, reschedule directly
                         if (session.getStatus() == SessionStatus.APPROVAL_PENDING) {
                                 session.setDate(newDate);
@@ -83,7 +86,8 @@ public class RescheduleService {
                         LocalTime newEndTime, String reason) {
 
                 try {
-
+                        if (isNull(session.getClient()))
+                                throw new ApiException(HttpStatus.BAD_REQUEST, "Can't request reschedule");
                         // Save request in DB for approval
                         RescheduleRequest request = new RescheduleRequest(null,
                                         session.getPhotographer().getUser().getId(),
@@ -108,7 +112,8 @@ public class RescheduleService {
         @Transactional
         public void approveReschedule(Session session, User user) {
                 try {
-
+                        if (isNull(session.getClient()))
+                                throw new ApiException(HttpStatus.BAD_REQUEST, "Can't approve reschedule");
                         RescheduleRequest request = rescheduleRequestRepository
                                         .findBySessionIdAndStatus(session.getId(), RescheduleStatus.PENDING)
                                         .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
@@ -159,6 +164,8 @@ public class RescheduleService {
         @Transactional
         public void rejectReschedule(Session session, User user) {
                 try {
+                        if (isNull(session.getClient()))
+                                throw new ApiException(HttpStatus.BAD_REQUEST, "Can't reject reschedule");
                         RescheduleRequest request = getRescheduleRequestOrThrow(session.getId());
                         if ((user.getId() != session.getPhotographer().getId()
                                         && user.getId() != session.getClient().getId())

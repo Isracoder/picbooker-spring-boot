@@ -67,6 +67,12 @@ public class Session {
     @Column
     private Currency currency;
 
+    @Column
+    private String clientName;
+
+    @Column
+    private String clientEmail;
+
     @Enumerated(EnumType.STRING)
     @Column
     private SessionStatus status;

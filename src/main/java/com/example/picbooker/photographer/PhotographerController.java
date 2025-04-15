@@ -25,6 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.picbooker.ApiException;
 import com.example.picbooker.ApiResponse;
 import com.example.picbooker.PageDTO;
+import com.example.picbooker.blocked_time.BlockedTimeDTO;
 import com.example.picbooker.photographer_additionalService.PhotographerAddOn;
 import com.example.picbooker.photographer_additionalService.PhotographerAddOnDTO;
 import com.example.picbooker.photographer_sessionType.PhotographerSessionType;
@@ -112,6 +113,36 @@ public class PhotographerController {
                                 .build();
         }
 
+        @PatchMapping("/sessions/minimum-notice")
+        public ApiResponse<TimeDTO> updateMinimumNotice(
+                        @RequestBody TimeDTO timeDTO) {
+
+                User user = UserService.getLoggedInUserThrow();
+
+                photographerService.updateMinimumNotice(
+                                photographerService.getPhotographerFromUserThrow(user),
+                                timeDTO.getMinutes());
+                return ApiResponse.<TimeDTO>builder()
+                                .content(timeDTO)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @PatchMapping("/sessions/buffer")
+        public ApiResponse<TimeDTO> updateBufferTime(
+                        @RequestBody TimeDTO timeDTO) {
+
+                User user = UserService.getLoggedInUserThrow();
+
+                photographerService.updateBufferTime(
+                                photographerService.getPhotographerFromUserThrow(user),
+                                timeDTO.getMinutes());
+                return ApiResponse.<TimeDTO>builder()
+                                .content(timeDTO)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
         @PatchMapping("/session-types/{sessionTypeId}")
         public ApiResponse<PhotographerSessionType> updateSessionType(@PathVariable("sessionTypeId") Long sessionTypeId,
                         @RequestBody PhotographerSessionTypeDTO photographerSessionTypeDTO) {
@@ -176,6 +207,38 @@ public class PhotographerController {
                                 .build();
         }
 
+        @GetMapping("/{photographerId}/blocks")
+        public ApiResponse<List<BlockedTimeDTO>> getBlocks(@PathVariable("photographerId") Long photographerId) {
+
+                return ApiResponse.<List<BlockedTimeDTO>>builder()
+                                .content(photographerService.getUpcomingBlockedTime(photographerId))
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @PostMapping("/blocks")
+        public ApiResponse<BlockedTimeDTO> createTimeBlock(
+                        @RequestBody BlockedTimeDTO requestDTO) {
+                BlockedTimeDTO blockedTimeDTO = photographerService.blockOutTime(
+                                UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()).getId(),
+                                requestDTO.getStartTime(), requestDTO.getEndTime());
+                return ApiResponse.<BlockedTimeDTO>builder()
+                                .content(blockedTimeDTO)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @DeleteMapping("/blocks/{blockId}")
+        public ApiResponse<Map<String, String>> deleteAdditionalServiceByName(@PathVariable("blockId") Long blockId) {
+                photographerService.deleteBlockedOutTime(
+                                UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()).getId(),
+                                blockId);
+                return ApiResponse.<Map<String, String>>builder()
+                                .content(Map.of("status", "Success"))
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
         @PostMapping("/add-ons")
         public ApiResponse<PhotographerAddOn> createAdditionalService(
                         @RequestBody PhotographerAddOnDTO photographerAddOnDTO) {
@@ -184,17 +247,6 @@ public class PhotographerController {
                                 photographerAddOnDTO);
                 return ApiResponse.<PhotographerAddOn>builder()
                                 .content(addOn)
-                                .status(HttpStatus.OK)
-                                .build();
-        }
-
-        @DeleteMapping("/add-ons/{add-onId}")
-        public ApiResponse<Map<String, String>> deleteAdditionalServiceByName(@PathVariable("add-onId") Long addOnId) {
-                photographerService.deleteAddOnById(
-                                UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()),
-                                addOnId);
-                return ApiResponse.<Map<String, String>>builder()
-                                .content(Map.of("status", "Success"))
                                 .status(HttpStatus.OK)
                                 .build();
         }

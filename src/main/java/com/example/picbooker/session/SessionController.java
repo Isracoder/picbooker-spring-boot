@@ -10,7 +10,6 @@ import org.springframework.data.domain.Sort.Direction;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -54,19 +53,6 @@ public class SessionController {
                 return ApiResponse.<String>builder()
                                 .content("Not implemented")
                                 .status(HttpStatus.OK)
-                                .build();
-
-        }
-
-        @DeleteMapping("/{id}") // to do secure with conditions
-        public ApiResponse<?> deleteById(@PathVariable("id") long bookingId) {
-
-                // cancel a reservation
-                // to do implement
-                sessionService.cancelReservation(bookingId);
-                return ApiResponse.<String>builder()
-                                .content("not implemented")
-                                .status(HttpStatus.NOT_IMPLEMENTED)
                                 .build();
 
         }
@@ -118,6 +104,20 @@ public class SessionController {
                 SessionResponse sessionResponse = sessionService.createBooking(sessionRequest,
                                 UserService.getClientFromUserThrow(user));
                 // to do return booking info maybe
+                return ApiResponse.<SessionResponse>builder()
+                                .content(sessionResponse)
+                                .status(HttpStatus.OK)
+                                .build();
+        }
+
+        @PostMapping("/custom-booking")
+        public ApiResponse<SessionResponse> createCustomAppointment(@RequestBody CustomSessionDTO sessionRequest) {
+
+                User user = UserService.getLoggedInUserThrow();
+
+                SessionResponse sessionResponse = sessionService.createCustomSession(sessionRequest,
+                                UserService.getPhotographerFromUserThrow(user));
+
                 return ApiResponse.<SessionResponse>builder()
                                 .content(sessionResponse)
                                 .status(HttpStatus.OK)

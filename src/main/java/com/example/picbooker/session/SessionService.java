@@ -25,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.example.picbooker.ApiException;
 import com.example.picbooker.PageDTO;
+import com.example.picbooker.blocked_time.BlockedTime;
 import com.example.picbooker.client.Client;
 import com.example.picbooker.client.ClientMapper;
 import com.example.picbooker.deposit.Deposit;
@@ -86,10 +87,12 @@ public class SessionService {
 
     public Session create(LocalDate date, LocalTime startTime, LocalTime endTime, String location,
             String privateComment, Double totalPrice,
-            Currency currency, SessionStatus status, Client client, Photographer photographer, Deposit deposit,
+            Currency currency, SessionStatus status, Client client, String clientName, String clientEmail,
+            Photographer photographer, Deposit deposit,
             PhotographerSessionType photographerSessionType, Set<PhotographerAddOn> photographerAddOns) {
 
-        return new Session(null, date, startTime, endTime, location, privateComment, totalPrice, currency, status,
+        return new Session(null, date, startTime, endTime, location, privateComment, totalPrice, currency, clientName,
+                clientEmail, status,
                 client, photographerSessionType, photographer, deposit, photographerAddOns);
 
     }
@@ -99,13 +102,12 @@ public class SessionService {
     }
 
     public Session createAndSave(LocalDate date, LocalTime startTime, LocalTime endTime, String location,
-            String privateComment,
+            String privateComment, String clientName, String clientEmail,
             Double totalPrice,
             Currency currency, SessionStatus status, Client client, Photographer photographer, Deposit deposit,
             PhotographerSessionType photographerSessionType, Set<PhotographerAddOn> photographerAddOns) {
         return save(create(date, startTime, endTime, location, privateComment, totalPrice, currency, status, client,
-                photographer,
-                deposit, photographerSessionType, photographerAddOns));
+                clientName, clientEmail, photographer, deposit, photographerSessionType, photographerAddOns));
     }
 
     public Optional<Session> findById(Long id) {
@@ -158,7 +160,10 @@ public class SessionService {
 
         if (photographerHasSessionBetween(photographerId, date, startTime, endTime))
             return false;
-        // to do check for blocks, buffer time, minimum
+        if (photographerHasBlockedTimeBetween(photographerId, date, startTime, endTime)) {
+            return false;
+        }
+        // to do check for , buffer time, minimum
         return true;
 
     }
@@ -240,8 +245,21 @@ public class SessionService {
         return conflictingSession.isPresent();
     }
 
-    public void cancelReservation(Long id) {
-        // to do implement ;
+    public Boolean photographerHasBlockedTimeBetween(Long photographerId, LocalDate date, LocalTime startTime,
+            LocalTime endTime) {
+        LocalDateTime startDateTime = LocalDateTime.of(date, startTime);
+        LocalDateTime endDateTime = LocalDateTime.of(date, endTime);
+
+        List<BlockedTime> blocks = photographerService.findByPhotographerIdAndOverlapping(photographerId, startDateTime,
+                endDateTime);
+
+        Optional<BlockedTime> conflict = blocks.stream()
+                .filter(block -> block.getStartDateTime().isBefore(endDateTime)
+                        && block.getEndDateTime().isAfter(startDateTime))
+                // conflict if block starts before I end && ends after I start
+                .findFirst();
+
+        return conflict.isPresent();
     }
 
     public void addAddOnsToSessions(Long id) {
@@ -255,12 +273,13 @@ public class SessionService {
 
             if (isNull(client))
                 throw new ApiException(HttpStatus.BAD_REQUEST, "Client must not be null");
-            System.out.println(sessionDTO.getPhotographerId() + " , " + sessionDTO.getPhotographerSessionTypeId()
-                    + " , " + sessionDTO.getPhotographerAddOnIds());
-            // get necessary info: email, name, phone number
-            // photographer, session type(length, cost, deposit)
+
             // what if he changed default client info ?
             Photographer photographer = photographerService.findByIdThrow(sessionDTO.getPhotographerId());
+            if (!canPhotographerHaveSessionOnDayBetween(photographer.getId(), sessionDTO.getDate(),
+                    sessionDTO.getStartTime(), sessionDTO.getEndTime())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Photographer Unavailable");
+            }
             PhotographerSessionType photographerSessionType = photographerSessionTypeService
                     .findByIdThrow(sessionDTO.getPhotographerSessionTypeId());
             Set<PhotographerAddOn> photographerAddOns = sessionDTO.getPhotographerAddOnIds() != null
@@ -276,7 +295,8 @@ public class SessionService {
             Double price = photographerSessionType.getPricePerDuration() + addOnPrice;
 
             Session session = createAndSave(sessionDTO.getDate(), sessionDTO.getStartTime(), sessionDTO.getEndTime(),
-                    sessionDTO.getLocation(), sessionDTO.getPrivateComment(), price,
+                    sessionDTO.getLocation(), sessionDTO.getPrivateComment(), sessionDTO.getClientName(),
+                    sessionDTO.getClientEmail(), price,
                     photographerSessionType.getCurrency(),
                     SessionStatus.APPROVAL_PENDING, client, photographer, null, photographerSessionType,
                     photographerAddOns);
@@ -380,7 +400,15 @@ public class SessionService {
                     "Reschedule Request unable to be fulfilled.Only one at a time and valid requests permitted.");
         }
 
-        rescheduleService.requestRescheduleAsClient(session, rescheduleDTO.getDate(), rescheduleDTO.getStartTime(),
+        if (isNull(session.getClient())) {
+            session.setDate(rescheduleDTO.getDate());
+            session.setStartTime(rescheduleDTO.getStartTime());
+            session.setEndTime(rescheduleDTO.getEndTime());
+
+            return toSessionResponse(save(session), session.getDeposit());
+        }
+        rescheduleService.requestRescheduleAsPhotographer(session, rescheduleDTO.getDate(),
+                rescheduleDTO.getStartTime(),
                 rescheduleDTO.getEndTime(), rescheduleDTO.getReason());
 
         return toSessionResponse(session, session.getDeposit());
@@ -407,15 +435,20 @@ public class SessionService {
 
             // Track photographer cancellations
             // photographerPenaltyService.recordCancellation(photographerId);
-            photographer.setCancellationStrikes(
-                    isNull(photographer.getCancellationStrikes()) ? 0 : 1 + photographer.getCancellationStrikes());
 
             // Notify client
             String message = "Your session has been canceled by the photographer. If your deposit was paid online it has been refunded, if you paid in cash request it from the photographer.\nWe apologize for the inconvenience and will take steps to reduce this happening in the future.";
-            notificationService.sendNotification(session.getClient().getUser(),
-                    "Your session has been canceled by the photographer");
-            emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Session CANCELLATION",
-                    message);
+            if (!isNull(session.getClient())) {
+                photographer.setCancellationStrikes(
+                        isNull(photographer.getCancellationStrikes()) ? 0 : 1 + photographer.getCancellationStrikes());
+                notificationService.sendNotification(session.getClient().getUser(),
+                        "Your session has been canceled by the photographer");
+                emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Session CANCELLATION",
+                        message);
+
+            } else {
+                emailService.sendGeneralEmail(session.getClientEmail(), "Session CANCELLATION", message);
+            }
         } catch (Exception e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong while sending a message");
         }
@@ -428,7 +461,7 @@ public class SessionService {
             if (LocalDate.now().isAfter(session.getDate())) {
                 throw new ApiException(HttpStatus.BAD_REQUEST, "Can't cancel a past booking");
             }
-            if (session.getClient().getId() != client.getId()) {
+            if (session.getClient() == null || session.getClient().getId() != client.getId()) {
                 throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
             }
 
@@ -473,7 +506,8 @@ public class SessionService {
 
     public SessionDTO toSessionDTO(Session session) {
         return new SessionDTO(session.getPhotographer().getId(), session.getSessionType().getId(), session.getDate(),
-                session.getStartTime(), session.getEndTime(), session.getLocation(), session.getPrivateComment(),
+                session.getStartTime(), session.getEndTime(), session.getLocation(), session.getClientName(),
+                session.getClientEmail(), session.getPrivateComment(),
                 session.getDeposit().getMethod(),
                 (session.getSessionAddOns()).stream().map(addon -> addon.getId()).toList());
     }
@@ -531,28 +565,65 @@ public class SessionService {
 
     private List<LocalTime> generateTimeSlots(LocalTime startTime, LocalTime endTime, Integer slotLengthMinutes) {
         List<LocalTime> timeSlots = new ArrayList<>();
-        // LocalTime currentTime = startTime;
-        // System.out.println("start time: " + startTime.getHour() + ", endtime: " +
-        // endTime.getHour());
+
+        // to do add buffer time
         int cnt = 0;
         while (endTime.isAfter(startTime.plusMinutes(slotLengthMinutes - 1)) && cnt < 50) {
             cnt++;
             timeSlots.add(startTime);
             startTime = startTime.plusMinutes(slotLengthMinutes);
         }
-        // System.out.println("startTime: " + startTime + ", endTime: " + endTime);
 
         return timeSlots;
     }
 
-    public void blockOutTime(Long photographerId) {
-        // to do implement ;
-        // date and time
-    }
+    public SessionResponse createCustomSession(CustomSessionDTO sessionDTO, Photographer photographer) {
+        try {
 
-    public void createPrivateSession(Long photographerId) {
-        // to do implement ;
-        // generate it as link ?
+            if (isNull(photographer))
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Photographer must not be null");
+
+            PhotographerSessionType photographerSessionType = photographerSessionTypeService
+                    .findByIdThrow(sessionDTO.getPhotographerSessionTypeId());
+            Set<PhotographerAddOn> photographerAddOns = sessionDTO.getPhotographerAddOnIds() != null
+                    ? photographerAddOnService
+                            .findSetByIds(sessionDTO.getPhotographerAddOnIds())
+                    : new HashSet<>();
+            Double addOnPrice = 0d;
+            for (PhotographerAddOn addon : photographerAddOns) {
+                addOnPrice += addon.getFee();
+            }
+            Double price = photographerSessionType.getPricePerDuration() + addOnPrice;
+
+            Session session = createAndSave(sessionDTO.getDate(), sessionDTO.getStartTime(), sessionDTO.getEndTime(),
+                    sessionDTO.getLocation(), sessionDTO.getPrivateComment(),
+                    sessionDTO.getClientDetails().getPersonalName(), sessionDTO.getClientDetails().getEmail(), price,
+                    photographerSessionType.getCurrency(),
+                    SessionStatus.BOOKED, null, photographer, null, photographerSessionType,
+                    photographerAddOns);
+            Deposit deposit = null;
+            if (photographerSessionType.getRequiresDeposit()) {
+
+                deposit = depositService.createAndSave(session, photographerSessionType.getDepositAmount(),
+                        photographerSessionType.getCurrency(), null, DepositStatus.UNPAID,
+                        (sessionDTO.getPaymentMethod()), null);
+                session.setDeposit(deposit);
+            }
+
+            String message = "Session Information: \n-Date: " + session.getDate().toString() + "\n-Time: "
+                    + session.getStartTime() + "-" + session.getEndTime() + "\n-Type: "
+                    + session.getSessionType().getType();
+
+            emailService.sendGeneralEmail(sessionDTO.getClientDetails().getEmail(),
+                    "Private Session Booked Confirmation",
+                    message);
+            session = save(session);
+            return toSessionResponse(session, deposit);
+        } catch (Exception e) {
+            System.out.println();
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Something went wrong: " + e.getLocalizedMessage());
+        }
     }
 
     @Transactional
@@ -565,9 +636,6 @@ public class SessionService {
             }
             session.setStatus(SessionStatus.BOOKED);
             sessionRepository.save(session);
-
-            notificationService.sendNotification(session.getClient().getUser(),
-                    "Your session request has been approved!");
 
             if (!isNull(session.getDeposit()) && session.getDeposit().getMethod() != PaymentMethod.CASH) {
 
@@ -587,6 +655,8 @@ public class SessionService {
                         "Your Session Request was approved by the photographer.\nPlease pay your deposit in accordance to what was agreed upon."
                                 + "\n\nIf you do not pay the deposit the photographer has the right to cancel your session.");
             }
+            notificationService.sendNotification(session.getClient().getUser(),
+                    "Your session request has been approved!");
         } catch (Exception e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -603,10 +673,16 @@ public class SessionService {
             sessionRepository.save(session);
 
             // Notify the client and photographer
-            notificationService.sendNotification(session.getClient().getUser(),
-                    "Your session deposit has been confirmed!");
-            emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Session Deposit Confirmed",
-                    "Your deposit has been confirmed!");
+            if (!isNull(session.getClient())) {
+
+                emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Session Deposit Confirmed",
+                        "Your deposit has been confirmed!");
+                notificationService.sendNotification(session.getClient().getUser(),
+                        "Your session deposit has been confirmed!");
+            } else {
+                emailService.sendGeneralEmail(session.getClientEmail(), "Session Deposit Confirmed",
+                        "Your session deposit has been confirmed!");
+            }
         } catch (Exception e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }
@@ -621,11 +697,17 @@ public class SessionService {
             sessionRepository.save(session);
 
             // Notify the client
-            notificationService.sendNotification(session.getClient().getUser(),
-                    "Payment failed");
+            if (!isNull(session.getClient())) {
 
-            emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Payment Failed",
-                    "Your payment failed. Please try again.");
+                emailService.sendGeneralEmail(session.getClient().getUser().getEmail(), "Payment Failed",
+                        "Your payment failed. Please try again.");
+                notificationService.sendNotification(session.getClient().getUser(),
+                        "Payment failed");
+
+            } else {
+                emailService.sendGeneralEmail(session.getClientEmail(), "Payment Failed",
+                        "Your payment failed. Please try again.");
+            }
         } catch (Exception e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }

@@ -15,16 +15,14 @@ import lombok.Setter;
 @Setter
 @AllArgsConstructor
 @Builder
-public class SessionDTO {
+public class CustomSessionDTO {
 
-    private Long photographerId;
+    private ClientDetailsDTO clientDetails;
     private Long photographerSessionTypeId;
     private LocalDate date;
     private LocalTime startTime;
     private LocalTime endTime;
     private String location;
-    private String clientName;
-    private String clientEmail;
     private String privateComment;
     private PaymentMethod paymentMethod;
     private List<Long> photographerAddOnIds; // 1 , 3
