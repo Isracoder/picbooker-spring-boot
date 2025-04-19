@@ -96,14 +96,11 @@ public class SessionController {
 
         @PostMapping("/booking")
         public ApiResponse<SessionResponse> addBookingRequest(@RequestBody SessionDTO sessionRequest) {
-                // add deposit info in req body : amount, currency, paidAt, method,
-                // is this only for cash deposit ?
-                System.out.println("In booking request");
+
                 User user = UserService.getLoggedInUserThrow();
 
                 SessionResponse sessionResponse = sessionService.createBooking(sessionRequest,
                                 UserService.getClientFromUserThrow(user));
-                // to do return booking info maybe
                 return ApiResponse.<SessionResponse>builder()
                                 .content(sessionResponse)
                                 .status(HttpStatus.OK)
@@ -116,7 +113,7 @@ public class SessionController {
                 User user = UserService.getLoggedInUserThrow();
 
                 SessionResponse sessionResponse = sessionService.createCustomSession(sessionRequest,
-                                UserService.getPhotographerFromUserThrow(user));
+                                UserService.getPhotographerFromUserThrow(user).getId());
 
                 return ApiResponse.<SessionResponse>builder()
                                 .content(sessionResponse)

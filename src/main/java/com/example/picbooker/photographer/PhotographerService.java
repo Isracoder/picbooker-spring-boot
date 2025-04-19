@@ -239,6 +239,7 @@ public class PhotographerService {
         try {
             BlockedTime blockedTime = blockedTimeRepository.findById(blockId)
                     .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Time block not found"));
+            System.out.println(blockId + " " + blockedTime.getId() + " " + blockedTime.getPhotographer().getId());
             Photographer photographer = blockedTime.getPhotographer();
             if (photographer.getId() != photographerId) {
                 throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
@@ -246,6 +247,7 @@ public class PhotographerService {
 
             blockedTimeRepository.delete(blockedTime);
         } catch (Exception e) {
+            System.out.println(e.getLocalizedMessage());
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong during deletion");
         }
 
@@ -255,7 +257,7 @@ public class PhotographerService {
         // Photographer photographer = findByIdThrow(photographerId);
 
         List<BlockedTime> blockedTimeSlots = new ArrayList<>();
-        blockedTimeSlots = blockedTimeRepository.findByPhotographer_IdAndEndDateAfter(photographerId,
+        blockedTimeSlots = blockedTimeRepository.findByPhotographer_IdAndEndDateTimeAfter(photographerId,
                 LocalDateTime.now());
 
         return blockedTimeSlots.stream()
@@ -265,7 +267,7 @@ public class PhotographerService {
     }
 
     public BlockedTimeDTO toBlockedTimeDTO(BlockedTime blockedTime) {
-        return new BlockedTimeDTO(blockedTime.getPhotographer().getId(),
+        return new BlockedTimeDTO(blockedTime.getId(), blockedTime.getPhotographer().getId(),
                 blockedTime.getPhotographer().getPersonalName(), blockedTime.getStartDateTime(),
                 blockedTime.getEndDateTime());
     }
@@ -370,6 +372,16 @@ public class PhotographerService {
         return new ProfileCompletionDTO((complete * 1.0) / listOfThings, profilePictureSet, workHoursSet,
                 sessionTypesSet,
                 socialMediaSet, portfolioSet, locationSet, emailVerified, bioSet);
+    }
+
+    public Boolean hasCompletedSession(Long photographerId) {
+        ProfileCompletionDTO profileCompletionDTO = getProfileCompletion(photographerId);
+        if (profileCompletionDTO.getCompletionPercentage() == 1.0)
+            return true;
+        // for (Boolean element : profileCompletionDTO) {
+
+        // }
+        return false;
     }
 
     public List<Photographer> findByCity(String city) {

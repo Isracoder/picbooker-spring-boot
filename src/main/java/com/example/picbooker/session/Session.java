@@ -43,7 +43,7 @@ import lombok.Setter;
 public class Session {
     @Id
     @Column(name = "id")
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column
@@ -81,7 +81,7 @@ public class Session {
     // deposit , client , sessionType, Addon , photographerId
 
     @ManyToOne
-    @JoinColumn(name = "client", nullable = false)
+    @JoinColumn(name = "client", nullable = true)
     private Client client;
 
     @ManyToOne
@@ -98,7 +98,7 @@ public class Session {
 
     @Default
     @ManyToMany
-    @JoinTable(name = "add_ons", joinColumns = @JoinColumn(name = "addOn_id"), inverseJoinColumns = @JoinColumn(name = "session_id"))
+    @JoinTable(name = "add_ons", joinColumns = @JoinColumn(name = "session_id"), inverseJoinColumns = @JoinColumn(name = "addOn_id"))
     private Set<PhotographerAddOn> sessionAddOns = new HashSet<>();
 
 }

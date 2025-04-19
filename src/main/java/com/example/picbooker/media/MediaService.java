@@ -1,7 +1,5 @@
 package com.example.picbooker.media;
 
-import static java.util.Objects.isNull;
-
 import java.io.IOException;
 import java.util.Collections;
 import java.util.UUID;
@@ -17,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.example.picbooker.ApiException;
 import com.example.picbooker.photographer.Photographer;
+import com.example.picbooker.photographer.PhotographerService;
 import com.google.cloud.storage.Acl;
 import com.google.cloud.storage.Blob;
 import com.google.cloud.storage.BlobId;
@@ -34,6 +33,9 @@ public class MediaService { // to think rename to media service
 
     @Autowired
     private EntityManager entityManager;
+
+    @Autowired
+    private PhotographerService photographerService;
 
     private final Storage storage;
 
@@ -163,13 +165,20 @@ public class MediaService { // to think rename to media service
         try {
             Media previousPhoto = getProfilePicturePhotographer(photographer.getId());
             String url = uploadFile(file, MediaType.PROFILE_PICTURE);
-            if (!isNull(previousPhoto)) {
-                deleteFile(previousPhoto.getMediaUrl()); // to delete from firebase
+            Media media = null;
+            if (previousPhoto != null) {
+                deleteFile(previousPhoto.getMediaUrl()); // delete from Firebase
                 previousPhoto.setMediaUrl(url);
-                return mediaRepository.save(previousPhoto); // Save the updated entity
+                media = mediaRepository.save(previousPhoto);
+            } else {
+                media = createAndSave(photographer, url, "Profile Picture", MediaType.PROFILE_PICTURE);
+                // Update profile URL from newly created media
             }
-            photographer.setProfilePhotoUrl(url);
-            return createAndSave(photographer, url, "Profile Picture", MediaType.PROFILE_PICTURE);
+
+            photographer.setProfilePhotoUrl(url); // update URL directly
+            photographerService.save(photographer); // ensure this persists
+
+            return media;
         } catch (IOException e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to convert or upload file");
         }

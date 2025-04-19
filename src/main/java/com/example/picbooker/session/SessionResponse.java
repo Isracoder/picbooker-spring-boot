@@ -28,6 +28,8 @@ public class SessionResponse {
     private Double depositAmount;
     private String currency;
     private String typeOrCustomType;
+    private String customClientName;
+    private String customClientEmail;
     private LocalDate date;
     private LocalTime startTime;
     private LocalTime endTime;

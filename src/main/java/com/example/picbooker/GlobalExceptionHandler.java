@@ -1,5 +1,6 @@
 package com.example.picbooker;
 
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -116,11 +117,11 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(ApiException.class)
-    public ApiResponse<String> handleApiException(ApiException ex) {
+    public ApiResponse<Map<String, String>> handleApiException(ApiException ex) {
         System.err.println("In handle APIException: " + ex.getMessage());
 
-        return ApiResponse.<String>builder()
-                .content(ex.getMessage())
+        return ApiResponse.<Map<String, String>>builder()
+                .content(Map.of("status", "Fail", "message", ex.getMessage()))
                 .status(ex.getStatus())
                 .build();
 

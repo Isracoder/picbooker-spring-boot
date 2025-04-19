@@ -26,7 +26,7 @@ import lombok.Setter;
 @Entity
 public class Media {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @JsonIgnore

@@ -28,6 +28,7 @@ import com.example.picbooker.PageDTO;
 import com.example.picbooker.blocked_time.BlockedTime;
 import com.example.picbooker.client.Client;
 import com.example.picbooker.client.ClientMapper;
+import com.example.picbooker.client.ClientResponse;
 import com.example.picbooker.deposit.Deposit;
 import com.example.picbooker.deposit.DepositService;
 import com.example.picbooker.deposit.DepositStatus;
@@ -155,15 +156,34 @@ public class SessionService {
             LocalTime endTime) {
         WorkHour workHour = workHourService.findForPhotographerAndDay(photographerId, DayOfWeek.from(date));
         if (isNull(workHour)
-                || !(startTime.isAfter(workHour.getStartTime()) && endTime.isBefore(workHour.getEndTime())))
+                || (workHour.getStartTime().isAfter(startTime) || workHour.getEndTime().isBefore(endTime))) {
+            System.out.println(workHour != null ? workHour.getId() : "null");
+            System.out.println(startTime + " " + endTime);
+            System.out.println("Not work hour");
             return false;
-
-        if (photographerHasSessionBetween(photographerId, date, startTime, endTime))
+        }
+        if (photographerHasSessionBetween(photographerId, date, startTime, endTime)) {
+            System.out.println("Has Session");
             return false;
+        }
         if (photographerHasBlockedTimeBetween(photographerId, date, startTime, endTime)) {
+            System.out.println("Has block");
             return false;
         }
         // to do check for , buffer time, minimum
+        return true;
+
+    }
+
+    public Boolean canPhotographerHaveCustomSessionOnDayBetween(Long photographerId, LocalDate date,
+            LocalTime startTime,
+            LocalTime endTime) {
+
+        if (photographerHasSessionBetween(photographerId, date, startTime, endTime)) {
+            System.out.println("Has Session");
+            return false;
+        }
+
         return true;
 
     }
@@ -235,12 +255,12 @@ public class SessionService {
     // to think do I let him have 2 requests at the same time ?
     public Boolean photographerHasSessionBetween(Long photographerId, LocalDate date, LocalTime startTime,
             LocalTime endTime) {
-        List<Session> sessions = sessionRepository.findBookedSessionsByPhotographer_IdAndDate(photographerId, date);
+        List<Session> sessions = sessionRepository.findBookedSessionsByPhotographer_IdAndDateAndStatus(photographerId,
+                date, SessionStatus.BOOKED);
+        System.out.println(sessions.size());
         Optional<Session> conflictingSession = sessions.stream()
-                .filter(session -> (session.getStartTime().isBefore(endTime)
-                        && session.getEndTime().isAfter(startTime)))
-                // a session is conflicting if it starts before I end and ends after I
-                // start
+                .filter(session -> session.getStartTime().isBefore(endTime)
+                        && session.getEndTime().isAfter(startTime))
                 .findFirst();
         return conflictingSession.isPresent();
     }
@@ -276,9 +296,10 @@ public class SessionService {
 
             // what if he changed default client info ?
             Photographer photographer = photographerService.findByIdThrow(sessionDTO.getPhotographerId());
-            if (!canPhotographerHaveSessionOnDayBetween(photographer.getId(), sessionDTO.getDate(),
-                    sessionDTO.getStartTime(), sessionDTO.getEndTime())) {
-                throw new ApiException(HttpStatus.BAD_REQUEST, "Photographer Unavailable");
+            if (sessionDTO.getStartTime().isAfter(sessionDTO.getEndTime())
+                    || !canPhotographerHaveSessionOnDayBetween(photographer.getId(), sessionDTO.getDate(),
+                            sessionDTO.getStartTime(), sessionDTO.getEndTime())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Unavailable Time");
             }
             PhotographerSessionType photographerSessionType = photographerSessionTypeService
                     .findByIdThrow(sessionDTO.getPhotographerSessionTypeId());
@@ -327,6 +348,62 @@ public class SessionService {
                     "Something went wrong: " + e.getLocalizedMessage());
         }
 
+    }
+
+    @Transactional
+    public SessionResponse createCustomSession(CustomSessionDTO sessionDTO, Long photographerId) {
+        try {
+
+            Photographer photographer = photographerService.findByIdThrow(photographerId);
+
+            if (sessionDTO.getStartTime().isAfter(sessionDTO.getEndTime())
+                    || !canPhotographerHaveCustomSessionOnDayBetween(photographer.getId(), sessionDTO.getDate(),
+                            sessionDTO.getStartTime(), sessionDTO.getEndTime())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Unavailable Time");
+            }
+            PhotographerSessionType photographerSessionType = photographerSessionTypeService
+                    .findByIdThrow(sessionDTO.getPhotographerSessionTypeId());
+            Set<PhotographerAddOn> photographerAddOns = sessionDTO.getPhotographerAddOnIds() != null
+                    ? photographerAddOnService
+                            .findSetByIds(sessionDTO.getPhotographerAddOnIds())
+                    : new HashSet<>();
+            Double addOnPrice = 0d;
+            for (PhotographerAddOn addon : photographerAddOns) {
+                addOnPrice += addon.getFee();
+            }
+            Double price = photographerSessionType.getPricePerDuration() + addOnPrice;
+
+            Session session = createAndSave(sessionDTO.getDate(), sessionDTO.getStartTime(), sessionDTO.getEndTime(),
+                    sessionDTO.getLocation(), sessionDTO.getPrivateComment(),
+                    sessionDTO.getClientDetails().getPersonalName(), sessionDTO.getClientDetails().getEmail(), price,
+                    photographerSessionType.getCurrency(),
+                    SessionStatus.BOOKED, null, photographer, null, photographerSessionType,
+                    photographerAddOns);
+            Deposit deposit = null;
+            if (photographerSessionType.getRequiresDeposit()) {
+
+                deposit = depositService.createAndSave(session, photographerSessionType.getDepositAmount(),
+                        photographerSessionType.getCurrency(), null, DepositStatus.UNPAID,
+                        (sessionDTO.getPaymentMethod()), null);
+                session.setDeposit(deposit);
+            }
+
+            String message = "Session Information: \n-Date: " + session.getDate().toString() + "\n-Time: "
+                    + session.getStartTime() + "-" + session.getEndTime() + "\n-Type: "
+                    + session.getSessionType().getType();
+
+            // emailService.sendGeneralEmail(sessionDTO.getClientDetails().getEmail(),
+            // "Private Session Booked Confirmation",
+            // message);
+
+            SessionResponse response = toSessionResponse(session, deposit);
+            session = save(session);
+            return response;
+        } catch (Exception e) {
+            System.out.println();
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Something went wrong: " + e.getLocalizedMessage());
+        }
     }
 
     @Transactional
@@ -495,12 +572,16 @@ public class SessionService {
         String typeOrCustomType = session.getSessionType().getType() != null
                 ? session.getSessionType().getType().toString()
                 : session.getSessionType().getCustomSessionType();
+        ClientResponse clientResponse = session.getClient() != null ? ClientMapper.toResponse(session.getClient())
+                : null;
         return new SessionResponse(session.getId(), deposit.getId(),
                 PhotographerMapper.toResponse(session.getPhotographer()),
                 session.getStatus(), deposit.getStatus(), deposit.getMethod(), session.getTotalPrice(),
-                deposit.getAmount(), session.getCurrency().getCurrencyCode(), typeOrCustomType, session.getDate(),
-                session.getStartTime(), session.getEndTime(), session.getLocation(), session.getPrivateComment(), null,
-                ClientMapper.toResponse(session.getClient()));
+                deposit.getAmount(), session.getCurrency().getCurrencyCode(), typeOrCustomType, session.getClientName(),
+                session.getClientEmail(), session.getDate(),
+                session.getStartTime(), session.getEndTime(), session.getLocation(), session.getPrivateComment(),
+                (session.getSessionAddOns().stream().map(addon -> addon.getId()).toList()),
+                clientResponse);
 
     }
 
@@ -533,9 +614,9 @@ public class SessionService {
 
             List<LocalTime> allTimeSlots = generateTimeSlots(startTime, endTime, slotLengthMinutes);
             System.out.println("Time slots generated with length: " + allTimeSlots.size());
-            List<Session> bookedSessions = sessionRepository.findBookedSessionsByPhotographer_IdAndDate(
+            List<Session> bookedSessions = sessionRepository.findBookedSessionsByPhotographer_IdAndDateAndStatus(
                     photographerSessionType.getPhotographer().getId(),
-                    date);
+                    date, SessionStatus.BOOKED);
 
             // Extract booked time slots
             List<LocalTime> bookedTimeSlots = bookedSessions.stream()
@@ -575,55 +656,6 @@ public class SessionService {
         }
 
         return timeSlots;
-    }
-
-    public SessionResponse createCustomSession(CustomSessionDTO sessionDTO, Photographer photographer) {
-        try {
-
-            if (isNull(photographer))
-                throw new ApiException(HttpStatus.BAD_REQUEST, "Photographer must not be null");
-
-            PhotographerSessionType photographerSessionType = photographerSessionTypeService
-                    .findByIdThrow(sessionDTO.getPhotographerSessionTypeId());
-            Set<PhotographerAddOn> photographerAddOns = sessionDTO.getPhotographerAddOnIds() != null
-                    ? photographerAddOnService
-                            .findSetByIds(sessionDTO.getPhotographerAddOnIds())
-                    : new HashSet<>();
-            Double addOnPrice = 0d;
-            for (PhotographerAddOn addon : photographerAddOns) {
-                addOnPrice += addon.getFee();
-            }
-            Double price = photographerSessionType.getPricePerDuration() + addOnPrice;
-
-            Session session = createAndSave(sessionDTO.getDate(), sessionDTO.getStartTime(), sessionDTO.getEndTime(),
-                    sessionDTO.getLocation(), sessionDTO.getPrivateComment(),
-                    sessionDTO.getClientDetails().getPersonalName(), sessionDTO.getClientDetails().getEmail(), price,
-                    photographerSessionType.getCurrency(),
-                    SessionStatus.BOOKED, null, photographer, null, photographerSessionType,
-                    photographerAddOns);
-            Deposit deposit = null;
-            if (photographerSessionType.getRequiresDeposit()) {
-
-                deposit = depositService.createAndSave(session, photographerSessionType.getDepositAmount(),
-                        photographerSessionType.getCurrency(), null, DepositStatus.UNPAID,
-                        (sessionDTO.getPaymentMethod()), null);
-                session.setDeposit(deposit);
-            }
-
-            String message = "Session Information: \n-Date: " + session.getDate().toString() + "\n-Time: "
-                    + session.getStartTime() + "-" + session.getEndTime() + "\n-Type: "
-                    + session.getSessionType().getType();
-
-            emailService.sendGeneralEmail(sessionDTO.getClientDetails().getEmail(),
-                    "Private Session Booked Confirmation",
-                    message);
-            session = save(session);
-            return toSessionResponse(session, deposit);
-        } catch (Exception e) {
-            System.out.println();
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Something went wrong: " + e.getLocalizedMessage());
-        }
     }
 
     @Transactional

@@ -12,6 +12,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class BlockedTimeDTO {
+    private Long id;
 
     private Long photographerId;
 

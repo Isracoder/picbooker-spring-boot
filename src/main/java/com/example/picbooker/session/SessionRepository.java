@@ -11,7 +11,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface SessionRepository extends JpaRepository<Session, Long> {
 
-        List<Session> findBookedSessionsByPhotographer_IdAndDate(Long photographerId, LocalDate date);
+        List<Session> findBookedSessionsByPhotographer_IdAndDateAndStatus(Long photographerId, LocalDate date,
+                        SessionStatus status);
 
         // to check if there is redundancy
         List<Session> findByPhotographer_IdAndDateOrderByStartTimeAsc(Long photographerId, LocalDate date);

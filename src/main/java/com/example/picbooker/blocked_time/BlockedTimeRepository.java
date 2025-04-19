@@ -11,13 +11,13 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface BlockedTimeRepository extends JpaRepository<BlockedTime, Long> {
 
-    List<BlockedTime> findByPhotographer_IdAndEndDateAfter(Long photographerId, LocalDateTime dateTime);
+        List<BlockedTime> findByPhotographer_IdAndEndDateTimeAfter(Long photographerId, LocalDateTime dateTime);
 
-    @Query("SELECT b FROM BlockedTime b WHERE b.photographer.id = :photographerId " +
-            "AND b.startDateTime < :endDateTime " +
-            "AND b.endDateTime > :startDateTime")
-    List<BlockedTime> findByPhotographerIdAndOverlapping(@Param("photographerId") Long photographerId,
-            @Param("startDateTime") LocalDateTime startDateTime,
-            @Param("endDateTime") LocalDateTime endDateTime);
+        @Query("SELECT b FROM BlockedTime b WHERE b.photographer.id = :photographerId " +
+                        "AND b.startDateTime < :endDateTime " +
+                        "AND b.endDateTime > :startDateTime")
+        List<BlockedTime> findByPhotographerIdAndOverlapping(@Param("photographerId") Long photographerId,
+                        @Param("startDateTime") LocalDateTime startDateTime,
+                        @Param("endDateTime") LocalDateTime endDateTime);
 
 }

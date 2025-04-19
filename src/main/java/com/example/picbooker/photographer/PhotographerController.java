@@ -230,9 +230,8 @@ public class PhotographerController {
 
         @DeleteMapping("/blocks/{blockId}")
         public ApiResponse<Map<String, String>> deleteAdditionalServiceByName(@PathVariable("blockId") Long blockId) {
-                photographerService.deleteBlockedOutTime(
-                                UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()).getId(),
-                                blockId);
+                photographerService.deleteBlockedOutTime(blockId,
+                                UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()).getId());
                 return ApiResponse.<Map<String, String>>builder()
                                 .content(Map.of("status", "Success"))
                                 .status(HttpStatus.OK)

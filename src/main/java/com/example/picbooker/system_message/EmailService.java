@@ -36,7 +36,7 @@ public class EmailService implements MessageSenderService {
         this.retryTemplate = new RetryTemplate();
 
         FixedBackOffPolicy backOffPolicy = new FixedBackOffPolicy();
-        backOffPolicy.setBackOffPeriod(300000); // 5 minutes between retries
+        backOffPolicy.setBackOffPeriod(60000); // 1 minutes between retries
 
         SimpleRetryPolicy retryPolicy = new SimpleRetryPolicy();
         retryPolicy.setMaxAttempts(3); // Max 3 attempts
@@ -100,7 +100,7 @@ public class EmailService implements MessageSenderService {
                 MimeMessageHelper helper = new MimeMessageHelper(message, true);
                 helper.setTo(to);
                 helper.setSubject(subject);
-                helper.setText(textContent, true); // true = isHTML
+                helper.setText(textContent); // true = isHTML
                 emailSender.send(message);
                 return null;
             } catch (MessagingException e) {
@@ -110,6 +110,10 @@ public class EmailService implements MessageSenderService {
                     // failureHandler.handleFailedEmail(to, subject, textContent);
                 }
                 throw e; // Triggers retry
+            } catch (Exception e) {
+                System.out.println("Email send failed ");
+                return null;
+
             }
         });
     }
