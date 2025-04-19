@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.example.picbooker.ApiException;
 import com.example.picbooker.client.Client;
 import com.example.picbooker.photographer.Photographer;
+import com.example.picbooker.security.AuthService;
 import com.example.picbooker.security.SecurityConfig;
 
 @Service
@@ -84,8 +85,17 @@ public class UserService {
         return userRepository.emailIsForUserId(email, userId);
     }
 
+    public String checkUniqueUsername(String username) {
+        String tempUsername = username;
+        while (userRepository.existsByUsername(tempUsername)) {
+            tempUsername = (username + "_" + AuthService.generateUUID().substring(0, 3));
+        }
+        return tempUsername;
+    }
+
     public User saveOauthUser(UserRequest userRequest) {
         // change to user oauth request for profile pic or add it as field
+        userRequest.setUsername(checkUniqueUsername(userRequest.getUsername()));
         User user = UserMapper.toEntity(userRequest); // can add type of oauth provider to users
         user.setIsEmailVerified(true);
         return userRepository.save(user);

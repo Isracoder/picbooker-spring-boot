@@ -65,7 +65,7 @@ public class MediaService { // to think rename to media service
     }
 
     @Transactional
-    private void deleteFile(String fileUrl) {
+    private Boolean deleteFile(String fileUrl) {
         try {
             String fileName = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
             fileName = fileName.split("\\?")[0]; // Remove query parameters
@@ -76,8 +76,10 @@ public class MediaService { // to think rename to media service
 
             if (deleted) {
                 System.out.println("File deleted successfully: " + fileName);
+                return true;
             } else {
                 System.out.println("File not found or could not be deleted: " + fileName);
+                return false;
             }
         } catch (StorageException e) {
             System.err.println("Error deleting file from Firebase Storage: " + e.getMessage());
@@ -96,10 +98,12 @@ public class MediaService { // to think rename to media service
         return mediaRepository.countByPhotographer_Id(photographerId);
     }
 
+    @Transactional
     public Media create(Photographer photographer, String url, String description, MediaType type) {
         return new Media(null, photographer, url, description, type);
     }
 
+    @Transactional
     public Media createAndSave(Photographer photographer, String url, String description, MediaType type) {
 
         return save(create(photographer, url, description, type));
@@ -125,9 +129,47 @@ public class MediaService { // to think rename to media service
             }
             deleteFile(media.getMediaUrl());
             photographer.getMediaUploads().remove(media);
+            photographerService.save(photographer);
             mediaRepository.deleteById(id);
+            mediaRepository.flush();
         } catch (Exception e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong during deletion");
+        }
+
+    }
+
+    @Transactional
+    void delete(Media media, Photographer photographer) {
+        // media = findByIdThrow(media.getId()) ;
+        if (!media.getPhotographer().getId().equals(photographer.getId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
+        }
+
+        try {
+            // 1. Delete from Firebase first
+            boolean firebaseDeleted = deleteFile(media.getMediaUrl());
+            if (!firebaseDeleted) {
+                System.out.println("Failed to delete from storage");
+                // throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete
+                // from storage");
+            }
+
+            // 2. Remove from photographer's collection
+            photographer.getMediaUploads().removeIf(m -> m.getId().equals(media.getId()));
+
+            // 3. Delete from database
+            mediaRepository.delete(media);
+            mediaRepository.flush(); // Force immediate execution
+
+            // 4. Verify deletion
+            if (mediaRepository.existsById(media.getId())) {
+                throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete media record");
+            }
+
+        } catch (Exception e) {
+            // log.error("Failed to delete media {}: {}", media.getId(), e.getMessage());
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Failed to complete deletion: " + e.getMessage());
         }
 
     }
@@ -161,28 +203,70 @@ public class MediaService { // to think rename to media service
     }
 
     @Transactional
+    public void deleteProfilePicture(Photographer photographer) {
+        try {
+            Media previousPhoto = getProfilePicturePhotographer(photographer.getId());
+
+            if (previousPhoto != null) {
+                delete(previousPhoto.getId(), photographer.getId());
+                photographer.setProfilePhotoUrl(null); // update URL directly
+                photographerService.save(photographer); // ensure this persists
+
+            }
+
+        } catch (Exception e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to convert or upload file");
+        }
+    }
+
+    @Transactional
     public Media uploadProfilePicture(Photographer photographer, MultipartFile file) {
         try {
             Media previousPhoto = getProfilePicturePhotographer(photographer.getId());
             String url = uploadFile(file, MediaType.PROFILE_PICTURE);
-            Media media = null;
+
             if (previousPhoto != null) {
-                deleteFile(previousPhoto.getMediaUrl()); // delete from Firebase
-                previousPhoto.setMediaUrl(url);
-                media = mediaRepository.save(previousPhoto);
+                System.out.println("going to delete...");
+                deleteFile(previousPhoto.getMediaUrl());
+                previousPhoto.setPhotographer(null);
+                photographer.getMediaUploads().removeIf(m -> m.getId().equals(previousPhoto.getId()));
+                photographer.setProfilePhotoUrl(url);
+                photographerService.save(photographer);
+
+                mediaRepository.delete(previousPhoto);
+                mediaRepository.flush();
+
+                // 4. Verify deletion
+                if (mediaRepository.existsById(previousPhoto.getId())) {
+                    throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete media record");
+                }
+                System.out.println("After verifying deletion");
+                Media media = createAndSave(photographer, url, "Profile Picture", MediaType.PROFILE_PICTURE);
+                return media;
             } else {
-                media = createAndSave(photographer, url, "Profile Picture", MediaType.PROFILE_PICTURE);
-                // Update profile URL from newly created media
+                Media media = createAndSave(photographer, url, "Profile Picture", MediaType.PROFILE_PICTURE);
+                photographer.setProfilePhotoUrl(url);
+                photographerService.save(photographer);
+                return media;
             }
-
-            photographer.setProfilePhotoUrl(url); // update URL directly
-            photographerService.save(photographer); // ensure this persists
-
-            return media;
-        } catch (IOException e) {
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to convert or upload file");
+        } catch (Exception e) {
+            System.out.println(e.getLocalizedMessage());
+            e.printStackTrace();
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Unable to upload file");
         }
     }
+
+    // private void deleteMediaEntity(Media media) {
+    // try {
+    // if (media != null && media.getMediaUrl() != null) {
+    // deleteFile(media.getMediaUrl());
+    // }
+    // mediaRepository.delete(media); // Use delete instead of deleteById
+    // mediaRepository.flush(); // Force immediate deletion
+    // } catch (Exception e) {
+    // System.out.println("Failed to delete media entity" + e.getMessage());
+    // }
+    // }
 
     @Transactional
     public Media getProfilePicturePhotographer(Long photographerId) {

@@ -51,13 +51,13 @@ public class UserMapper {
         // if (userUpdates.getUsername() != null)
         // finalUser.setUsername(userUpdates.getUsername()); // for later check jwt no
         // break
-        if (!isNull(userUpdates.getPhoneNumber()))
+        if (!isNull(userUpdates.getPhoneNumber()) && !(userUpdates.getPhoneNumber().trim().isEmpty()))
             finalUser.setPhoneNumber(userUpdates.getPhoneNumber());
         if (userUpdates.getDOB() != null)
             finalUser.setDOB(userUpdates.getDOB());
-        if (userUpdates.getCountry() != null)
+        if (userUpdates.getCountry() != null && !(userUpdates.getCountry().trim().isEmpty()))
             finalUser.setCountry(userUpdates.getCountry());
-        if (userUpdates.getCity() != null)
+        if (userUpdates.getCity() != null && !(userUpdates.getCity().trim().isEmpty()))
             finalUser.setCity(userUpdates.getCity());
         if (!isNull(userUpdates.getGender()))
             finalUser.setGender(userUpdates.getGender());

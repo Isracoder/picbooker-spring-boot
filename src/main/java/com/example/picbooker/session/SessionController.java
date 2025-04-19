@@ -83,13 +83,13 @@ public class SessionController {
 
         @PatchMapping("/{sessionId}/status")
         public ApiResponse<Map<String, String>> modifyBooking(@PathVariable("sessionId") long sessionId,
-                        @RequestBody SessionStatus sessionStatus) {
+                        @RequestBody Map<String, SessionStatus> body) {
                 Photographer photographer = UserService
                                 .getPhotographerFromUserThrow(UserService.getLoggedInUserThrow());
 
-                sessionService.changeSessionStatus(sessionId, photographer.getId(), sessionStatus);
+                sessionService.changeSessionStatus(sessionId, photographer.getId(), body.get("status"));
                 return ApiResponse.<Map<String, String>>builder()
-                                .content(Map.of("newStatus", sessionStatus.toString()))
+                                .content(Map.of("newStatus", body.get("status").toString()))
                                 .status(HttpStatus.OK)
                                 .build();
         }

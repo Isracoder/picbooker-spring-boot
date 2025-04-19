@@ -119,7 +119,7 @@ public class Photographer {
 
     // my photos
     @Default
-    @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "photographer", cascade = CascadeType.ALL, fetch = FetchType.EAGER, orphanRemoval = true)
     List<Media> mediaUploads = new ArrayList<>();
 
 }

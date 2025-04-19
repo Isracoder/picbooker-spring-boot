@@ -122,6 +122,17 @@ public class MediaController {
 
         }
 
+        @DeleteMapping("/profile")
+        public ApiResponse<Map<String, String>> deleteProfile() {
+                mediaService.deleteProfilePicture(
+                                UserService.getPhotographerFromUserThrow(UserService.getLoggedInUserThrow()));
+                return ApiResponse.<Map<String, String>>builder()
+                                .content(Map.of("status", "Success"))
+                                .status(HttpStatus.OK)
+                                .build();
+
+        }
+
         @DeleteMapping("/{mediaId}")
         public ApiResponse<Map<String, String>> deleteMedia(@PathVariable("mediaId") Long mediaId) {
                 mediaService.delete(mediaId,

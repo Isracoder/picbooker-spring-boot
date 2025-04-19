@@ -207,6 +207,7 @@ public class AuthService {
         try {
 
             User user = UserMapper.toEntity(userRequest);
+            user.setUsername(userService.checkUniqueUsername(user.getUsername()));
             user.setIsEmailVerified(false); // Not enabled until 2FA is verified
             user.setPassword(SecurityConfig.passwordEncoder().encode(user.getPassword()));
             UserResponse response = userService.save(user);

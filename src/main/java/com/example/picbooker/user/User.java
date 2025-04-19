@@ -78,7 +78,7 @@ public class User implements UserDetails {
     // @NotNull(message = "PhoneNumber cannot be null")
     // @NotBlank(message = "PhoneNumber cannot be blank")
     @Size(min = 8, message = "PhoneNumber must be at least 8 characters long")
-    @Pattern(regexp = RegexPatterns.phoneRegex, message = "Phone number must contain both letters and numbers")
+    @Pattern(regexp = RegexPatterns.phoneRegex, message = "Phone number must be of valid length and format")
     private String phoneNumber;
 
     @Column(updatable = false)

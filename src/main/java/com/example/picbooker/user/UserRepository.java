@@ -21,6 +21,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
         Optional<User> findByUsername(String username);
 
+        Boolean existsByUsername(String username);
+
         @Modifying
         @Query("UPDATE User u SET u.accessToken = :accessToken, u.expiresAt = :expiresAt WHERE u.refreshToken = :refreshToken")
         void updateAccessToken(@Param("refreshToken") String refreshToken, @Param("accessToken") String accessToken,

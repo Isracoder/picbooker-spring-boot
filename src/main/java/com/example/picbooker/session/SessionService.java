@@ -574,10 +574,13 @@ public class SessionService {
                 : session.getSessionType().getCustomSessionType();
         ClientResponse clientResponse = session.getClient() != null ? ClientMapper.toResponse(session.getClient())
                 : null;
-        return new SessionResponse(session.getId(), deposit.getId(),
+        return new SessionResponse(session.getId(), session.getSessionType().getId(),
+                deposit != null ? deposit.getId() : null,
                 PhotographerMapper.toResponse(session.getPhotographer()),
-                session.getStatus(), deposit.getStatus(), deposit.getMethod(), session.getTotalPrice(),
-                deposit.getAmount(), session.getCurrency().getCurrencyCode(), typeOrCustomType, session.getClientName(),
+                session.getStatus(), deposit != null ? deposit.getStatus() : null,
+                deposit != null ? deposit.getMethod() : null, session.getTotalPrice(),
+                deposit != null ? deposit.getAmount() : null, session.getCurrency().getCurrencyCode(), typeOrCustomType,
+                session.getClientName(),
                 session.getClientEmail(), session.getDate(),
                 session.getStartTime(), session.getEndTime(), session.getLocation(), session.getPrivateComment(),
                 (session.getSessionAddOns().stream().map(addon -> addon.getId()).toList()),
@@ -612,7 +615,8 @@ public class SessionService {
             LocalTime startTime = workHours.getStartTime();
             LocalTime endTime = workHours.getEndTime();
 
-            List<LocalTime> allTimeSlots = generateTimeSlots(startTime, endTime, slotLengthMinutes);
+            List<LocalTime> allTimeSlots = generateTimeSlots(startTime, endTime, slotLengthMinutes,
+                    photographerSessionType.getPhotographer().getBufferTimeMinutes());
             System.out.println("Time slots generated with length: " + allTimeSlots.size());
             List<Session> bookedSessions = sessionRepository.findBookedSessionsByPhotographer_IdAndDateAndStatus(
                     photographerSessionType.getPhotographer().getId(),
@@ -644,15 +648,16 @@ public class SessionService {
         return Collections.emptyList();
     }
 
-    private List<LocalTime> generateTimeSlots(LocalTime startTime, LocalTime endTime, Integer slotLengthMinutes) {
+    private List<LocalTime> generateTimeSlots(LocalTime startTime, LocalTime endTime, Integer slotLengthMinutes,
+            Integer bufferTimeMinutes) {
         List<LocalTime> timeSlots = new ArrayList<>();
-
-        // to do add buffer time
+        if (isNull(bufferTimeMinutes))
+            bufferTimeMinutes = 15;
         int cnt = 0;
-        while (endTime.isAfter(startTime.plusMinutes(slotLengthMinutes - 1)) && cnt < 50) {
+        while (endTime.isAfter(startTime.plusMinutes(slotLengthMinutes - 1 + bufferTimeMinutes)) && cnt < 50) {
             cnt++;
             timeSlots.add(startTime);
-            startTime = startTime.plusMinutes(slotLengthMinutes);
+            startTime = startTime.plusMinutes(slotLengthMinutes + bufferTimeMinutes);
         }
 
         return timeSlots;
@@ -772,6 +777,8 @@ public class SessionService {
             session.setStatus(newSessionStatus);
             // to do check that refusing the session doesn't interfere with search,
             // should I cancel instead ?
+        } else if (newSessionStatus == SessionStatus.APPROVAL_PENDING && session.getStatus() == SessionStatus.BOOKED) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Can't change back to pending after approval");
         }
         save(session);
     }

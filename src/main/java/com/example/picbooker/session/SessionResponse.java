@@ -18,7 +18,7 @@ import lombok.Setter;
 @AllArgsConstructor
 public class SessionResponse {
     private Long sessionId;
-    // private SessionDTO sessionDTO;
+    private Long photographerSessionTypeId;
     private Long depositId;
     private PhotographerResponse photographerResponse;
     private SessionStatus sessionStatus;
