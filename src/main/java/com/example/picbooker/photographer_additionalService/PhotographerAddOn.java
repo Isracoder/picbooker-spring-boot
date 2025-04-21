@@ -49,7 +49,7 @@ public class PhotographerAddOn {
     private AddOnType type;
 
     @Column
-    private String customSessionType;
+    private String customAddOnType;
 
     @Column
     private Boolean multipleAllowedInSession;

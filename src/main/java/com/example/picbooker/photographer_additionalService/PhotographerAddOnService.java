@@ -102,7 +102,7 @@ public class PhotographerAddOnService {
         if (!isNull(request.getType()))
             photographerAddOn.setType(request.getType());
         if (!isNull(request.getCustomSessionType()))
-            photographerAddOn.setCustomSessionType(request.getCustomSessionType());
+            photographerAddOn.setCustomAddOnType(request.getCustomSessionType());
 
         if (!isNull(request.getIsPrivate()))
             photographerAddOn.setIsPrivate(request.getIsPrivate());
@@ -115,7 +115,7 @@ public class PhotographerAddOnService {
 
         // validation
         if (photographerAddOn.getType() != AddOnType.OTHER)
-            photographerAddOn.setCustomSessionType(null);
+            photographerAddOn.setCustomAddOnType(null);
         return (photographerAddOn);
 
     }

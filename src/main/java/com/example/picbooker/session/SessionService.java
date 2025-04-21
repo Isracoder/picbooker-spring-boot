@@ -821,7 +821,8 @@ public class SessionService {
             SessionStatus status, LocalDate date, Pageable pageable) {
         date = Optional.ofNullable(date).orElse(LocalDate.now());
         if (!isNull(status)) {
-            Page<Session> results = sessionRepository.findByClient_IdAndStatusAndDateAfter(photographerId, status, date,
+            Page<Session> results = sessionRepository.findByPhotographer_IdAndStatusAndDateAfter(photographerId, status,
+                    date,
                     pageable);
 
             List<SessionResponse> responses = results.getContent().stream()
@@ -830,7 +831,7 @@ public class SessionService {
             return new PageDTO<SessionResponse>(responses, results.getTotalPages(), results.getTotalElements(),
                     results.getNumber());
         } else {
-            Page<Session> results = sessionRepository.findByClient_IdAndDateAfter(photographerId, date, pageable);
+            Page<Session> results = sessionRepository.findByPhotographer_IdAndDateAfter(photographerId, date, pageable);
 
             List<SessionResponse> responses = results.getContent().stream()
                     .map(session -> toSessionResponse(session, session.getDeposit()))

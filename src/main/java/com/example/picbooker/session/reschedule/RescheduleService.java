@@ -119,8 +119,8 @@ public class RescheduleService {
                                         .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND,
                                                         "Reschedule request not found"));
 
-                        if ((user.getId() != session.getPhotographer().getId()
-                                        && user.getId() != session.getClient().getId())
+                        if ((user.getId() != session.getPhotographer().getUser().getId()
+                                        && user.getId() != session.getClient().getUser().getId())
                                         || (user.getId() == request.getInitiatedById())) {
                                 throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
                         }
@@ -156,6 +156,7 @@ public class RescheduleService {
                                                         + request.getNewStartTime());
 
                 } catch (Exception e) {
+                        System.out.println(e.getLocalizedMessage());
                         throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR,
                                         "Exception when notifying and sending emails.");
                 }
