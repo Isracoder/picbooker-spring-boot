@@ -128,7 +128,7 @@ public class ClientService {
 
     @Transactional
     public ClientResponse updateProfile(Client client, ClientResponse clientRequest) {
-
+        client = findByIdThrow(client.getId());
         if (!isNull(clientRequest.getPersonalName()))
             client.setPersonalName(clientRequest.getPersonalName());
         return ClientMapper.toResponse(client);

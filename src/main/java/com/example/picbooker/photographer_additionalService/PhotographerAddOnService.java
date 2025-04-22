@@ -77,6 +77,12 @@ public class PhotographerAddOnService {
 
     }
 
+    public static PhotographerAddOnDTO toDTO(PhotographerAddOn addOn) {
+        return new PhotographerAddOnDTO(addOn.getType(), addOn.getCustomAddOnType(),
+                addOn.getMultipleAllowedInSession(), addOn.getFee(), addOn.getIsPrivate(), addOn.getIsSpecialOffer(),
+                addOn.getEndDate(), addOn.getCurrency().getCurrencyCode(), addOn.getDescription());
+    }
+
     public void deleteByName(Long photographerId, AddOnType typeName) {
         photographerAddOnRepository.deleteByPhotographer_IdAndType(photographerId, typeName);
     }

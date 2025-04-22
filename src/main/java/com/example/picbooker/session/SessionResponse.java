@@ -8,6 +8,7 @@ import com.example.picbooker.client.ClientResponse;
 import com.example.picbooker.deposit.DepositStatus;
 import com.example.picbooker.deposit.PaymentMethod;
 import com.example.picbooker.photographer.PhotographerResponse;
+import com.example.picbooker.photographer_additionalService.PhotographerAddOnDTO;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -35,6 +36,6 @@ public class SessionResponse {
     private LocalTime endTime;
     private String location;
     private String privateComment;
-    private List<Long> photographerAddons;
+    private List<PhotographerAddOnDTO> photographerAddons;
     private ClientResponse clientResponse;
 }

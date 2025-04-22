@@ -583,7 +583,7 @@ public class SessionService {
                 session.getClientName(),
                 session.getClientEmail(), session.getDate(),
                 session.getStartTime(), session.getEndTime(), session.getLocation(), session.getPrivateComment(),
-                (session.getSessionAddOns().stream().map(addon -> addon.getId()).toList()),
+                (session.getSessionAddOns().stream().map(addon -> PhotographerAddOnService.toDTO(addon)).toList()),
                 clientResponse);
 
     }
@@ -599,53 +599,55 @@ public class SessionService {
     // gets in one-hours slots
     // to think have one for specific session type length
     public List<AppointmentDTO> getAvailableAppointments(Long sessionTypeID, LocalDate date) {
-        // to think what if other ? then multiple types , have default slot length to be
-        // what ?
-        System.out.println(sessionTypeID + " , " + date.toString());
-        PhotographerSessionType photographerSessionType = photographerSessionTypeService.findByIdThrow(sessionTypeID);
+        PhotographerSessionType sessionType = photographerSessionTypeService.findByIdThrow(sessionTypeID);
         DayOfWeek dayOfWeek = date.getDayOfWeek();
-        Integer slotLengthMinutes = photographerSessionType.getDurationMinutes();
-        System.out.println(photographerSessionType.getId() + " " + dayOfWeek);
-        WorkHour workHours = workHourService
-                .findForPhotographerAndDay(photographerSessionType.getPhotographer().getId(), dayOfWeek);
-        if (!isNull(workHours)) {
-            System.out.println("workhours not null");
-            List<AppointmentDTO> availableAppointments = new ArrayList<>();
+        Integer slotLength = sessionType.getDurationMinutes();
+        Integer bufferTime = sessionType.getPhotographer().getBufferTimeMinutes();
 
-            LocalTime startTime = workHours.getStartTime();
-            LocalTime endTime = workHours.getEndTime();
+        WorkHour workHours = workHourService.findForPhotographerAndDay(sessionType.getPhotographer().getId(),
+                dayOfWeek);
+        if (workHours == null)
+            return Collections.emptyList();
 
-            List<LocalTime> allTimeSlots = generateTimeSlots(startTime, endTime, slotLengthMinutes,
-                    photographerSessionType.getPhotographer().getBufferTimeMinutes());
-            System.out.println("Time slots generated with length: " + allTimeSlots.size());
-            List<Session> bookedSessions = sessionRepository.findBookedSessionsByPhotographer_IdAndDateAndStatus(
-                    photographerSessionType.getPhotographer().getId(),
-                    date, SessionStatus.BOOKED);
+        List<LocalTime> slotStarts = generateTimeSlots(
+                workHours.getStartTime(),
+                workHours.getEndTime(),
+                slotLength,
+                bufferTime);
 
-            // Extract booked time slots
-            List<LocalTime> bookedTimeSlots = bookedSessions.stream()
-                    .map(Session::getStartTime)
-                    .collect(Collectors.toList());
+        List<Session> bookedSessions = sessionRepository.findBookedSessionsByPhotographer_IdAndDateAndStatus(
+                sessionType.getPhotographer().getId(), date, SessionStatus.BOOKED);
 
-            for (LocalTime timeSlot : allTimeSlots) {
-                if (!bookedTimeSlots.contains(timeSlot)) {
-                    AppointmentDTO appointment = new AppointmentDTO();
-                    // appointment.set(photographerId);
-                    appointment.setDate(date);
-                    appointment.setStartTime(timeSlot);
-                    appointment.setEndTime(timeSlot.plusMinutes(slotLengthMinutes));
-                    availableAppointments.add(appointment);
-                    appointment.setLocation(photographerSessionType.getLocation());
-                    appointment.setSessionType(photographerSessionType.getType() != SessionTypeName.OTHER
-                            ? photographerSessionType.getType().toString()
-                            : photographerSessionType.getCustomSessionType());
-                }
+        List<AppointmentDTO> availableAppointments = new ArrayList<>();
+
+        for (LocalTime potentialStart : slotStarts) {
+            LocalTime potentialEnd = potentialStart.plusMinutes(slotLength);
+
+            boolean overlaps = bookedSessions.stream().anyMatch(session -> {
+                LocalTime sessionStart = session.getStartTime();
+                LocalTime sessionEndWithBuffer = session.getEndTime().plusMinutes(bufferTime);
+                return timeRangesOverlap(potentialStart, potentialEnd, sessionStart, sessionEndWithBuffer);
+            });
+
+            if (!overlaps) {
+                AppointmentDTO appointment = new AppointmentDTO();
+                appointment.setDate(date);
+                appointment.setStartTime(potentialStart);
+                appointment.setEndTime(potentialEnd);
+                appointment.setLocation(sessionType.getLocation());
+                appointment.setSessionType(sessionType.getType() != SessionTypeName.OTHER
+                        ? sessionType.getType().toString()
+                        : sessionType.getCustomSessionType());
+                availableAppointments.add(appointment);
             }
-
-            return availableAppointments;
         }
 
-        return Collections.emptyList();
+        return availableAppointments;
+    }
+
+    // Util method to check time overlap (unchanged)
+    private boolean timeRangesOverlap(LocalTime start1, LocalTime end1, LocalTime start2, LocalTime end2) {
+        return !start1.isAfter(end2.minusNanos(1)) && !start2.isAfter(end1.minusNanos(1));
     }
 
     private List<LocalTime> generateTimeSlots(LocalTime startTime, LocalTime endTime, Integer slotLengthMinutes,
