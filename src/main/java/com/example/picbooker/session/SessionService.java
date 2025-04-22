@@ -239,13 +239,16 @@ public class SessionService {
 
         // Convert matching sessions into DTOs
         for (PhotographerSessionType session : matchingSessions) {
+            if (photographerService.getProfileCompletion(session.getPhotographer().getId())
+                    .getCompletionPercentage() == 1.0) {
 
-            results.add(new SessionSearchDTO(PhotographerMapper.toResponse(session.getPhotographer()), date,
-                    session.getPricePerDuration(), session.getCurrency(), session.getDurationMinutes(),
-                    session.getDepositAmount(),
-                    session.getType() != SessionTypeName.OTHER ? session.getType().toString()
-                            : session.getCustomSessionType(),
-                    session.getId()));
+                results.add(new SessionSearchDTO(PhotographerMapper.toResponse(session.getPhotographer()), date,
+                        session.getPricePerDuration(), session.getCurrency(), session.getDurationMinutes(),
+                        session.getDepositAmount(),
+                        session.getType() != SessionTypeName.OTHER ? session.getType().toString()
+                                : session.getCustomSessionType(),
+                        session.getId()));
+            }
 
         }
 
@@ -296,6 +299,9 @@ public class SessionService {
 
             // what if he changed default client info ?
             Photographer photographer = photographerService.findByIdThrow(sessionDTO.getPhotographerId());
+            if (photographerService.getProfileCompletion(sessionDTO.getPhotographerId())
+                    .getCompletionPercentage() != 1.0)
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Photographer hasn't completed profile yet.");
             if (sessionDTO.getStartTime().isAfter(sessionDTO.getEndTime())
                     || !canPhotographerHaveSessionOnDayBetween(photographer.getId(), sessionDTO.getDate(),
                             sessionDTO.getStartTime(), sessionDTO.getEndTime())) {

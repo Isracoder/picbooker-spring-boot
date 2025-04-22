@@ -177,7 +177,7 @@ public class PhotographerController {
                                 .build();
         }
 
-        @GetMapping("/{photographerId}")
+        @GetMapping("/{photographerId}/info")
         public ApiResponse<PhotographerResponse> getPhotographer(@PathVariable("photographerId") Long photographerId) {
                 Photographer photographer = photographerService.findByIdThrow(photographerId);
                 return ApiResponse.<PhotographerResponse>builder()

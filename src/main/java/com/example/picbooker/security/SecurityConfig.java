@@ -60,15 +60,31 @@ public class SecurityConfig {
                 .authorizeHttpRequests((authorize) -> {
                     authorize.requestMatchers("/api/auth/**", "/css/**", "/v3/api-docs/**",
                             "/api/payments/**",
-                            "/api/photographers/", "/api/photographers", // to allo
+
                             "/swagger-ui/**",
                             "/swagger-ui.html", "/js/**",
                             "/oauth2/**",
-                            "api/location/**", // temporary
+
                             "/images/**",
                             "/webjars/**",
                             "/**.css", "/**.js",
-                            "/**.png", "/**.jpg", "/ws/**", "/", "/**.html").permitAll();
+                            "/**.png", "/**.jpg", "/ws/**", "/wss/**", "/", "/**.html").permitAll();
+
+                    authorize.requestMatchers(HttpMethod.GET, "/api/media/gallery", "/api/users/*",
+                            "/api/media/profile", "/api/*/reviews", "/api/reviews/*", "/api/sessions/appointments/*",
+                            "/api/sessions/possibles",
+                            "/api/photographers/*/session-types",
+
+                            "/api/photographers/*/add-ons",
+                            "/api/photographers/*/blocks",
+                            "/api/photographers/*/work-hours",
+                            "/api/photographers/*/socials",
+                            "/api/photographers/*/profile-completion",
+                            "/api/photographers/*/reviews",
+                            "/api/photographers/*/info"
+
+                ).permitAll();
+
                     authorize.requestMatchers(HttpMethod.OPTIONS);
                     authorize.anyRequest().authenticated();
                 })
