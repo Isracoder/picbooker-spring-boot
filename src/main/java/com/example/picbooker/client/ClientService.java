@@ -82,6 +82,7 @@ public class ClientService {
         }
         Client client = save(create(user));
         user.setClient(client);
+        userService.save(user);
 
         return ClientMapper.toResponse(client);
     }
