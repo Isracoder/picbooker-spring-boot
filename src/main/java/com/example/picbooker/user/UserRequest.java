@@ -32,6 +32,7 @@ public class UserRequest {
     private String country;
 
     private String city;
+    private String accountType;
 
     // private RoleType role;
 

@@ -40,7 +40,8 @@ public class UserMapper {
                 .gender(user.getGender() != null ? user.getGender().getValue() : null)
                 .country(user.getCountry())
                 .city(user.getCity())
-
+                .clientId(user.getClient() == null ? null : user.getClient().getId())
+                .photographerId(user.getPhotographer() == null ? null : user.getPhotographer().getId())
                 .DOB(user.getDOB())
                 .id(user.getId())
                 .build();

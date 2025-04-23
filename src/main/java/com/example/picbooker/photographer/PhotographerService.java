@@ -90,6 +90,23 @@ public class PhotographerService {
 
     }
 
+    @Transactional
+    public PhotographerResponse assignDefaultAndCreate(Long userId) {
+        User user = userService.findByIdThrow(userId);
+
+        if (photographerRepository.existsByUser(user)) {
+            throw new ApiException(HttpStatus.CONFLICT, "User already has a photographer role");
+        }
+        Photographer photographer = Photographer.builder()
+                .user(user)
+                .bufferTimeMinutes(15)
+                .minimumNoticeBeforeSessionMinutes(1440 * 2).build();
+        user.setPhotographer(photographer);
+        userService.save(user);
+
+        return PhotographerMapper.toResponse(photographer);
+    }
+
     public List<WorkHourDTO> getWorkHours(Long id) {
         Photographer photographer = findByIdThrow(id);
         if (isNull(photographer.getWorkHours()))

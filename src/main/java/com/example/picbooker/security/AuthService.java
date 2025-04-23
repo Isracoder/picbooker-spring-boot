@@ -27,6 +27,10 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import com.example.picbooker.ApiException;
+import com.example.picbooker.client.Client;
+import com.example.picbooker.client.ClientService;
+import com.example.picbooker.photographer.Photographer;
+import com.example.picbooker.photographer.PhotographerService;
 import com.example.picbooker.security.OauthToken.OauthProviderType;
 import com.example.picbooker.security.passwordReset.PasswordResetDTO;
 import com.example.picbooker.security.passwordReset.PasswordResetService;
@@ -86,6 +90,12 @@ public class AuthService {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private PhotographerService photographerService;
+
+    @Autowired
+    private ClientService clientService;
 
     // temporary , to do implement better way in prod use db
     private final Map<String, String> tempTokens = new HashMap<>(); // Email -> Token mapping
@@ -211,9 +221,21 @@ public class AuthService {
             user.setIsEmailVerified(false); // Not enabled until 2FA is verified
             user.setPassword(SecurityConfig.passwordEncoder().encode(user.getPassword()));
             UserResponse response = userService.save(user);
+            if (userRequest.getAccountType() == "photographer") {
+                Photographer photographer = Photographer.builder().minimumNoticeBeforeSessionMinutes(1440 * 2)
+                        .bufferTimeMinutes(15).user(user).build();
+                photographerService.save(photographer);
+                user.setPhotographer(photographer);
+                userService.save(user);
+            } else if (userRequest.getAccountType() == "client" || userRequest.getAccountType() == "customer") {
+                Client client = Client.builder().user(user).build();
+                clientService.save(client);
+                user.setClient(client);
+                userService.save(user);
+            }
             System.out.println("User saved successfully");
             changeAndResendCode(user.getEmail(), user);
-            return response;
+            return UserMapper.toResponse(user);
         } catch (Exception e) {
 
             e.printStackTrace();
@@ -282,7 +304,8 @@ public class AuthService {
             user.setTemp2FACode(code);
             user.setCodeExpiryTime(LocalDateTime.now().plusMinutes(codeExpiryMinutes));
             userService.save(user);
-            emailService.send2FACode(email, code);
+            // emailService.send2FACode(email, code);
+            emailService.sendGeneralEmail(email, "Picbooker OTP code", "Your code is: " + code);
         } catch (Exception e) {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
         }

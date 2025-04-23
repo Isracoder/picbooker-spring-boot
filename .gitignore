@@ -38,3 +38,5 @@ build/
 *ClientSecret.txt 
 *secret*.zip
 *firebase-config*
+.dockerignore
+Dockerfile
