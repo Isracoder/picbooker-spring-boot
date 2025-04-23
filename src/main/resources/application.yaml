@@ -8,7 +8,9 @@ app:
   web-redirect: ${PB_WEB_REDIRECT}
   web-home-redirect: ${PB_WEB_HOME_REDIRECT}
   jwt-cookie-name: jwt
-  path-to-firebase: "src/main/resources/firebase-config.json"
+  # path-to-firebase: "src/main/resources/firebase-config.json"
+  path-to-firebase: /app/config/firebase-config.json
+
 
 # stripe:
 #   api: 
@@ -28,18 +30,21 @@ spring:
       pool: 
         core-size: 5
         max-size: 10
-  config: 
-  # optional:file:.env[.properties]
-    import: file:.env[.properties]
+  config:
+    import: optional:file:.env
+
+  # config: 
+  #   import: file:.env[.properties]
   servlet:
     multipart:
       max-file-size: 35MB
       max-request-size: 35MB
   application:
-    name: paranoia-zone
+    # name: paranoia-zone
+    name: picbooker
   datasource:
-    url: jdbc:postgresql://${PB_URL_HOST:localhost}:5432/picbooker
-    username: ${PB_DB_USERNAME:postgres}
+    url: jdbc:postgresql://${PB_DB_HOST:localhost}:5432/${PB_DB_NAME:picbooker}  # 🔁 FIXED
+    username: ${PB_DB_USERNAME:postgres}  # ✅ Optional: fallback values
     password: ${PB_DB_PASSWORD:admin}
   security:
     oauth2:

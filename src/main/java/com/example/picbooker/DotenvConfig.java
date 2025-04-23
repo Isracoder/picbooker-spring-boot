@@ -10,14 +10,24 @@ public class DotenvConfig {
 
     @PostConstruct
     public void loadEnv() {
-        Dotenv dotenv = Dotenv.configure()
-                .filename(".env") // Specify the .env file name if not in the default location
-                .load();
+        try {
+            Dotenv dotenv = Dotenv.configure()
+                    .ignoreIfMissing()
+                    .load();
 
-        dotenv.entries().forEach(entry -> {
-            // System.out.println(entry.getKey());
-            System.setProperty(entry.getKey(), entry.getValue());
-        });
+            dotenv.entries().forEach(entry -> {
+                // Only set if not already defined (from system environment)
+                // if (System.getProperty(entry.getKey()) == null &&
+                // System.getenv(entry.getKey()) == null) {
+                // System.out.println(entry.getKey() + ": " + entry.getValue());
+                System.setProperty(entry.getKey(), entry.getValue());
+                // }
+            });
+
+            System.out.println(".env loaded successfully.");
+        } catch (Exception e) {
+            System.out.println("Skipping .env loading — either missing or not needed in this environment.");
+        }
 
     }
 }
