@@ -780,6 +780,10 @@ public class SessionService {
             throw new ApiException(HttpStatus.FORBIDDEN, "Not your resource");
         }
         if (newSessionStatus == SessionStatus.BOOKED && session.getStatus() == SessionStatus.APPROVAL_PENDING) {
+            if (!canPhotographerHaveSessionOnDayBetween(photographerId, session.getDate(), session.getStartTime(),
+                    session.getEndTime())) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Can't have session in that time/on that day");
+            }
             approveSessionRequest(sessionId, photographerId);
         } else if (newSessionStatus == SessionStatus.REFUSED && session.getStatus() == SessionStatus.APPROVAL_PENDING) {
             session.setStatus(newSessionStatus);

@@ -377,7 +377,8 @@ public class PhotographerService {
         // should check if not just profile
         Boolean portfolioSet = (photographer.getMediaUploads() != null && photographer.getMediaUploads().size() > 1);
 
-        Boolean socialMediaSet = photographer.getSocialLinks() != null;
+        Boolean socialMediaSet = photographer.getSocialLinks().stream()
+                .filter(social -> !isNull(social.getLinkUrl()) && !social.getLinkUrl().isBlank()).findAny().isPresent();
         Boolean emailVerified = user.getIsEmailVerified();
         Boolean bioSet = photographer.getBio() != null;
 

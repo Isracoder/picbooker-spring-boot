@@ -96,7 +96,7 @@ public class AuthController {
             } else {
                 ResponseCookie jwtCookie = ResponseCookie.from("jwt", jwt)
                         .httpOnly(true)
-                        .secure(false) // Only in production with HTTPS
+                        .secure(true) // Only in production with HTTPS
                         .path("/") // Available across the site
                         .maxAge(86400) // 1 day expiration
                         .build();
@@ -131,7 +131,7 @@ public class AuthController {
         } else {
             ResponseCookie jwtCookie = ResponseCookie.from("jwt", jwt)
                     .httpOnly(true)
-                    .secure(false) // Only in production with HTTPS
+                    .secure(true) // Only in production with HTTPS
                     .path("/") // Available across the site
                     .maxAge(86400) // 1 day expiration
                     .build();
@@ -242,11 +242,19 @@ public class AuthController {
         // String redirectUrl = redirectURL + "?token=" + jwt; // Pass token in query
         // response.sendRedirect(redirectUrl);
         // Set HTTP-only cookie
+        // ResponseCookie jwtCookie = ResponseCookie.from("jwt", jwt)
+        // .httpOnly(true)
+        // .secure(false) // Only in production with HTTPS
+        // .path("/") // Available across the site
+        // .maxAge(86400) // 1 day expiration
+        // .build();
+
         ResponseCookie jwtCookie = ResponseCookie.from("jwt", jwt)
-                .httpOnly(true)
-                .secure(false) // Only in production with HTTPS
-                .path("/") // Available across the site
-                .maxAge(86400) // 1 day expiration
+                .httpOnly(true) // Still true: prevents JavaScript access
+                .secure(true) // NOW true: ensures cookie is only sent over HTTPS
+                .path("/") // Keep: available to all endpoints
+                .maxAge(86400) // Keep: 1-day expiration
+                .sameSite("Lax") // Recommended for login flows (or "Strict" if you want maximum control)
                 .build();
 
         HttpHeaders headers = new HttpHeaders();

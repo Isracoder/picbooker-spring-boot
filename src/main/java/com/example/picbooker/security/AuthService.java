@@ -304,10 +304,15 @@ public class AuthService {
             user.setTemp2FACode(code);
             user.setCodeExpiryTime(LocalDateTime.now().plusMinutes(codeExpiryMinutes));
             userService.save(user);
-            // emailService.send2FACode(email, code);
-            emailService.sendGeneralEmail(email, "Picbooker OTP code", "Your code is: " + code);
-        } catch (Exception e) {
-            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, e.getMessage());
+            emailService.send2FACode(email, code);
+        } catch (MessagingException e) {
+            try {
+                emailService.sendGeneralEmail(email, "Picbooker OTP code",
+                        "Your code is: " + e.getMessage().split(":")[1]);
+
+            } catch (Exception ex) {
+                throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "Something went wrong.");
+            }
         }
     }
 

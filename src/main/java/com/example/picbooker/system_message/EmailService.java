@@ -3,7 +3,6 @@ package com.example.picbooker.system_message;
 import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -24,11 +23,11 @@ public class EmailService implements MessageSenderService {
     private final JavaMailSender emailSender;
     private final RetryTemplate retryTemplate;
 
-    @Value("${spring.mail.username}")
-    private String emailUsername;
+    // @Value("${spring.mail.username}")
+    // private String emailUsername;
 
-    @Value("${spring.mail.password}")
-    private String emailPassword;
+    // @Value("${spring.mail.password}")
+    // private String emailPassword;
 
     @Autowired
     public EmailService(JavaMailSender emailSender) {
@@ -61,16 +60,17 @@ public class EmailService implements MessageSenderService {
     }
 
     public void send2FACode(String to, String code) throws MessagingException {
-        MimeMessage message = emailSender.createMimeMessage();
-        MimeMessageHelper helper = new MimeMessageHelper(message, true);
-        System.out.println("Email password : " + emailPassword);
-        System.out.println("Email username : " + emailUsername);
-        System.out.println("To: " + to);
-        helper.setTo(to);
-
-        helper.setSubject("Picbooker OTP Code");
-        helper.setText("Your OTP code is: " + code);
-        emailSender.send(message);
+        try {
+            MimeMessage message = emailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true);
+            helper.setTo(to);
+            helper.setSubject("Picbooker OTP Code");
+            helper.setText("Your OTP code is: " + code);
+            emailSender.send(message);
+        } catch (MessagingException e) {
+            // Add context to the exception before rethrowing
+            throw new MessagingException("Failed to send 2FA code to " + to + " with code: " + code, e);
+        }
     }
 
     // public void sendGeneralEmail(String to, String subject, String textContent) {
