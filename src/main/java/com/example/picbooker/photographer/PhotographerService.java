@@ -370,7 +370,8 @@ public class PhotographerService {
         Photographer photographer = findByIdThrow(photographerId);
         User user = photographer.getUser();
         Boolean profilePictureSet = photographer.getProfilePhotoUrl() != null;
-        Boolean locationSet = user.getCountry() != null && user.getCity() != null;
+        Boolean locationSet = user.getCountry() != null && user.getCity() != null && !user.getCountry().isBlank()
+                && !user.getCity().isBlank();
         // to do check if has valid workHours , and if has non-private session types
         Boolean workHoursSet = !isNull(photographer.getWorkHours()) && photographer.getWorkHours().size() > 0;
         Boolean sessionTypesSet = !isNull(photographer.getSessionTypes()) && photographer.getSessionTypes().size() > 0;
@@ -380,7 +381,7 @@ public class PhotographerService {
         Boolean socialMediaSet = photographer.getSocialLinks().stream()
                 .filter(social -> !isNull(social.getLinkUrl()) && !social.getLinkUrl().isBlank()).findAny().isPresent();
         Boolean emailVerified = user.getIsEmailVerified();
-        Boolean bioSet = photographer.getBio() != null;
+        Boolean bioSet = photographer.getBio() != null && !photographer.getBio().isBlank();
 
         int listOfThings = ProfileCompletionDTO.getNumberOfFields() - 1;
         int complete = (profilePictureSet ? 1 : 0) + (sessionTypesSet ? 1 : 0) + (workHoursSet ? 1 : 0)
