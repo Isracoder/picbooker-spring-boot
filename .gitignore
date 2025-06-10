@@ -36,7 +36,8 @@ build/
 *.p8
 *.pem
 *ClientSecret.txt 
-*secret*.zip
+*.zip
 *firebase-config*
 .dockerignore
 Dockerfile
+*deploy-notes.txt

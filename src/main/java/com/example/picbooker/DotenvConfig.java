@@ -19,7 +19,7 @@ public class DotenvConfig {
                 // Only set if not already defined (from system environment)
                 // if (System.getProperty(entry.getKey()) == null &&
                 // System.getenv(entry.getKey()) == null) {
-                System.out.println(entry.getKey() + ": " + entry.getValue());
+                // System.out.println(entry.getKey() + ": " + entry.getValue());
                 System.setProperty(entry.getKey(), entry.getValue());
                 // }
             });
