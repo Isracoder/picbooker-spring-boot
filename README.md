@@ -56,6 +56,48 @@ A full-stack marketplace platform that streamlines the photography booking exper
 
 ---
 
+## 📱 Application Walkthrough
+
+### Client Journey
+
+![Client Search Process](https://github.com/user-attachments/assets/d4d1004a-67be-4e27-83ab-cc290802379d)
+_Clients can easily search and filter photographers based on their specific needs_
+
+![search results](https://github.com/user-attachments/assets/828cc45b-e386-4000-8ccb-54d2b33eb107)
+_Search Results_
+
+![Booking Process](https://github.com/user-attachments/assets/e73d8791-d859-41ed-ac40-481950b16ba5)
+_Streamlined booking flow with real-time availability and instant confirmation_
+
+
+
+
+
+### Photographer Dashboard
+
+![Photographer Dashboard](https://github.com/user-attachments/assets/2b646350-f260-4ac8-8e3b-215d7280a7eb)
+_Comprehensive dashboard for managing bookings, availability, and client communications_
+
+![Photographer Profile View](https://github.com/user-attachments/assets/c0c1f3eb-b7cd-4691-9189-88bfe75b7106)
+
+_Detailed photographer profiles showcase portfolios, reviews, and available services_
+
+![Photographer Gallery](https://github.com/user-attachments/assets/9b46733c-06ef-489f-8445-a73fdf219c4d)
+_Photographer Gallery to upload sample Images_
+
+![Profile Management](https://github.com/user-attachments/assets/1050775c-fd1d-4e70-b1c8-0d955b4d29fc)
+_Easy-to-use profile editor for showcasing work and managing service offerings_
+
+---
+
+## 🎨 Logo
+![Picbooker Logo](https://github.com/user-attachments/assets/345889e0-34a7-4415-b85e-ca84130f932e)
+
+
+
+---
+
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -87,35 +129,6 @@ A full-stack marketplace platform that streamlines the photography booking exper
     ```
 
 The application will be available at `http://localhost:8080`
-
----
-
-## 📱 Application Walkthrough
-
-### Client Journey
-
-![Client Search Process]()
-_Clients can easily search and filter photographers based on their specific needs_
-
-![Photographer Profile View]()
-_Detailed photographer profiles showcase portfolios, reviews, and available services_
-
-![Booking Process]()
-_Streamlined booking flow with real-time availability and instant confirmation_
-
-### Photographer Dashboard
-
-![Photographer Dashboard]()
-_Comprehensive dashboard for managing bookings, availability, and client communications_
-
-![Profile Management]()
-_Easy-to-use profile editor for showcasing work and managing service offerings_
-
----
-
-## 🎨 Logo
-
-![Picbooker Logo]()
 
 ---
 
